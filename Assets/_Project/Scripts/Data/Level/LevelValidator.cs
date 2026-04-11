@@ -2,11 +2,14 @@ using System.Collections.Generic;
 using System.Text;
 
 /// <summary>
-/// Semantic validator for <see cref="LevelPayload"/>. Runs in the editor (and
-/// in tests) to catch level authoring mistakes before the runtime builder
-/// ever sees the data. Distinct from deserialization (which only checks
-/// JSON correctness); this layer knows about palettes, definitions, grid
-/// bounds and the project's win rules.
+/// Semantic validator for <see cref="LevelPayload"/>. Runs at level load
+/// time and in tests to catch authoring mistakes before the runtime builder
+/// ever tries to spawn anything. Distinct from deserialization (which only
+/// checks JSON correctness); this layer knows about palettes, definitions,
+/// grid bounds and the project's win rules.
+///
+/// Lives in the Data assembly so the runtime LevelBuilder can invoke it;
+/// the validator itself has no editor-only dependencies.
 ///
 /// The validator never throws: it returns a <see cref="Result"/> collecting
 /// every issue found so tooling can show them in bulk.

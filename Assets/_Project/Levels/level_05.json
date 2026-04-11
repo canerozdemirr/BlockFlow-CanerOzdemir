@@ -1,0 +1,27 @@
+{
+  "id": "level_05",
+  "gridSize": { "x": 6, "y": 6 },
+  "timeLimit": 120,
+  "walls": [
+    { "x": 2, "y": 2 },
+    { "x": 3, "y": 2 }
+  ],
+  "grinders": [
+    { "edge": "Top",    "position": 0, "width": 2, "color": "Red"    },
+    { "edge": "Top",    "position": 4, "width": 2, "color": "Blue"   },
+    { "edge": "Bottom", "position": 2, "width": 2, "color": "Green"  },
+    { "edge": "Right",  "position": 4, "width": 1, "color": "Yellow" }
+  ],
+  "blocks": [
+    { "shape": "Line_S", "origin": { "x": 0, "y": 4 }, "rotation": 0, "color": "Red",
+      "modifiers": { "iced": 0, "axisLock": "None"       } },
+    { "shape": "Line_S", "origin": { "x": 3, "y": 4 }, "rotation": 0, "color": "Blue",
+      "modifiers": { "iced": 0, "axisLock": "None"       } },
+    { "shape": "Line_S", "origin": { "x": 2, "y": 0 }, "rotation": 0, "color": "Green",
+      "modifiers": { "iced": 0, "axisLock": "None"       } },
+    { "shape": "Cube_S", "origin": { "x": 5, "y": 4 }, "rotation": 0, "color": "Yellow",
+      "modifiers": { "iced": 2, "axisLock": "Horizontal" } },
+    { "shape": "Cube_S", "origin": { "x": 0, "y": 1 }, "rotation": 0, "color": "Red",
+      "modifiers": { "iced": 0, "axisLock": "Vertical"   } }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "level_04",
+  "gridSize": { "x": 6, "y": 6 },
+  "timeLimit": 90,
+  "walls": [],
+  "grinders": [
+    { "edge": "Top",    "position": 2, "width": 1, "color": "Red"   },
+    { "edge": "Bottom", "position": 3, "width": 1, "color": "Blue"  },
+    { "edge": "Left",   "position": 2, "width": 1, "color": "Green" }
+  ],
+  "blocks": [
+    { "shape": "Cube_S", "origin": { "x": 1, "y": 1 }, "rotation": 0, "color": "Red",
+      "modifiers": { "iced": 0, "axisLock": "None" } },
+    { "shape": "Cube_S", "origin": { "x": 4, "y": 3 }, "rotation": 0, "color": "Blue",
+      "modifiers": { "iced": 0, "axisLock": "None" } },
+    { "shape": "Cube_S", "origin": { "x": 3, "y": 1 }, "rotation": 0, "color": "Red",
+      "modifiers": { "iced": 1, "axisLock": "None" } },
+    { "shape": "Cube_S", "origin": { "x": 2, "y": 4 }, "rotation": 0, "color": "Green",
+      "modifiers": { "iced": 2, "axisLock": "None" } },
+    { "shape": "Cube_S", "origin": { "x": 5, "y": 5 }, "rotation": 0, "color": "Blue",
+      "modifiers": { "iced": 2, "axisLock": "None" } }
+  ]
+}

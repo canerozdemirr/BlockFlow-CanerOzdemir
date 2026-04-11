@@ -3,7 +3,8 @@
     "rootNamespace": "BlockFlow.Editor",
     "references": [
         "BlockFlow.Core",
-        "BlockFlow.Data"
+        "BlockFlow.Data",
+        "BlockFlow.Gameplay"
     ],
     "includePlatforms": [
         "Editor"

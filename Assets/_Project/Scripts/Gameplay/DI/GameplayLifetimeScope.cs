@@ -91,8 +91,28 @@ public class GameplayLifetimeScope : LifetimeScope
         builder.RegisterInstance(SingleAxisMovementStrategy.Instance).As<IMovementStrategy>();
         builder.RegisterEntryPoint<DragController>(Lifetime.Singleton);
 
+        // ---------- level loading ----------
+
+        builder.Register<LevelLoader>(Lifetime.Singleton);
+        builder.Register(container => new LevelBuilder(
+            blockCatalog,
+            grinderCatalog,
+            defaultPalette,
+            container.Resolve<IBlockModelFactory>(),
+            container.Resolve<IBlockViewFactory>(),
+            container.Resolve<IGrinderViewFactory>(),
+            container.Resolve<BlockViewRegistry>(),
+            container.Resolve<LevelContext>(),
+            container.Resolve<CellSpace>(),
+            cameraFitter,
+            container.Resolve<GridBuilder>(),
+            viewParent),
+            Lifetime.Singleton);
+        builder.Register<LevelRunner>(Lifetime.Singleton);
+
         // ---------- scene-owned ----------
 
         if (cameraFitter != null) builder.RegisterComponent(cameraFitter);
+        builder.RegisterComponentInHierarchy<GameplayBootstrapper>();
     }
 }

@@ -537,6 +537,51 @@ Transform:
   m_Children: []
   m_Father: {fileID: 608417890}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1444084443
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1444084444}
+  - component: {fileID: 1444084445}
+  m_Layer: 0
+  m_Name: Bootstrapper
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1444084444
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1444084443}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1444084445
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1444084443}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d864aae63cc77064a95ed7d1e632d6d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startingLevel: {fileID: 11400000, guid: c350dcc6af1308240be0512ecbaedd44, type: 2}
 --- !u!1 &1668191638
 GameObject:
   m_ObjectHideFlags: 0
@@ -618,13 +663,15 @@ MonoBehaviour:
     TypeName: 
   autoRun: 1
   autoInjectGameObjects: []
-  cameraFitter: {fileID: 0}
-  viewParent: {fileID: 0}
-  groundTilePrefab: {fileID: 0}
-  wallPrefab: {fileID: 0}
-  defaultPalette: {fileID: 0}
-  blockCatalog: {fileID: 0}
-  grinderCatalog: {fileID: 0}
+  cameraFitter: {fileID: 330585548}
+  viewParent: {fileID: 1248215614}
+  groundTilePrefab: {fileID: 2816931157235360966, guid: 9d8e21bb8accd434491edb82f4228e5f,
+    type: 3}
+  wallPrefab: {fileID: 7605759113495226311, guid: 22a85bf5991ee404c88d2f56d5901116,
+    type: 3}
+  defaultPalette: {fileID: 11400000, guid: c33db65a6597c30459a5ff224841ee55, type: 2}
+  blockCatalog: {fileID: 11400000, guid: 36289ac01e9b3d94eb00e6f3469ac2dd, type: 2}
+  grinderCatalog: {fileID: 11400000, guid: a5fcd11444f869c419d8ed713e081e9e, type: 2}
   cellSize: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
@@ -634,3 +681,4 @@ SceneRoots:
   - {fileID: 1971863449}
   - {fileID: 1668191639}
   - {fileID: 608417890}
+  - {fileID: 1444084444}
