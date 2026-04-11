@@ -14,5 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shapeId: SM_Block_Cube_S_01
   displayName: Small 1x1 Cube
-  cellOffsets: []
-  meshPrefab: {fileID: 0}
+  cellOffsets:
+  - x: 0
+    y: 0
+  meshPrefab: {fileID: 8037347309468041374, guid: 476bf58365a562349ae03e5fb40b151b,
+    type: 3}

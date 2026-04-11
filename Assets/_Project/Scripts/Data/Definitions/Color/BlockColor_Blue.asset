@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   colorId: Blue
   displayColor: {r: 0, g: 0.3708868, b: 1, a: 1}
-  materialOverride: {fileID: 0}
+  materialOverride: {fileID: 2100000, guid: 30b03d51b896b17418e7141dfc00413f, type: 2}
