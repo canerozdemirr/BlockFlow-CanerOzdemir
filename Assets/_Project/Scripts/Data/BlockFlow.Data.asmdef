@@ -2,8 +2,7 @@
     "name": "BlockFlow.Data",
     "rootNamespace": "BlockFlow.Data",
     "references": [
-        "BlockFlow.Core",
-        "Unity.Nuget.Newtonsoft.Json"
+        "BlockFlow.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
