@@ -1,0 +1,26 @@
+{
+    "name": "BlockFlow.Tests.EditMode",
+    "rootNamespace": "BlockFlow.Tests",
+    "references": [
+        "BlockFlow.Core",
+        "BlockFlow.Data",
+        "BlockFlow.Gameplay",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
