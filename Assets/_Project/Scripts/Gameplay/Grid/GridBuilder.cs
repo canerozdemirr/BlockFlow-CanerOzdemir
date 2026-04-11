@@ -28,6 +28,12 @@ public sealed class GridBuilder
     /// any cell flagged as a wall in <paramref name="grid"/>. Everything is
     /// parented to <paramref name="parent"/> so the caller can wipe a level
     /// by destroying the parent's children.
+    ///
+    /// Only the <i>position</i> of each instance is overridden — its authored
+    /// local rotation and scale pass through from the prefab. That lets
+    /// designers bake the correct mesh orientation (e.g. a 90° fix for a
+    /// sideways FBX import) into the prefab once and trust the builder to
+    /// preserve it.
     /// </summary>
     public void Build(GridModel grid, Transform parent)
     {
@@ -45,14 +51,12 @@ public sealed class GridBuilder
                 {
                     var tile = Object.Instantiate(groundTilePrefab, parent);
                     tile.transform.localPosition = localPos;
-                    tile.transform.localRotation = Quaternion.identity;
                 }
 
                 if (wallPrefab != null && grid.IsWall(coord))
                 {
                     var wall = Object.Instantiate(wallPrefab, parent);
                     wall.transform.localPosition = localPos;
-                    wall.transform.localRotation = Quaternion.identity;
                 }
             }
         }

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2e620746a37835d4990a9e206664b215, type: 3}
   m_Name: BlockDefinition_Cube_S
   m_EditorClassIdentifier: 
-  shapeId: SM_Block_Cube_S_01
+  shapeId: Cube_S
   displayName: Small 1x1 Cube
   cellOffsets:
   - x: 0
