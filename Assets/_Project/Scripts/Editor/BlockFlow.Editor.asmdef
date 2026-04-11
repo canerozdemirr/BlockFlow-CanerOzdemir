@@ -1,10 +1,13 @@
 {
-    "name": "BlockFlow.Data",
-    "rootNamespace": "BlockFlow.Data",
+    "name": "BlockFlow.Editor",
+    "rootNamespace": "BlockFlow.Editor",
     "references": [
-        "BlockFlow.Core"
+        "BlockFlow.Core",
+        "BlockFlow.Data"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

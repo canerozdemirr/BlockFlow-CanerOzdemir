@@ -7,8 +7,7 @@
         "VContainer",
         "UniTask",
         "PrimeTween.Runtime",
-        "Unity.InputSystem",
-        "Unity.Nuget.Newtonsoft.Json"
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

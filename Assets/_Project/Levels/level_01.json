@@ -1,0 +1,26 @@
+{
+  "id": "level_01",
+  "gridSize": { "x": 4, "y": 4 },
+  "timeLimit": 60,
+  "walls": [],
+  "grinders": [
+    { "edge": "Top",    "position": 1, "width": 1, "color": "Red"  },
+    { "edge": "Bottom", "position": 2, "width": 1, "color": "Blue" }
+  ],
+  "blocks": [
+    {
+      "shape": "Cube_S",
+      "origin": { "x": 1, "y": 1 },
+      "rotation": 0,
+      "color": "Red",
+      "modifiers": { "iced": 0, "axisLock": "None" }
+    },
+    {
+      "shape": "Cube_S",
+      "origin": { "x": 2, "y": 2 },
+      "rotation": 0,
+      "color": "Blue",
+      "modifiers": { "iced": 0, "axisLock": "None" }
+    }
+  ]
+}
