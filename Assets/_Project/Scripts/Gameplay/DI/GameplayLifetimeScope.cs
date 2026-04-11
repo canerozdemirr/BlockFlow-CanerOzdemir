@@ -56,6 +56,11 @@ public class GameplayLifetimeScope : LifetimeScope
         if (blockCatalog    != null) builder.RegisterInstance(blockCatalog);
         if (grinderCatalog  != null) builder.RegisterInstance(grinderCatalog);
 
+        // ---------- per-level state ----------
+
+        builder.Register<LevelContext>(Lifetime.Singleton);
+        builder.Register<BlockViewRegistry>(Lifetime.Singleton);
+
         // ---------- factories ----------
 
         builder.Register<IBlockModelFactory, BlockModelFactory>(Lifetime.Singleton);
@@ -79,6 +84,12 @@ public class GameplayLifetimeScope : LifetimeScope
             wallPrefab,
             container.Resolve<CellSpace>()),
             Lifetime.Singleton);
+
+        // ---------- input & drag ----------
+
+        builder.Register<IInputService, UnityPointerInputService>(Lifetime.Singleton);
+        builder.RegisterInstance(SingleAxisMovementStrategy.Instance).As<IMovementStrategy>();
+        builder.RegisterEntryPoint<DragController>(Lifetime.Singleton);
 
         // ---------- scene-owned ----------
 
