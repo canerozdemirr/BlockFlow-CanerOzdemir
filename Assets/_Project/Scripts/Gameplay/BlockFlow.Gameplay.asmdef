@@ -1,0 +1,22 @@
+{
+    "name": "BlockFlow.Gameplay",
+    "rootNamespace": "BlockFlow.Gameplay",
+    "references": [
+        "BlockFlow.Core",
+        "BlockFlow.Data",
+        "VContainer",
+        "UniTask",
+        "PrimeTween.Runtime",
+        "Unity.InputSystem",
+        "Unity.Nuget.Newtonsoft.Json"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

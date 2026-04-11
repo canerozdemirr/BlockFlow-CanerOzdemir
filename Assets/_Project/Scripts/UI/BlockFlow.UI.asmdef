@@ -1,0 +1,22 @@
+{
+    "name": "BlockFlow.UI",
+    "rootNamespace": "BlockFlow.UI",
+    "references": [
+        "BlockFlow.Core",
+        "BlockFlow.Data",
+        "BlockFlow.Gameplay",
+        "VContainer",
+        "UniTask",
+        "PrimeTween.Runtime",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

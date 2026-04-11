@@ -1,0 +1,17 @@
+{
+    "name": "BlockFlow.Data",
+    "rootNamespace": "BlockFlow.Data",
+    "references": [
+        "BlockFlow.Core",
+        "Unity.Nuget.Newtonsoft.Json"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

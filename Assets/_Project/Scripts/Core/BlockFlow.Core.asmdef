@@ -1,0 +1,17 @@
+{
+    "name": "BlockFlow.Core",
+    "rootNamespace": "BlockFlow.Core",
+    "references": [
+        "VContainer",
+        "UniTask"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
