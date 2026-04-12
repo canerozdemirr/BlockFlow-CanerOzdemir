@@ -42,8 +42,9 @@ public static class GrinderPlacement
         float cs   = cellSpace.CellSize;
         float half = cs * 0.5f;
 
-        // Along the edge: center of the grinder's coverage span.
-        float along = (position + (width - 1) * 0.5f) * cs;
+        // Along the edge: pivot at the first cell of the coverage span.
+        // The grinder mesh extends from its pivot for 'width' cells.
+        float along = position * cs;
 
         // Perpendicular: grid boundary + depth offset.
         // Grid boundary = outermost cell center ± half a cell.
@@ -59,22 +60,22 @@ public static class GrinderPlacement
         switch (edge)
         {
             case GridEdge.Top:
-                worldPos = new Vector3(along, 0f, boundaryTop + depthOffset);
+                worldPos = new Vector3(along - half, 0f, boundaryTop + depthOffset);
                 worldRot = Quaternion.Euler(0f, 90f, 0f);
                 break;
 
             case GridEdge.Bottom:
-                worldPos = new Vector3(along, 0f, boundaryBottom - depthOffset);
+                worldPos = new Vector3(along - half, 0f, boundaryBottom - depthOffset);
                 worldRot = Quaternion.Euler(0f, 90f, 0f);
                 break;
 
             case GridEdge.Left:
-                worldPos = new Vector3(boundaryLeft - depthOffset, 0f, along);
+                worldPos = new Vector3(boundaryLeft - depthOffset, 0f, along - half);
                 worldRot = Quaternion.identity;
                 break;
 
             case GridEdge.Right:
-                worldPos = new Vector3(boundaryRight + depthOffset, 0f, along);
+                worldPos = new Vector3(boundaryRight + depthOffset, 0f, along - half);
                 worldRot = Quaternion.identity;
                 break;
 

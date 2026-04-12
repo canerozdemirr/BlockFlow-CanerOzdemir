@@ -12,6 +12,36 @@
       "position": 3,
       "width": 3,
       "color": "Red"
+    },
+    {
+      "edge": "Right",
+      "position": 1,
+      "width": 2,
+      "color": "Red"
+    },
+    {
+      "edge": "Right",
+      "position": 0,
+      "width": 1,
+      "color": "Red"
+    },
+    {
+      "edge": "Bottom",
+      "position": 3,
+      "width": 3,
+      "color": "Red"
+    },
+    {
+      "edge": "Bottom",
+      "position": 1,
+      "width": 2,
+      "color": "Red"
+    },
+    {
+      "edge": "Bottom",
+      "position": 0,
+      "width": 1,
+      "color": "Red"
     }
   ],
   "blocks": [
