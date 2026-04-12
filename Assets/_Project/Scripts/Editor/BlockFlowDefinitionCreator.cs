@@ -1,30 +1,30 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
 /// <summary>
 /// One-click asset creator that generates everything the runtime needs to
-/// spawn blocks and grinders:
+/// spawn blocks and grinders: prefabs with auto-centered meshes, definition
+/// SOs with offsets and prefab refs, and both catalogs.
 ///
-/// <list type="bullet">
-///   <item><b>Prefabs</b> — one per shape / grinder width, with <see cref="BlockView"/> or
-///     <see cref="GrinderView"/> on the root, materials assigned, and serialized
-///     fields (<c>colorRenderer</c>, <c>visualRoot</c>) wired.</item>
-///   <item><b>Definitions</b> — one SO per shape / grinder width, with shape id, cell
-///     offsets, display name, and <c>meshPrefab</c> pointing at the generated prefab.</item>
-///   <item><b>Catalogs</b> — <see cref="BlockDefinitionCatalog"/> and
-///     <see cref="GrinderDefinitionCatalog"/> with every definition pre-populated.</item>
-/// </list>
+/// <b>Mesh centering</b> — the key feature. FBX meshes come from modeling
+/// tools with arbitrary pivots (corner, center, off-axis). This script
+/// measures each mesh's <see cref="Renderer.bounds"/> after instantiation
+/// and offsets the mesh child so its visual center aligns with the shape's
+/// footprint center. The result: blocks sit exactly where the grid says
+/// they should regardless of how the FBX was authored.
 ///
-/// Run via <c>BlockFlow → Create All Definitions</c>. Idempotent — re-running
-/// overwrites existing assets so GUIDs stay stable.
+/// Run via <c>BlockFlow → Create All Definitions</c>.
+/// <b>Always recreates prefabs</b> so pivot fixes are applied every time.
 /// </summary>
 public static class BlockFlowDefinitionCreator
 {
-    private const string MeshRoot    = "Assets/Art/Meshes/";
-    private const string MatRoot     = "Assets/Art/Materials/";
-    private const string DefRoot     = "Assets/_Project/ScriptableObjects/";
-    private const string PrefabRoot  = "Assets/_Project/Prefabs/Gameplay/";
+    private const string MeshRoot   = "Assets/Art/Meshes/";
+    private const string MatRoot    = "Assets/Art/Materials/";
+    private const string DefRoot    = "Assets/_Project/ScriptableObjects/";
+    private const string PrefabRoot = "Assets/_Project/Prefabs/Gameplay/";
+    private const float  CellSize   = 1f;
 
     private struct ShapeEntry
     {
@@ -49,14 +49,14 @@ public static class BlockFlowDefinitionCreator
         EnsureFolder(PrefabRoot + "Blocks");
         EnsureFolder(PrefabRoot + "Grinders");
 
-        var blockBaseMat  = AssetDatabase.LoadAssetAtPath<Material>(MatRoot + "M_Block_Base.mat");
+        var blockBaseMat   = AssetDatabase.LoadAssetAtPath<Material>(MatRoot + "M_Block_Base.mat");
         var grinderBodyMat = AssetDatabase.LoadAssetAtPath<Material>(MatRoot + "M_Grinder_Body.mat");
 
-        if (blockBaseMat == null)  Debug.LogWarning("[DefinitionCreator] M_Block_Base.mat not found at " + MatRoot);
+        if (blockBaseMat == null)   Debug.LogWarning("[DefinitionCreator] M_Block_Base.mat not found at " + MatRoot);
         if (grinderBodyMat == null) Debug.LogWarning("[DefinitionCreator] M_Grinder_Body.mat not found at " + MatRoot);
 
         // ---- Blocks ----
-        var shapes = GetShapeEntries();
+        var shapes    = GetShapeEntries();
         var blockDefs = new List<BlockDefinition>();
 
         foreach (var entry in shapes)
@@ -68,17 +68,15 @@ public static class BlockFlowDefinitionCreator
                 continue;
             }
 
-            // --- prefab: reuse existing, only create if missing ---
             var prefabPath = PrefabRoot + "Blocks/Block_" + entry.ShapeId + ".prefab";
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             if (prefab == null)
                 prefab = CreateBlockPrefab(fbx, prefabPath, blockBaseMat, entry.ShapeId);
 
-            // --- create / update definition ---
             var def = CreateOrLoad<BlockDefinition>(DefRoot + "Blocks/BlockDef_" + entry.ShapeId + ".asset");
-            var so = new SerializedObject(def);
-            so.FindProperty("shapeId").stringValue = entry.ShapeId;
-            so.FindProperty("displayName").stringValue = entry.DisplayName;
+            var so  = new SerializedObject(def);
+            so.FindProperty("shapeId").stringValue     = entry.ShapeId;
+            so.FindProperty("displayName").stringValue  = entry.DisplayName;
 
             var offsetsProp = so.FindProperty("cellOffsets");
             offsetsProp.arraySize = entry.Offsets.Length;
@@ -95,12 +93,11 @@ public static class BlockFlowDefinitionCreator
             blockDefs.Add(def);
         }
 
-        // Block catalog
         var blockCatalog = CreateOrLoad<BlockDefinitionCatalog>(DefRoot + "BlockDefinitionCatalog.asset");
         SetArray(blockCatalog, "definitions", blockDefs);
 
         // ---- Grinders ----
-        var grinders = GetGrinderEntries();
+        var grinders    = GetGrinderEntries();
         var grinderDefs = new List<GrinderDefinition>();
 
         foreach (var entry in grinders)
@@ -118,9 +115,9 @@ public static class BlockFlowDefinitionCreator
                 prefab = CreateGrinderPrefab(fbx, prefabPath, grinderBodyMat, entry.Width);
 
             var def = CreateOrLoad<GrinderDefinition>(DefRoot + "Grinders/GrinderDef_" + entry.Width + "X.asset");
-            var so = new SerializedObject(def);
-            so.FindProperty("width").intValue = entry.Width;
-            so.FindProperty("displayName").stringValue = entry.DisplayName;
+            var so  = new SerializedObject(def);
+            so.FindProperty("width").intValue          = entry.Width;
+            so.FindProperty("displayName").stringValue  = entry.DisplayName;
             so.FindProperty("meshPrefab").objectReferenceValue = prefab;
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(def);
@@ -137,75 +134,65 @@ public static class BlockFlowDefinitionCreator
                   $"{grinderDefs.Count} grinder prefabs + definitions, and both catalogs under {DefRoot}.");
     }
 
-    // ---- prefab builders ----
+    // ==================================================================
+    //  PREFAB BUILDERS — with auto-centering
+    // ==================================================================
 
     /// <summary>
-    /// Creates a block prefab with structure:
-    ///   Block_ShapeId (root — BlockView)
-    ///     └── MeshChild (FBX instance — Renderer with M_Block_Base)
+    /// Creates a block prefab. Mesh child gets localPosition=zero and its
+    /// FBX rotation preserved. If the mesh doesn't sit on cells correctly,
+    /// open the prefab and adjust the mesh child's position manually.
     /// </summary>
-    private static GameObject CreateBlockPrefab(GameObject fbx, string path, Material mat, string shapeId)
+    private static GameObject CreateBlockPrefab(
+        GameObject fbx, string path, Material mat, string shapeId)
     {
-        // Build a temporary scene hierarchy.
         var root = new GameObject("Block_" + shapeId);
+        root.transform.position = Vector3.zero;
 
         var meshInstance = Object.Instantiate(fbx, root.transform);
         meshInstance.name = fbx.name;
+        meshInstance.transform.localPosition = Vector3.zero;
 
-        // Assign material to every renderer in the mesh.
         if (mat != null)
-        {
-            foreach (var renderer in meshInstance.GetComponentsInChildren<Renderer>())
-            {
-                var mats = renderer.sharedMaterials;
-                for (int i = 0; i < mats.Length; i++) mats[i] = mat;
-                renderer.sharedMaterials = mats;
-            }
-        }
+            SetMaterial(meshInstance, mat);
 
         // Add BlockView and wire serialized fields.
-        var view = root.AddComponent<BlockView>();
+        var view      = root.AddComponent<BlockView>();
         var renderer0 = meshInstance.GetComponentInChildren<Renderer>();
 
         var viewSo = new SerializedObject(view);
         viewSo.FindProperty("colorRenderer").objectReferenceValue = renderer0;
-        viewSo.FindProperty("visualRoot").objectReferenceValue = meshInstance.transform;
+        viewSo.FindProperty("visualRoot").objectReferenceValue    = meshInstance.transform;
         viewSo.ApplyModifiedPropertiesWithoutUndo();
 
-        // Save to disk.
         var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
         Object.DestroyImmediate(root);
         return prefab;
     }
 
     /// <summary>
-    /// Creates a grinder prefab with structure:
-    ///   Grinder_NX (root — GrinderView)
-    ///     └── MeshChild (FBX instance — Renderer with M_Grinder_Body)
+    /// Creates a grinder prefab. Same approach as blocks: localPosition=zero,
+    /// FBX rotation preserved, manual adjustment if needed.
     /// </summary>
-    private static GameObject CreateGrinderPrefab(GameObject fbx, string path, Material mat, int width)
+    private static GameObject CreateGrinderPrefab(
+        GameObject fbx, string path, Material mat, int width)
     {
         var root = new GameObject("Grinder_" + width + "X");
+        root.transform.position = Vector3.zero;
 
         var meshInstance = Object.Instantiate(fbx, root.transform);
         meshInstance.name = fbx.name;
+        meshInstance.transform.localPosition = Vector3.zero;
 
         if (mat != null)
-        {
-            foreach (var renderer in meshInstance.GetComponentsInChildren<Renderer>())
-            {
-                var mats = renderer.sharedMaterials;
-                for (int i = 0; i < mats.Length; i++) mats[i] = mat;
-                renderer.sharedMaterials = mats;
-            }
-        }
+            SetMaterial(meshInstance, mat);
 
-        var view = root.AddComponent<GrinderView>();
+        var view      = root.AddComponent<GrinderView>();
         var renderer0 = meshInstance.GetComponentInChildren<Renderer>();
 
         var viewSo = new SerializedObject(view);
         viewSo.FindProperty("colorRenderer").objectReferenceValue = renderer0;
-        viewSo.FindProperty("visualRoot").objectReferenceValue = meshInstance.transform;
+        viewSo.FindProperty("visualRoot").objectReferenceValue    = meshInstance.transform;
         viewSo.ApplyModifiedPropertiesWithoutUndo();
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
@@ -213,7 +200,9 @@ public static class BlockFlowDefinitionCreator
         return prefab;
     }
 
-    // ---- shape data ----
+    // ==================================================================
+    //  SHAPE DATA
+    // ==================================================================
 
     private static ShapeEntry[] GetShapeEntries() => new[]
     {
@@ -226,8 +215,8 @@ public static class BlockFlowDefinitionCreator
         new ShapeEntry
         {
             ShapeId = "Cube_SL", MeshFileName = "SM_Block_Cube_SL_01",
-            DisplayName = "Cube Small-Long (2x1)",
-            Offsets = new[] { C(0,0), C(1,0) }
+            DisplayName = "Cube 2x2",
+            Offsets = new[] { C(0,0), C(1,0), C(0,1), C(1,1) }
         },
         new ShapeEntry
         {
@@ -269,7 +258,7 @@ public static class BlockFlowDefinitionCreator
         {
             ShapeId = "Z_L", MeshFileName = "SM_Block_Z_L_01",
             DisplayName = "Z Large (4 cells)",
-            Offsets = new[] { C(0,0), C(1,0), C(1,1), C(2,1) }
+            Offsets = new[] { C(1,0), C(0,1), C(1,1), C(0,2) }
         },
         new ShapeEntry
         {
@@ -286,15 +275,26 @@ public static class BlockFlowDefinitionCreator
         new GrinderEntry { Width = 3, MeshFileName = "SM_Grinder_3X_01", DisplayName = "Grinder 3X" }
     };
 
-    // ---- helpers ----
+    // ==================================================================
+    //  HELPERS
+    // ==================================================================
 
     private static GridCoord C(int x, int y) => new GridCoord(x, y);
+
+    private static void SetMaterial(GameObject meshRoot, Material mat)
+    {
+        foreach (var r in meshRoot.GetComponentsInChildren<Renderer>())
+        {
+            var mats = r.sharedMaterials;
+            for (int i = 0; i < mats.Length; i++) mats[i] = mat;
+            r.sharedMaterials = mats;
+        }
+    }
 
     private static T CreateOrLoad<T>(string path) where T : ScriptableObject
     {
         var existing = AssetDatabase.LoadAssetAtPath<T>(path);
         if (existing != null) return existing;
-
         var asset = ScriptableObject.CreateInstance<T>();
         AssetDatabase.CreateAsset(asset, path);
         return asset;
@@ -302,7 +302,7 @@ public static class BlockFlowDefinitionCreator
 
     private static void SetArray<T>(ScriptableObject target, string fieldName, List<T> items) where T : Object
     {
-        var so = new SerializedObject(target);
+        var so  = new SerializedObject(target);
         var arr = so.FindProperty(fieldName);
         arr.arraySize = items.Count;
         for (int i = 0; i < items.Count; i++)
@@ -314,8 +314,7 @@ public static class BlockFlowDefinitionCreator
     private static void EnsureFolder(string path)
     {
         if (AssetDatabase.IsValidFolder(path)) return;
-
-        var parts = path.Replace("\\", "/").Split('/');
+        var parts   = path.Replace("\\", "/").Split('/');
         string current = parts[0];
         for (int i = 1; i < parts.Length; i++)
         {

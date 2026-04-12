@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &2836391712760834291
+--- !u!1 &6525212837811749148
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,9 +8,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7540009930694324783}
-  - component: {fileID: 1258402252657140675}
-  - component: {fileID: 398183481515596241}
+  - component: {fileID: 865818335115142676}
+  - component: {fileID: 7719146372501604516}
+  - component: {fileID: 8220634832403462595}
   m_Layer: 0
   m_Name: SM_Block_Z_L_01
   m_TagString: Untagged
@@ -18,36 +18,36 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7540009930694324783
+--- !u!4 &865818335115142676
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2836391712760834291}
+  m_GameObject: {fileID: 6525212837811749148}
   serializedVersion: 2
   m_LocalRotation: {x: -4.3297806e-17, y: 0.7071068, z: 0.7071068, w: -4.3297806e-17}
-  m_LocalPosition: {x: -0, y: 0, z: 0}
+  m_LocalPosition: {x: 0.5, y: 0, z: 1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 2302458294609362634}
+  m_Father: {fileID: 860653078192224163}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &1258402252657140675
+--- !u!33 &7719146372501604516
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2836391712760834291}
+  m_GameObject: {fileID: 6525212837811749148}
   m_Mesh: {fileID: 7639736607735135954, guid: a19995579f42705458f68266ec66c901, type: 3}
---- !u!23 &398183481515596241
+--- !u!23 &8220634832403462595
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2836391712760834291}
+  m_GameObject: {fileID: 6525212837811749148}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -83,7 +83,7 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &7689223872976672988
+--- !u!1 &6865809703128104380
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -91,8 +91,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2302458294609362634}
-  - component: {fileID: 9099130502792855895}
+  - component: {fileID: 860653078192224163}
+  - component: {fileID: 3830055302720520324}
   m_Layer: 0
   m_Name: Block_Z_L
   m_TagString: Untagged
@@ -100,34 +100,34 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2302458294609362634
+--- !u!4 &860653078192224163
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7689223872976672988}
+  m_GameObject: {fileID: 6865809703128104380}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7540009930694324783}
+  - {fileID: 865818335115142676}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9099130502792855895
+--- !u!114 &3830055302720520324
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7689223872976672988}
+  m_GameObject: {fileID: 6865809703128104380}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 747e034712a8e79498e93a3fa2f6c2e4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  colorRenderer: {fileID: 398183481515596241}
+  colorRenderer: {fileID: 8220634832403462595}
   iceOverlay: {fileID: 0}
-  visualRoot: {fileID: 7540009930694324783}
+  visualRoot: {fileID: 865818335115142676}

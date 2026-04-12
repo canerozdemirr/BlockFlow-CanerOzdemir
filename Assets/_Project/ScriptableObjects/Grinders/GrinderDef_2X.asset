@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   width: 2
   displayName: Grinder 2X
-  meshPrefab: {fileID: 6509495952764527726, guid: 553372a137dee6340afde86e4d7ffba0,
+  meshPrefab: {fileID: 461019750322591853, guid: 553372a137dee6340afde86e4d7ffba0,
     type: 3}

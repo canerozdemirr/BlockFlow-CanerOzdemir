@@ -1,26 +1,34 @@
 using UnityEngine;
 
 /// <summary>
-/// Pure pose math for placing a grinder on an edge of the grid. Factored out
-/// of <see cref="GrinderViewFactory"/> so the translation from logical edge
-/// data to world position/rotation can be unit-tested and reused by gizmo
-/// drawers, debug overlays, or future SFX anchors.
+/// Pure pose math for placing a grinder on an edge of the grid.
 ///
 /// Conventions:
 /// <list type="bullet">
-///   <item>Cell (0, 0) lives at local origin (0, 0, 0).</item>
-///   <item>Grinders are positioned flush with the grid boundary (half a cell beyond the outermost cell centers) so they sit right at the edge of the ground tiles.</item>
-///   <item>Rotation is an edge-specific <b>delta</b> (not absolute). The factory multiplies it by the prefab's authored base rotation so the designer's FBX orientation fix is always preserved.</item>
+///   <item>Cell (0, 0) center is at local origin (0, 0, 0).</item>
+///   <item>The along-edge position aligns with cell centers (position 0 = cell 0 center).</item>
+///   <item><see cref="depthOffset"/> controls how far out from the grid boundary
+///     the grinder sits. 0 = flush at boundary, positive = further out.
+///     Tune this on the LifetimeScope to match your grinder mesh depth.</item>
+///   <item>Rotation is an edge-specific delta. The factory multiplies it by the
+///     prefab's authored base rotation.</item>
 /// </list>
 /// </summary>
 public static class GrinderPlacement
 {
+    /// <summary>
+    /// Computes the world-local pose for a grinder.
+    /// </summary>
+    /// <param name="depthOffset">Extra distance from the grid boundary outward.
+    /// 0 = grinder pivot right on the boundary. Increase to push grinder meshes
+    /// further out so their opening sits flush against the tiles.</param>
     public static void GetPose(
         GridEdge edge,
         int position,
         int width,
         GridSize gridSize,
         CellSpace cellSpace,
+        float depthOffset,
         out Vector3 worldPos,
         out Quaternion worldRot)
     {
@@ -31,36 +39,43 @@ public static class GrinderPlacement
             return;
         }
 
-        float cs = cellSpace.CellSize;
+        float cs   = cellSpace.CellSize;
         float half = cs * 0.5f;
 
-        // Midpoint of the grinder's footprint along the edge axis.
-        float alongAxisCenter = (position + (width - 1) * 0.5f) * cs;
+        // Along the edge: center of the grinder's coverage span.
+        float along = (position + (width - 1) * 0.5f) * cs;
 
-        // Perpendicular position: flush with the grid boundary.
-        // Cell centers run from 0 to (size-1)*cs. Each cell extends ±half
-        // around its center, so the grid boundary is at -half and
-        // (size-1)*cs + half = (size - 0.5)*cs.
+        // Perpendicular: grid boundary + depth offset.
+        // Grid boundary = outermost cell center ± half a cell.
+        float boundaryTop    = (gridSize.height - 1) * cs + half;
+        float boundaryBottom = -half;
+        float boundaryRight  = (gridSize.width  - 1) * cs + half;
+        float boundaryLeft   = -half;
+
+        // Top/Bottom grinders rotate 90° around Y so the mesh (authored for
+        // left/right edges) aligns with the horizontal edges.
+        // Left/Right grinders keep identity — the mesh is already oriented
+        // correctly for vertical edges as authored.
         switch (edge)
         {
             case GridEdge.Top:
-                worldPos = new Vector3(alongAxisCenter, 0f, (gridSize.height - 0.5f) * cs);
-                worldRot = Quaternion.Euler(0f, 180f, 0f);
-                break;
-
-            case GridEdge.Bottom:
-                worldPos = new Vector3(alongAxisCenter, 0f, -half);
-                worldRot = Quaternion.identity;
-                break;
-
-            case GridEdge.Left:
-                worldPos = new Vector3(-half, 0f, alongAxisCenter);
+                worldPos = new Vector3(along, 0f, boundaryTop + depthOffset);
                 worldRot = Quaternion.Euler(0f, 90f, 0f);
                 break;
 
+            case GridEdge.Bottom:
+                worldPos = new Vector3(along, 0f, boundaryBottom - depthOffset);
+                worldRot = Quaternion.Euler(0f, 90f, 0f);
+                break;
+
+            case GridEdge.Left:
+                worldPos = new Vector3(boundaryLeft - depthOffset, 0f, along);
+                worldRot = Quaternion.identity;
+                break;
+
             case GridEdge.Right:
-                worldPos = new Vector3((gridSize.width - 0.5f) * cs, 0f, alongAxisCenter);
-                worldRot = Quaternion.Euler(0f, -90f, 0f);
+                worldPos = new Vector3(boundaryRight + depthOffset, 0f, along);
+                worldRot = Quaternion.identity;
                 break;
 
             default:

@@ -16,6 +16,7 @@ public sealed class GrinderViewFactory : IGrinderViewFactory
     private readonly ColorPalette palette;
     private readonly CellSpace cellSpace;
     private readonly Transform parent;
+    private readonly float depthOffset;
 
     private readonly Dictionary<GameObject, PrefabPool<GrinderView>> poolsByPrefab =
         new Dictionary<GameObject, PrefabPool<GrinderView>>();
@@ -23,11 +24,12 @@ public sealed class GrinderViewFactory : IGrinderViewFactory
     private readonly Dictionary<GrinderView, PrefabPool<GrinderView>> activeViews =
         new Dictionary<GrinderView, PrefabPool<GrinderView>>();
 
-    public GrinderViewFactory(ColorPalette palette, CellSpace cellSpace, Transform parent)
+    public GrinderViewFactory(ColorPalette palette, CellSpace cellSpace, Transform parent, float depthOffset = 0f)
     {
         this.palette = palette;
         this.cellSpace = cellSpace;
         this.parent = parent;
+        this.depthOffset = depthOffset;
     }
 
     public GrinderView Acquire(GrinderModel model, GrinderDefinition definition, GridSize gridSize)
@@ -56,12 +58,10 @@ public sealed class GrinderViewFactory : IGrinderViewFactory
         var view = pool.Get();
         activeViews[view] = pool;
 
-        GrinderPlacement.GetPose(model.Edge, model.Position, model.Width, gridSize, cellSpace, out var pos, out var rot);
+        GrinderPlacement.GetPose(model.Edge, model.Position, model.Width, gridSize, cellSpace, depthOffset, out var pos, out var rot);
         var t = view.transform;
         t.localPosition = pos;
-        // Combine the edge-specific turn with the prefab's authored base
-        // rotation so the designer's FBX orientation fix is preserved.
-        t.localRotation = rot * view.BaseRotation;
+        t.localRotation = rot;
 
         view.Bind(model, ResolveColor(model.ColorId));
         return view;

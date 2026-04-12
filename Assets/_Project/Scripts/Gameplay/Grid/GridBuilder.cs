@@ -51,12 +51,14 @@ public sealed class GridBuilder
                 {
                     var tile = Object.Instantiate(groundTilePrefab, parent);
                     tile.transform.localPosition = localPos;
+                    tile.name = $"Tile ({x},{y})";
                 }
 
                 if (wallPrefab != null && grid.IsWall(coord))
                 {
                     var wall = Object.Instantiate(wallPrefab, parent);
                     wall.transform.localPosition = localPos;
+                    wall.name = $"Wall ({x},{y})";
                 }
             }
         }

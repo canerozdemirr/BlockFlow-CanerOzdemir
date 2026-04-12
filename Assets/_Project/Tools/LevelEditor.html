@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlockFlow Level Editor</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#1a1a2e;--surface:#16213e;--surface2:#0f3460;--border:#1a4080;
+  --text:#e0e0e0;--text-dim:#888;--accent:#3e8cff;--danger:#f24a4a;
+  --red:#F24A4A;--blue:#3E8CFF;--green:#4AD06B;--yellow:#FFD23F;
+  --purple:#B94AE0;--orange:#FF8A3D;
+  --cell:56px;--gap:2px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+
+/* ---- SIDEBAR LEFT ---- */
+.sidebar{width:260px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.sidebar h2{padding:16px;font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);border-bottom:1px solid var(--border)}
+.sidebar section{padding:12px 16px;border-bottom:1px solid var(--border)}
+.sidebar label{display:block;font-size:11px;color:var(--text-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.sidebar select,.sidebar input[type=text],.sidebar input[type=number]{width:100%;padding:6px 8px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:13px;margin-bottom:8px}
+.sidebar input[type=range]{width:100%;margin-bottom:4px}
+.color-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.color-swatch{width:28px;height:28px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:border-color .15s}
+.color-swatch.active{border-color:#fff}
+.color-swatch:hover{border-color:#aaa}
+.shape-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.shape-btn{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:6px;cursor:pointer;text-align:center;font-size:10px;color:var(--text);transition:all .15s}
+.shape-btn:hover{border-color:var(--accent)}
+.shape-btn.active{border-color:var(--accent);background:var(--surface2)}
+.shape-preview{display:grid;gap:1px;margin:0 auto 4px;width:fit-content}
+.shape-preview-cell{width:8px;height:8px;border-radius:1px}
+
+/* ---- CENTER ---- */
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow:auto}
+.grid-wrapper{position:relative;display:inline-block}
+.grid-area{display:grid;gap:var(--gap);position:relative}
+.cell{width:var(--cell);height:var(--cell);background:#2a2a4a;border-radius:3px;cursor:pointer;position:relative;transition:background .1s}
+.cell:hover{background:#3a3a5a}
+.cell.wall{background:#555568;background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(0,0,0,.15) 4px,rgba(0,0,0,.15) 8px)}
+.cell .coord{position:absolute;bottom:1px;right:3px;font-size:8px;color:rgba(255,255,255,.2);pointer-events:none}
+.cell.block-cell{border-radius:4px}
+.cell.block-cell.selected{box-shadow:0 0 0 2px #fff}
+.cell.overlap{box-shadow:inset 0 0 0 2px var(--danger)}
+.cell.preview{outline:2px dashed rgba(255,255,255,.4);outline-offset:-2px}
+.cell .axis-arrow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:16px;color:rgba(255,255,255,.7);pointer-events:none}
+.cell .ice-badge{position:absolute;top:2px;left:2px;font-size:9px;background:rgba(0,200,255,.7);color:#fff;border-radius:2px;padding:0 3px;pointer-events:none}
+
+/* edge strips */
+.edge-strip{position:absolute;display:flex;gap:var(--gap)}
+.edge-strip.top,.edge-strip.bottom{flex-direction:row}
+.edge-strip.left,.edge-strip.right{flex-direction:column}
+.edge-cell{background:rgba(255,255,255,.05);border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-dim);transition:background .1s}
+.edge-cell:hover{background:rgba(255,255,255,.12)}
+.edge-cell.has-grinder{border:2px solid;font-weight:bold;font-size:11px;color:#fff}
+
+/* ---- SIDEBAR RIGHT ---- */
+.properties{width:260px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.properties section{padding:12px 16px;border-bottom:1px solid var(--border)}
+.properties label{display:block;font-size:11px;color:var(--text-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.properties select,.properties input{width:100%;padding:6px 8px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:13px;margin-bottom:8px}
+
+/* buttons */
+.btn{padding:8px 14px;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#5a9fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{background:#ff6b6b}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.btn-sm{padding:5px 10px;font-size:11px}
+
+/* validation */
+.warnings{padding:12px 16px;font-size:11px}
+.warn-item{padding:4px 0;color:var(--danger);display:flex;align-items:start;gap:6px}
+.warn-item::before{content:"!";display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;background:var(--danger);color:#fff;border-radius:50%;font-size:9px;font-weight:bold;flex-shrink:0}
+
+/* tool mode indicator */
+.tool-indicator{padding:10px 16px;background:var(--surface2);font-size:12px;text-align:center;border-bottom:1px solid var(--border)}
+.tool-indicator .mode{color:var(--accent);font-weight:600}
+
+/* grinder dialog */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100;display:none}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:24px;min-width:280px}
+.modal h3{margin-bottom:16px;color:var(--accent)}
+.modal .btn-row{justify-content:flex-end}
+</style>
+</head>
+<body>
+
+<!-- LEFT SIDEBAR -->
+<div class="sidebar">
+  <h2>BlockFlow Editor</h2>
+
+  <section>
+    <label>Level ID</label>
+    <input type="text" id="levelId" value="level_01">
+    <label>Grid Size</label>
+    <select id="gridSize">
+      <option value="4">4 x 4</option>
+      <option value="5">5 x 5</option>
+      <option value="6">6 x 6</option>
+    </select>
+    <label>Time Limit: <span id="timeLimitVal">60</span>s</label>
+    <input type="range" id="timeLimit" min="10" max="300" value="60" step="5">
+  </section>
+
+  <section>
+    <label>Tool Mode</label>
+    <div class="btn-row" style="margin-bottom:8px">
+      <button class="btn btn-sm btn-primary" onclick="setTool('block')" id="toolBlock">Block</button>
+      <button class="btn btn-sm btn-outline" onclick="setTool('wall')" id="toolWall">Wall</button>
+      <button class="btn btn-sm btn-outline" onclick="setTool('eraser')" id="toolEraser">Eraser</button>
+    </div>
+  </section>
+
+  <section id="blockTools">
+    <label>Color</label>
+    <div class="color-row" id="colorPicker"></div>
+    <label>Shape</label>
+    <div class="shape-grid" id="shapePicker"></div>
+    <label style="margin-top:8px">Rotation</label>
+    <select id="rotation">
+      <option value="0">0</option>
+      <option value="90">90</option>
+      <option value="180">180</option>
+      <option value="270">270</option>
+    </select>
+  </section>
+
+  <section>
+    <label>Actions</label>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="exportJSON()">Export JSON</button>
+      <button class="btn btn-outline" onclick="copyJSON()">Copy</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">Import JSON</button>
+      <button class="btn btn-danger btn-sm" onclick="clearAll()">Clear All</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+    </div>
+  </section>
+</div>
+
+<!-- CENTER -->
+<div class="center">
+  <div class="tool-indicator">Mode: <span class="mode" id="toolLabel">Block</span> &mdash; <span id="toolHint">Click cell to place block</span></div>
+  <div class="grid-wrapper" id="gridWrapper"></div>
+</div>
+
+<!-- RIGHT SIDEBAR -->
+<div class="properties">
+  <h2>Properties</h2>
+  <section id="propNone"><p style="color:var(--text-dim);font-size:12px;padding:8px 0">Click a block or grinder to inspect it.</p></section>
+  <section id="propBlock" style="display:none">
+    <label>Selected Block</label>
+    <p id="propBlockInfo" style="font-size:12px;margin-bottom:8px"></p>
+    <label>Ice Level</label>
+    <input type="number" id="propIce" min="0" max="10" value="0" onchange="updateBlockProp()">
+    <label>Axis Lock</label>
+    <select id="propAxis" onchange="updateBlockProp()">
+      <option value="None">None</option>
+      <option value="Horizontal">Horizontal</option>
+      <option value="Vertical">Vertical</option>
+    </select>
+    <label>Color</label>
+    <select id="propColor" onchange="updateBlockProp()"></select>
+    <div class="btn-row"><button class="btn btn-danger btn-sm" onclick="deleteSelected()">Delete Block</button></div>
+  </section>
+  <section id="propGrinder" style="display:none">
+    <label>Selected Grinder</label>
+    <p id="propGrinderInfo" style="font-size:12px;margin-bottom:8px"></p>
+    <label>Color</label>
+    <select id="propGrinderColor" onchange="updateGrinderProp()"></select>
+    <label>Width</label>
+    <select id="propGrinderWidth" onchange="updateGrinderProp()">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+    </select>
+    <div class="btn-row"><button class="btn btn-danger btn-sm" onclick="deleteSelectedGrinder()">Delete Grinder</button></div>
+  </section>
+
+  <div class="warnings" id="warnings"></div>
+</div>
+
+<!-- GRINDER MODAL -->
+<div class="modal-overlay" id="grinderModal">
+  <div class="modal">
+    <h3>Place Grinder</h3>
+    <label>Color</label>
+    <select id="grinderColor"></select>
+    <label>Width</label>
+    <select id="grinderWidth">
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+    </select>
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="closeGrinderModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmGrinder()">Place</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ DATA ============
+const COLORS = {
+  Red:    '#F24A4A', Blue:   '#3E8CFF', Green:  '#4AD06B',
+  Yellow: '#FFD23F', Purple: '#B94AE0', Orange: '#FF8A3D'
+};
+const COLOR_NAMES = Object.keys(COLORS);
+
+const SHAPES = {
+  Cube_S:     { offsets: [[0,0]], label: 'Cube S' },
+  Cube_SL:    { offsets: [[0,0],[1,0],[0,1],[1,1]], label: 'Cube SL' },
+  Line_S:     { offsets: [[0,0],[1,0]], label: 'Line S' },
+  Line_L:     { offsets: [[0,0],[1,0],[2,0]], label: 'Line L' },
+  L_S:        { offsets: [[0,0],[1,0],[0,1]], label: 'L Small' },
+  L_L:        { offsets: [[0,0],[1,0],[0,1],[0,2]], label: 'L Large' },
+  L_L_Mirror: { offsets: [[0,0],[1,0],[1,1],[1,2]], label: 'L Mirror' },
+  T_L:        { offsets: [[0,0],[1,0],[2,0],[1,1]], label: 'T Large' },
+  Z_L:        { offsets: [[1,0],[0,1],[1,1],[0,2]], label: 'Z Large' },
+  Plus_L:     { offsets: [[1,0],[0,1],[1,1],[2,1],[1,2]], label: 'Plus L' }
+};
+
+// ============ STATE ============
+let gridSize = 4;
+let tool = 'block';
+let selectedColor = 'Red';
+let selectedShape = 'Cube_S';
+let selectedRotation = 0;
+let blocks = [];   // { id, shape, origin:{x,y}, rotation, color, modifiers:{iced,axisLock} }
+let walls = [];    // { x, y }
+let grinders = []; // { id, edge, position, width, color }
+let selectedBlockId = null;
+let selectedGrinderId = null;
+let pendingGrinderEdge = null;
+let pendingGrinderPos = null;
+let nextBlockId = 1;
+let nextGrinderId = 1;
+
+// ============ ROTATION ============
+function rotateOffset(ox, oy, quarterTurns) {
+  let t = ((quarterTurns % 4) + 4) % 4;
+  for (let i = 0; i < t; i++) { let tmp = ox; ox = -oy; oy = tmp; }
+  return [ox, oy];
+}
+function getRotatedOffsets(shapeId, rotation) {
+  const base = SHAPES[shapeId].offsets;
+  const q = Math.round(rotation / 90);
+  return base.map(([x,y]) => rotateOffset(x, y, q));
+}
+function getWorldCells(block) {
+  return getRotatedOffsets(block.shape, block.rotation).map(([ox,oy]) => ({
+    x: block.origin.x + ox, y: block.origin.y + oy
+  }));
+}
+
+// ============ INIT ============
+function init() {
+  buildColorPicker();
+  buildShapePicker();
+  buildColorSelects();
+  document.getElementById('gridSize').addEventListener('change', e => { gridSize = +e.target.value; blocks=[]; walls=[]; grinders=[]; selectedBlockId=null; selectedGrinderId=null; rebuildGrid(); });
+  document.getElementById('timeLimit').addEventListener('input', e => document.getElementById('timeLimitVal').textContent = e.target.value);
+  document.getElementById('rotation').addEventListener('change', () => { selectedRotation = +document.getElementById('rotation').value; rebuildGrid(); });
+  document.addEventListener('keydown', e => { if(e.key==='Delete'||e.key==='Backspace'){if(selectedBlockId!==null)deleteSelected();if(selectedGrinderId!==null)deleteSelectedGrinder();}if(e.key==='Escape'){selectedBlockId=null;selectedGrinderId=null;showProps();rebuildGrid();}});
+  rebuildGrid();
+}
+
+function buildColorPicker() {
+  const el = document.getElementById('colorPicker');
+  el.innerHTML = '';
+  for (const [name, hex] of Object.entries(COLORS)) {
+    const s = document.createElement('div');
+    s.className = 'color-swatch' + (name===selectedColor?' active':'');
+    s.style.background = hex;
+    s.title = name;
+    s.onclick = () => { selectedColor = name; buildColorPicker(); };
+    el.appendChild(s);
+  }
+}
+
+function buildShapePicker() {
+  const el = document.getElementById('shapePicker');
+  el.innerHTML = '';
+  for (const [id, shape] of Object.entries(SHAPES)) {
+    const btn = document.createElement('div');
+    btn.className = 'shape-btn' + (id===selectedShape?' active':'');
+    // mini preview
+    const offsets = shape.offsets;
+    let maxX=0,maxY=0; offsets.forEach(([x,y])=>{if(x>maxX)maxX=x;if(y>maxY)maxY=y;});
+    const prev = document.createElement('div');
+    prev.className = 'shape-preview';
+    prev.style.gridTemplateColumns = `repeat(${maxX+1}, 8px)`;
+    const set = new Set(offsets.map(([x,y])=>x+','+y));
+    for (let y=maxY;y>=0;y--) for (let x=0;x<=maxX;x++) {
+      const c = document.createElement('div');
+      c.className = 'shape-preview-cell';
+      c.style.background = set.has(x+','+y) ? COLORS[selectedColor] : 'transparent';
+      prev.appendChild(c);
+    }
+    btn.appendChild(prev);
+    btn.appendChild(document.createTextNode(shape.label));
+    btn.onclick = () => { selectedShape = id; buildShapePicker(); rebuildGrid(); };
+    el.appendChild(btn);
+  }
+}
+
+function buildColorSelects() {
+  ['propColor','propGrinderColor','grinderColor'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '';
+    COLOR_NAMES.forEach(c => { const o = document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
+  });
+}
+
+// ============ TOOL ============
+function setTool(t) {
+  tool = t;
+  selectedBlockId = null; selectedGrinderId = null; showProps();
+  document.getElementById('toolBlock').className = 'btn btn-sm ' + (t==='block'?'btn-primary':'btn-outline');
+  document.getElementById('toolWall').className = 'btn btn-sm ' + (t==='wall'?'btn-primary':'btn-outline');
+  document.getElementById('toolEraser').className = 'btn btn-sm ' + (t==='eraser'?'btn-primary':'btn-outline');
+  document.getElementById('blockTools').style.display = t==='block'?'block':'none';
+  const labels = {block:'Block',wall:'Wall',eraser:'Eraser'};
+  const hints = {block:'Click cell to place block',wall:'Click cell to toggle wall',eraser:'Click cell to erase block/wall'};
+  document.getElementById('toolLabel').textContent = labels[t];
+  document.getElementById('toolHint').textContent = hints[t];
+  rebuildGrid();
+}
+
+// ============ GRID ============
+function rebuildGrid() {
+  const wrapper = document.getElementById('gridWrapper');
+  wrapper.innerHTML = '';
+  const edgeSize = 28;
+  const totalCellPx = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell'));
+  const gapPx = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap'));
+
+  // occupancy map
+  const occ = {}; // "x,y" -> blockId
+  const overlapSet = new Set();
+  blocks.forEach(b => {
+    getWorldCells(b).forEach(c => {
+      const k = c.x+','+c.y;
+      if (occ[k] !== undefined) { overlapSet.add(k); }
+      occ[k] = b.id;
+    });
+  });
+  const wallSet = new Set(walls.map(w=>w.x+','+w.y));
+
+  // preview cells for current tool
+  const previewCells = new Set();
+  // (will be set via mouseover)
+
+  // grid
+  const grid = document.createElement('div');
+  grid.className = 'grid-area';
+  grid.style.gridTemplateColumns = `repeat(${gridSize}, var(--cell))`;
+  grid.style.margin = `${edgeSize+8}px`;
+
+  for (let y = gridSize-1; y >= 0; y--) {
+    for (let x = 0; x < gridSize; x++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.x = x; cell.dataset.y = y;
+
+      const coord = document.createElement('span');
+      coord.className = 'coord';
+      coord.textContent = `${x},${y}`;
+      cell.appendChild(coord);
+
+      // wall
+      if (wallSet.has(x+','+y)) cell.classList.add('wall');
+
+      // block color
+      const bId = occ[x+','+y];
+      if (bId !== undefined) {
+        const b = blocks.find(bl=>bl.id===bId);
+        if (b) {
+          cell.classList.add('block-cell');
+          cell.style.background = COLORS[b.color] || '#888';
+          if (b.id === selectedBlockId) cell.classList.add('selected');
+          // ice badge
+          if (b.modifiers.iced > 0) {
+            const badge = document.createElement('span');
+            badge.className = 'ice-badge';
+            badge.textContent = b.modifiers.iced;
+            cell.appendChild(badge);
+          }
+          // axis arrow
+          if (b.modifiers.axisLock !== 'None') {
+            const arrow = document.createElement('span');
+            arrow.className = 'axis-arrow';
+            arrow.textContent = b.modifiers.axisLock === 'Horizontal' ? '\u2194' : '\u2195';
+            cell.appendChild(arrow);
+          }
+        }
+      }
+
+      // overlap
+      if (overlapSet.has(x+','+y)) cell.classList.add('overlap');
+
+      // hover preview for block placement
+      if (tool === 'block') {
+        cell.addEventListener('mouseenter', () => showPreview(x, y));
+        cell.addEventListener('mouseleave', clearPreview);
+      }
+
+      // click
+      cell.addEventListener('click', () => onCellClick(x, y));
+      cell.addEventListener('contextmenu', e => { e.preventDefault(); onCellRightClick(x, y); });
+
+      grid.appendChild(cell);
+    }
+  }
+  wrapper.appendChild(grid);
+
+  // Edge strips
+  const gridPxW = gridSize * (totalCellPx + gapPx) - gapPx;
+  const gridPxH = gridPxW;
+
+  createEdgeStrip(wrapper, 'top', gridSize, edgeSize, totalCellPx, gapPx, gridPxW);
+  createEdgeStrip(wrapper, 'bottom', gridSize, edgeSize, totalCellPx, gapPx, gridPxW);
+  createEdgeStrip(wrapper, 'left', gridSize, edgeSize, totalCellPx, gapPx, gridPxH);
+  createEdgeStrip(wrapper, 'right', gridSize, edgeSize, totalCellPx, gapPx, gridPxH);
+
+  validate();
+}
+
+function createEdgeStrip(wrapper, edge, size, edgeH, cellPx, gapPx, gridPx) {
+  const strip = document.createElement('div');
+  strip.className = `edge-strip ${edge}`;
+  const margin = edgeH + 8;
+  const isHoriz = edge==='top'||edge==='bottom';
+
+  if (isHoriz) {
+    strip.style.left = `${margin}px`;
+    strip.style.width = `${gridPx}px`;
+    strip.style.height = `${edgeH}px`;
+    if (edge==='top') strip.style.top = '0px'; else strip.style.bottom = '0px';
+  } else {
+    strip.style.top = `${margin}px`;
+    strip.style.height = `${gridPx}px`;
+    strip.style.width = `${edgeH}px`;
+    if (edge==='left') strip.style.left = '0px'; else strip.style.right = '0px';
+  }
+
+  for (let i = 0; i < size; i++) {
+    const ec = document.createElement('div');
+    ec.className = 'edge-cell';
+    if (isHoriz) {
+      ec.style.width = `${cellPx}px`;
+      ec.style.height = `${edgeH}px`;
+      ec.style.marginRight = i<size-1?`${gapPx}px`:'0';
+    } else {
+      ec.style.height = `${cellPx}px`;
+      ec.style.width = `${edgeH}px`;
+      ec.style.marginBottom = i<size-1?`${gapPx}px`:'0';
+    }
+
+    // reverse Y for left/right strips so visual bottom = index 0
+    const pos = (!isHoriz) ? (size - 1 - i) : i;
+
+    // check for grinder at this position
+    const g = grinders.find(gr => gr.edge === capitalize(edge) && pos >= gr.position && pos < gr.position + gr.width);
+    if (g) {
+      ec.classList.add('has-grinder');
+      ec.style.background = COLORS[g.color] || '#888';
+      ec.style.borderColor = COLORS[g.color] || '#888';
+      if (pos === g.position) ec.textContent = g.width + 'X';
+      if (g.id === selectedGrinderId) ec.style.boxShadow = '0 0 0 2px #fff';
+      ec.onclick = () => { selectedBlockId=null; selectedGrinderId=g.id; showProps(); rebuildGrid(); };
+    } else {
+      ec.textContent = pos;
+      ec.onclick = () => openGrinderModal(capitalize(edge), pos);
+    }
+
+    strip.appendChild(ec);
+  }
+
+  wrapper.appendChild(strip);
+}
+
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ============ PREVIEW ============
+function showPreview(cx, cy) {
+  if (tool !== 'block') return;
+  const offsets = getRotatedOffsets(selectedShape, selectedRotation);
+  const cells = document.querySelectorAll('.cell');
+  cells.forEach(c => {
+    const x = +c.dataset.x, y = +c.dataset.y;
+    if (offsets.some(([ox,oy]) => cx+ox===x && cy+oy===y)) c.classList.add('preview');
+  });
+}
+function clearPreview() {
+  document.querySelectorAll('.cell.preview').forEach(c => c.classList.remove('preview'));
+}
+
+// ============ CELL ACTIONS ============
+function onCellClick(x, y) {
+  if (tool === 'wall') {
+    const idx = walls.findIndex(w => w.x===x && w.y===y);
+    if (idx >= 0) walls.splice(idx, 1); else walls.push({x,y});
+    rebuildGrid();
+  } else if (tool === 'block') {
+    const b = { id: nextBlockId++, shape: selectedShape, origin: {x,y}, rotation: selectedRotation, color: selectedColor, modifiers: {iced:0, axisLock:'None'} };
+    blocks.push(b);
+    selectedBlockId = b.id; selectedGrinderId = null;
+    showProps();
+    rebuildGrid();
+  } else if (tool === 'eraser') {
+    // erase block at cell
+    const occ = {};
+    blocks.forEach(b => getWorldCells(b).forEach(c => { occ[c.x+','+c.y] = b.id; }));
+    const bId = occ[x+','+y];
+    if (bId !== undefined) { blocks = blocks.filter(b=>b.id!==bId); if(selectedBlockId===bId) selectedBlockId=null; }
+    // erase wall
+    walls = walls.filter(w => !(w.x===x && w.y===y));
+    showProps(); rebuildGrid();
+  }
+}
+
+function onCellRightClick(x, y) {
+  const occ = {};
+  blocks.forEach(b => getWorldCells(b).forEach(c => { occ[c.x+','+c.y] = b.id; }));
+  const bId = occ[x+','+y];
+  if (bId !== undefined) {
+    selectedBlockId = bId; selectedGrinderId = null;
+    showProps(); rebuildGrid();
+  }
+}
+
+// ============ PROPERTIES ============
+function showProps() {
+  document.getElementById('propNone').style.display = 'none';
+  document.getElementById('propBlock').style.display = 'none';
+  document.getElementById('propGrinder').style.display = 'none';
+  if (selectedBlockId !== null) {
+    const b = blocks.find(bl=>bl.id===selectedBlockId);
+    if (!b) { selectedBlockId=null; showProps(); return; }
+    document.getElementById('propBlock').style.display = 'block';
+    document.getElementById('propBlockInfo').textContent = `${b.shape} at (${b.origin.x},${b.origin.y}) rot ${b.rotation}`;
+    document.getElementById('propIce').value = b.modifiers.iced;
+    document.getElementById('propAxis').value = b.modifiers.axisLock;
+    document.getElementById('propColor').value = b.color;
+  } else if (selectedGrinderId !== null) {
+    const g = grinders.find(gr=>gr.id===selectedGrinderId);
+    if (!g) { selectedGrinderId=null; showProps(); return; }
+    document.getElementById('propGrinder').style.display = 'block';
+    document.getElementById('propGrinderInfo').textContent = `${g.edge} edge, pos ${g.position}, ${g.width}X`;
+    document.getElementById('propGrinderColor').value = g.color;
+    document.getElementById('propGrinderWidth').value = g.width;
+  } else {
+    document.getElementById('propNone').style.display = 'block';
+  }
+}
+
+function updateBlockProp() {
+  const b = blocks.find(bl=>bl.id===selectedBlockId);
+  if (!b) return;
+  b.modifiers.iced = +document.getElementById('propIce').value;
+  b.modifiers.axisLock = document.getElementById('propAxis').value;
+  b.color = document.getElementById('propColor').value;
+  rebuildGrid();
+}
+
+function updateGrinderProp() {
+  const g = grinders.find(gr=>gr.id===selectedGrinderId);
+  if (!g) return;
+  g.color = document.getElementById('propGrinderColor').value;
+  g.width = +document.getElementById('propGrinderWidth').value;
+  rebuildGrid();
+}
+
+function deleteSelected() {
+  blocks = blocks.filter(b=>b.id!==selectedBlockId);
+  selectedBlockId = null; showProps(); rebuildGrid();
+}
+
+function deleteSelectedGrinder() {
+  grinders = grinders.filter(g=>g.id!==selectedGrinderId);
+  selectedGrinderId = null; showProps(); rebuildGrid();
+}
+
+// ============ GRINDER MODAL ============
+function openGrinderModal(edge, pos) {
+  pendingGrinderEdge = edge; pendingGrinderPos = pos;
+  document.getElementById('grinderColor').value = selectedColor;
+  document.getElementById('grinderWidth').value = '1';
+  document.getElementById('grinderModal').classList.add('show');
+}
+function closeGrinderModal() { document.getElementById('grinderModal').classList.remove('show'); }
+function confirmGrinder() {
+  const color = document.getElementById('grinderColor').value;
+  const width = +document.getElementById('grinderWidth').value;
+  grinders.push({ id: nextGrinderId++, edge: pendingGrinderEdge, position: pendingGrinderPos, width, color });
+  closeGrinderModal();
+  rebuildGrid();
+}
+
+// ============ VALIDATION ============
+function validate() {
+  const warns = [];
+  // overlaps
+  const occ = {};
+  blocks.forEach((b,bi) => {
+    getWorldCells(b).forEach(c => {
+      const k = c.x+','+c.y;
+      if (occ[k] !== undefined) warns.push(`Block "${b.shape}" at (${b.origin.x},${b.origin.y}) overlaps another block at (${c.x},${c.y})`);
+      occ[k] = bi;
+    });
+  });
+  // out of bounds
+  blocks.forEach(b => {
+    getWorldCells(b).forEach(c => {
+      if (c.x<0||c.y<0||c.x>=gridSize||c.y>=gridSize) warns.push(`Block "${b.shape}" at (${b.origin.x},${b.origin.y}) has cell (${c.x},${c.y}) outside grid`);
+    });
+  });
+  // color coverage
+  const blockColors = new Set(blocks.map(b=>b.color));
+  const grinderColors = new Set(grinders.map(g=>g.color));
+  blockColors.forEach(c => { if(!grinderColors.has(c)) warns.push(`Color "${c}" has blocks but no matching grinder`); });
+  // time
+  if (+document.getElementById('timeLimit').value <= 0) warns.push('Time limit must be > 0');
+
+  const el = document.getElementById('warnings');
+  if (warns.length === 0) { el.innerHTML = '<p style="color:var(--green);font-size:11px">No issues found.</p>'; return; }
+  el.innerHTML = warns.map(w => `<div class="warn-item">${w}</div>`).join('');
+}
+
+// ============ EXPORT / IMPORT ============
+function buildJSON() {
+  return {
+    id: document.getElementById('levelId').value,
+    gridSize: { x: gridSize, y: gridSize },
+    timeLimit: +document.getElementById('timeLimit').value,
+    walls: walls.map(w => ({x:w.x, y:w.y})),
+    grinders: grinders.map(g => ({ edge:g.edge, position:g.position, width:g.width, color:g.color })),
+    blocks: blocks.map(b => ({
+      shape: b.shape,
+      origin: { x:b.origin.x, y:b.origin.y },
+      rotation: b.rotation,
+      color: b.color,
+      modifiers: { iced: b.modifiers.iced, axisLock: b.modifiers.axisLock }
+    }))
+  };
+}
+
+function exportJSON() {
+  const json = JSON.stringify(buildJSON(), null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = document.getElementById('levelId').value + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function copyJSON() {
+  navigator.clipboard.writeText(JSON.stringify(buildJSON(), null, 2)).then(() => {
+    const btn = document.querySelector('[onclick="copyJSON()"]');
+    const orig = btn.textContent; btn.textContent = 'Copied!';
+    setTimeout(()=>btn.textContent=orig, 1200);
+  });
+}
+
+function importJSON(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      document.getElementById('levelId').value = data.id || 'level_01';
+      gridSize = data.gridSize ? (data.gridSize.x || 4) : 4;
+      document.getElementById('gridSize').value = gridSize;
+      document.getElementById('timeLimit').value = data.timeLimit || 60;
+      document.getElementById('timeLimitVal').textContent = data.timeLimit || 60;
+      walls = (data.walls || []).map(w => ({x:w.x, y:w.y}));
+      grinders = (data.grinders || []).map((g,i) => ({id:++nextGrinderId, edge:g.edge, position:g.position, width:g.width, color:g.color}));
+      blocks = (data.blocks || []).map((b,i) => ({
+        id: ++nextBlockId, shape:b.shape, origin:{x:b.origin.x, y:b.origin.y},
+        rotation: b.rotation||0, color:b.color,
+        modifiers: { iced: b.modifiers?.iced||0, axisLock: b.modifiers?.axisLock||'None' }
+      }));
+      selectedBlockId = null; selectedGrinderId = null;
+      showProps(); rebuildGrid();
+    } catch(err) { alert('Invalid JSON: ' + err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function clearAll() {
+  if (!confirm('Clear everything?')) return;
+  blocks=[]; walls=[]; grinders=[]; selectedBlockId=null; selectedGrinderId=null;
+  showProps(); rebuildGrid();
+}
+
+// ============ BOOT ============
+init();
+</script>
+</body>
+</html>

@@ -1891,9 +1891,10 @@ MonoBehaviour:
   defaultPalette: {fileID: 11400000, guid: c33db65a6597c30459a5ff224841ee55, type: 2}
   blockCatalog: {fileID: 11400000, guid: 79ddab088f2fb114db4be1cf40308fad, type: 2}
   grinderCatalog: {fileID: 11400000, guid: 4389eeadd44f7254a80b88b28f69ba7b, type: 2}
-  levelCatalog: {fileID: 0}
+  levelCatalog: {fileID: 11400000, guid: 8c9612476c8d39749914bdf3ccfcacd8, type: 2}
   audioLibrary: {fileID: 0}
   cellSize: 1
+  grinderDepthOffset: 0
 --- !u!1 &1986229123
 GameObject:
   m_ObjectHideFlags: 0

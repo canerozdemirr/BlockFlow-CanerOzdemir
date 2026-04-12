@@ -55,6 +55,9 @@ public class GameplayLifetimeScope : LifetimeScope
     [SerializeField, Min(0.1f), Tooltip("World-space size of a single cell. 1 is a sensible default; bump for chunkier layouts.")]
     private float cellSize = 1f;
 
+    [SerializeField, Tooltip("How far grinders sit beyond the grid boundary. 0 = pivot on boundary. Increase until the grinder opening is flush with tiles.")]
+    private float grinderDepthOffset = 0f;
+
     protected override void Configure(IContainerBuilder builder)
     {
         // ---------- utilities ----------
@@ -90,7 +93,8 @@ public class GameplayLifetimeScope : LifetimeScope
         builder.Register<IGrinderViewFactory>(container => new GrinderViewFactory(
             defaultPalette,
             container.Resolve<CellSpace>(),
-            viewParent),
+            viewParent,
+            grinderDepthOffset),
             Lifetime.Singleton);
 
         // ---------- builders ----------
@@ -158,7 +162,6 @@ public class GameplayLifetimeScope : LifetimeScope
         // [Inject] method it finds without needing a type reference here.
 
         if (cameraFitter != null) builder.RegisterComponent(cameraFitter);
-        builder.RegisterComponentInHierarchy<CameraShaker>();
         builder.RegisterComponentInHierarchy<GameplayBootstrapper>();
     }
 }
