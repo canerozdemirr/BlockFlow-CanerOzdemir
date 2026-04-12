@@ -17,5 +17,5 @@ MonoBehaviour:
   cellOffsets:
   - x: 0
     y: 0
-  meshPrefab: {fileID: 8037347309468041374, guid: 476bf58365a562349ae03e5fb40b151b,
+  meshPrefab: {fileID: 7372915462898551108, guid: 2784afc07d6446c418b8e94dce9d1914,
     type: 3}

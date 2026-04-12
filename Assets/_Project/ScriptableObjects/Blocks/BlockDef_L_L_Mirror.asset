@@ -23,5 +23,5 @@ MonoBehaviour:
     y: 1
   - x: 1
     y: 2
-  meshPrefab: {fileID: 6764565705894216502, guid: e7d939f0222fc7e4e98a59e749d2f21f,
+  meshPrefab: {fileID: 5388527736765102499, guid: eb12dba14a10ade4db3dd978f2b71d39,
     type: 3}

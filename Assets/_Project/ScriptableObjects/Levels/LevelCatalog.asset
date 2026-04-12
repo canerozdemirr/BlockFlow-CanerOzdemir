@@ -9,10 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eb3cd85fc230e514c955482fe4ae20f2, type: 3}
-  m_Name: GrinderDef_2X
+  m_Script: {fileID: 11500000, guid: 0f891d21302b5924fa293b40631701ca, type: 3}
+  m_Name: LevelCatalog
   m_EditorClassIdentifier: 
-  width: 2
-  displayName: Grinder 2X
-  meshPrefab: {fileID: 6509495952764527726, guid: 553372a137dee6340afde86e4d7ffba0,
-    type: 3}
+  levels:
+  - {fileID: 11400000, guid: c350dcc6af1308240be0512ecbaedd44, type: 2}
