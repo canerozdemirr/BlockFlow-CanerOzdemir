@@ -171,9 +171,23 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         if (!GridPicker.TryGetLocalHit(screenPos, camera, context.GridRoot, out var localHit))
             return;
 
-        if (!GridPicker.TryPick(localHit, cellSpace, context.Grid, out _, out var blockId))
-            return;
+        // Primary: grid cell occupancy lookup (fast, exact).
+        BlockId blockId = BlockId.None;
+        GridPicker.TryPick(localHit, cellSpace, context.Grid, out _, out blockId);
 
+        // Fallback: if the cell lookup missed (visual mesh offset from logical
+        // grid), check every active block view's renderer bounds against the
+        // world-space click point. This lets the player grab any visible part
+        // of a block even when the mesh pivot doesn't perfectly match the grid.
+        if (!blockId.IsValid)
+        {
+            var worldHit = context.GridRoot != null
+                ? context.GridRoot.TransformPoint(localHit)
+                : localHit;
+            blockId = PickByRendererBounds(worldHit);
+        }
+
+        if (!blockId.IsValid) return;
         if (!context.Grid.TryGetBlock(blockId, out var block)) return;
         if (!viewRegistry.TryGet(blockId, out var view)) return;
 
@@ -189,6 +203,24 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         };
 
         bus.Publish(new BlockDragStartedEvent(blockId));
+    }
+
+    /// <summary>
+    /// Iterates every active block view and returns the id of the first one
+    /// whose renderer bounds contain the world-space point. O(n) but only
+    /// runs on pointer-down when the grid cell lookup misses — not per frame.
+    /// </summary>
+    private BlockId PickByRendererBounds(Vector3 worldPoint)
+    {
+        foreach (var pair in context.Grid.Blocks)
+        {
+            if (!viewRegistry.TryGet(pair.Key, out var view) || view == null) continue;
+            var renderer = view.GetComponentInChildren<Renderer>();
+            if (renderer == null) continue;
+            if (renderer.bounds.Contains(worldPoint))
+                return pair.Key;
+        }
+        return BlockId.None;
     }
 
     // ---------- update ----------
