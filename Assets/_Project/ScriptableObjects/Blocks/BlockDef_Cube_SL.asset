@@ -13,11 +13,15 @@ MonoBehaviour:
   m_Name: BlockDef_Cube_SL
   m_EditorClassIdentifier: 
   shapeId: Cube_SL
-  displayName: Cube Small-Long (2x1)
+  displayName: Cube 2x2
   cellOffsets:
   - x: 0
     y: 0
   - x: 1
     y: 0
+  - x: 0
+    y: 1
+  - x: 1
+    y: 1
   meshPrefab: {fileID: 4846739687244768065, guid: 43aef3e64b8338c40baae3d6329eaba7,
     type: 3}
