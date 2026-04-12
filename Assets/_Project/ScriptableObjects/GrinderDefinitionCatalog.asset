@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d49d8a2db52aea4469f10f31d14e9db6, type: 3}
+  m_Name: GrinderDefinitionCatalog
+  m_EditorClassIdentifier: 
+  definitions:
+  - {fileID: 11400000, guid: 9d2bb948a9fa3744aa7905da99ed06f8, type: 2}
+  - {fileID: 11400000, guid: f1bf9b30641c1ab49b010c1422bce66e, type: 2}
+  - {fileID: 11400000, guid: 3656c482c8e10634782b45d05910c1fc, type: 2}

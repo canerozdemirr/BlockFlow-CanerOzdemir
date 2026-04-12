@@ -22,8 +22,20 @@ public sealed class GrinderView : MonoBehaviour
     private MaterialPropertyBlock mpb;
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
+    /// <summary>
+    /// The prefab's authored local rotation, cached on first instantiation.
+    /// The factory multiplies the edge-specific turn by this base so the
+    /// designer's FBX orientation fix is never lost.
+    /// </summary>
+    public Quaternion BaseRotation { get; private set; }
+
     public GrinderModel Model { get; private set; }
     public Transform VisualRoot => visualRoot;
+
+    private void Awake()
+    {
+        BaseRotation = transform.localRotation;
+    }
 
     public void Bind(GrinderModel model, Color color)
     {

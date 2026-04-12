@@ -59,7 +59,9 @@ public sealed class GrinderViewFactory : IGrinderViewFactory
         GrinderPlacement.GetPose(model.Edge, model.Position, model.Width, gridSize, cellSpace, out var pos, out var rot);
         var t = view.transform;
         t.localPosition = pos;
-        t.localRotation = rot;
+        // Combine the edge-specific turn with the prefab's authored base
+        // rotation so the designer's FBX orientation fix is preserved.
+        t.localRotation = rot * view.BaseRotation;
 
         view.Bind(model, ResolveColor(model.ColorId));
         return view;

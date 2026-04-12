@@ -105,16 +105,18 @@ public class GameplayLifetimeScope : LifetimeScope
 
         builder.Register<IInputService, UnityPointerInputService>(Lifetime.Singleton);
         builder.RegisterInstance(SingleAxisMovementStrategy.Instance).As<IMovementStrategy>();
-        builder.RegisterEntryPoint<DragController>(Lifetime.Singleton);
+        builder.RegisterEntryPoint<DragController>();
 
         // ---------- core loop (Phase 6) ----------
+        // .AsSelf() on GameStateService and GrinderService because other
+        // services resolve them by concrete type (not just via interfaces).
 
-        builder.RegisterEntryPoint<GameStateService>(Lifetime.Singleton);
-        builder.RegisterEntryPoint<CountdownTimer>(Lifetime.Singleton);
-        builder.RegisterEntryPoint<GrinderService>(Lifetime.Singleton);
-        builder.RegisterEntryPoint<IceMeltService>(Lifetime.Singleton);
-        builder.RegisterEntryPoint<WinConditionEvaluator>(Lifetime.Singleton);
-        builder.RegisterEntryPoint<LoseConditionEvaluator>(Lifetime.Singleton);
+        builder.RegisterEntryPoint<GameStateService>().AsSelf();
+        builder.RegisterEntryPoint<CountdownTimer>();
+        builder.RegisterEntryPoint<GrinderService>().AsSelf();
+        builder.RegisterEntryPoint<IceMeltService>();
+        builder.RegisterEntryPoint<WinConditionEvaluator>();
+        builder.RegisterEntryPoint<LoseConditionEvaluator>();
 
         // ---------- level loading ----------
 
@@ -143,16 +145,20 @@ public class GameplayLifetimeScope : LifetimeScope
         // ---------- feedback (Phase 7) ----------
 
         builder.Register(_ => new AudioService(audioLibrary), Lifetime.Singleton);
-        builder.RegisterEntryPoint<AudioFeedbackRouter>(Lifetime.Singleton);
-        builder.RegisterEntryPoint<HapticsService>(Lifetime.Singleton);
-        builder.RegisterEntryPoint<BlockJuiceService>(Lifetime.Singleton);
+        builder.RegisterEntryPoint<AudioFeedbackRouter>();
+        builder.RegisterEntryPoint<HapticsService>();
+        builder.RegisterEntryPoint<BlockJuiceService>();
 
         // ---------- scene-owned ----------
+        // Note: UI components (GameplayHudView, LevelOutcomePopupView) live in
+        // the BlockFlow.UI assembly which Gameplay cannot reference. They receive
+        // their [Inject] dependencies via VContainer's autoInjectGameObjects
+        // list in the inspector — drag the Canvas root into that list on this
+        // LifetimeScope and VContainer will walk it on build, injecting every
+        // [Inject] method it finds without needing a type reference here.
 
         if (cameraFitter != null) builder.RegisterComponent(cameraFitter);
         builder.RegisterComponentInHierarchy<CameraShaker>();
         builder.RegisterComponentInHierarchy<GameplayBootstrapper>();
-        builder.RegisterComponentInHierarchy<GameplayHudView>();
-        builder.RegisterComponentInHierarchy<LevelOutcomePopupView>();
     }
 }

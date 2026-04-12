@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e620746a37835d4990a9e206664b215, type: 3}
+  m_Name: BlockDef_L_L
+  m_EditorClassIdentifier: 
+  shapeId: L_L
+  displayName: L Large (4 cells)
+  cellOffsets:
+  - x: 0
+    y: 0
+  - x: 1
+    y: 0
+  - x: 0
+    y: 1
+  - x: 0
+    y: 2
+  meshPrefab: {fileID: 8735967378942778426, guid: 4afc773fb0cab2c459ff746ee5d9488b,
+    type: 3}

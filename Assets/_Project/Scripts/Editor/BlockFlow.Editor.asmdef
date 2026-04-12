@@ -4,7 +4,10 @@
     "references": [
         "BlockFlow.Core",
         "BlockFlow.Data",
-        "BlockFlow.Gameplay"
+        "BlockFlow.Gameplay",
+        "BlockFlow.UI",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [
         "Editor"
