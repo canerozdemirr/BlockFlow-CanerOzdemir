@@ -1,3 +1,5 @@
+using System;
+using PrimeTween;
 using UnityEngine;
 
 /// <summary>
@@ -26,6 +28,10 @@ public sealed class BlockView : MonoBehaviour
     private MaterialPropertyBlock mpb;
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
+    // Active dismiss tween, cleaned up in Unbind so a pool release
+    // doesn't leak a callback onto a re-acquired instance.
+    private Tween dismissTween;
+
     public BlockModel Model { get; private set; }
     public Transform VisualRoot => visualRoot;
 
@@ -42,10 +48,16 @@ public sealed class BlockView : MonoBehaviour
         RefreshIceOverlay();
     }
 
-    /// <summary>Clears the model reference so the instance can go back to the pool.</summary>
+    /// <summary>
+    /// Clears the model reference, stops any in-flight dismiss tween, and
+    /// resets the transform's local scale so the next pool acquire starts
+    /// from a known state.
+    /// </summary>
     public void Unbind()
     {
+        if (dismissTween.isAlive) dismissTween.Stop();
         Model = null;
+        transform.localScale = Vector3.one;
     }
 
     /// <summary>
@@ -68,6 +80,21 @@ public sealed class BlockView : MonoBehaviour
     {
         if (iceOverlay != null)
             iceOverlay.SetActive(Model != null && Model.IsIced);
+    }
+
+    /// <summary>
+    /// Plays the "consumed by grinder" scale-down tween and invokes
+    /// <paramref name="onComplete"/> when it finishes. If a previous dismiss
+    /// is still in flight, it is stopped first so we never stack callbacks.
+    /// Invoked by <see cref="GrinderService"/> on a successful consumption.
+    /// </summary>
+    public void Dismiss(float duration, Action onComplete)
+    {
+        if (dismissTween.isAlive) dismissTween.Stop();
+
+        dismissTween = Tween.Scale(transform, Vector3.zero, duration, Ease.InBack);
+        var callback = onComplete;
+        dismissTween.OnComplete(() => callback?.Invoke());
     }
 
     // ---------- internals ----------

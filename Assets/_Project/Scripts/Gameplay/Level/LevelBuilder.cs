@@ -33,6 +33,7 @@ public sealed class LevelBuilder
     private readonly CellSpace cellSpace;
     private readonly GameplayCameraFitter cameraFitter;
     private readonly GridBuilder gridBuilder;
+    private readonly GrinderService grinderService;
     private readonly Transform levelRoot;
 
     public LevelBuilder(
@@ -47,6 +48,7 @@ public sealed class LevelBuilder
         CellSpace cellSpace,
         GameplayCameraFitter cameraFitter,
         GridBuilder gridBuilder,
+        GrinderService grinderService,
         Transform levelRoot)
     {
         this.blockCatalog       = blockCatalog;
@@ -60,6 +62,7 @@ public sealed class LevelBuilder
         this.cellSpace          = cellSpace;
         this.cameraFitter       = cameraFitter;
         this.gridBuilder        = gridBuilder;
+        this.grinderService     = grinderService;
         this.levelRoot          = levelRoot;
     }
 
@@ -193,6 +196,7 @@ public sealed class LevelBuilder
             var model = new GrinderModel(i + 1, edge, dto.Position, dto.Width, dto.Color);
 
             grinderViewFactory.Acquire(model, definition, gridSize);
+            grinderService.Register(model);
         }
     }
 

@@ -1,0 +1,48 @@
+using System;
+using System.Collections.Generic;
+using VContainer.Unity;
+
+/// <summary>
+/// Owns the single <see cref="GamePhase"/> value and exposes it to the rest
+/// of the gameplay layer. Transitions are driven by bus events rather than
+/// imperative calls, so the "who can change the phase" question has exactly
+/// one answer: whoever publishes the event.
+///
+/// Runs as a VContainer entry point so <see cref="Start"/> is invoked once
+/// per scope lifetime — which is the correct window to subscribe to bus
+/// events and arm the service for the rest of the level session.
+/// </summary>
+public sealed class GameStateService : IStartable, IDisposable
+{
+    private readonly IEventBus bus;
+    private readonly List<IDisposable> subs = new List<IDisposable>();
+
+    public GamePhase Current { get; private set; } = GamePhase.Loading;
+    public event Action<GamePhase> PhaseChanged;
+
+    public GameStateService(IEventBus bus)
+    {
+        this.bus = bus;
+    }
+
+    public void Start()
+    {
+        subs.Add(bus.Subscribe<LevelStartedEvent>(_ => Set(GamePhase.Playing)));
+        subs.Add(bus.Subscribe<LevelEndedEvent>(_ => Set(GamePhase.Loading)));
+        subs.Add(bus.Subscribe<LevelWonEvent>(_ => Set(GamePhase.Won)));
+        subs.Add(bus.Subscribe<LevelLostEvent>(_ => Set(GamePhase.Lost)));
+    }
+
+    public void Dispose()
+    {
+        for (int i = 0; i < subs.Count; i++) subs[i].Dispose();
+        subs.Clear();
+    }
+
+    private void Set(GamePhase phase)
+    {
+        if (Current == phase) return;
+        Current = phase;
+        PhaseChanged?.Invoke(phase);
+    }
+}

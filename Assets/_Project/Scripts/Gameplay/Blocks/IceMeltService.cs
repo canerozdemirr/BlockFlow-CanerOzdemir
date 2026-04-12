@@ -1,0 +1,71 @@
+using System;
+using System.Collections.Generic;
+using VContainer.Unity;
+
+/// <summary>
+/// Implements the "global grind counter" rule picked during planning: every
+/// successful grind decrements the ice counter on every iced block. When a
+/// block's counter reaches zero, its view's ice overlay is refreshed and a
+/// <see cref="BlockRevealedEvent"/> goes out for Phase 7 VFX to hook.
+///
+/// Listens for <see cref="BlockGroundEvent"/> — the one event that fires on
+/// every successful consumption — so there is no ambiguity about when ice
+/// ticks.
+/// </summary>
+public sealed class IceMeltService : IStartable, IDisposable
+{
+    private readonly IEventBus bus;
+    private readonly LevelContext context;
+    private readonly BlockViewRegistry viewRegistry;
+    private readonly List<IDisposable> subs = new List<IDisposable>();
+
+    // Scratch list used to avoid mutating the blocks dictionary while iterating.
+    private readonly List<BlockModel> scratch = new List<BlockModel>();
+
+    public IceMeltService(IEventBus bus, LevelContext context, BlockViewRegistry viewRegistry)
+    {
+        this.bus = bus;
+        this.context = context;
+        this.viewRegistry = viewRegistry;
+    }
+
+    public void Start()
+    {
+        subs.Add(bus.Subscribe<BlockGroundEvent>(OnBlockGround));
+    }
+
+    public void Dispose()
+    {
+        for (int i = 0; i < subs.Count; i++) subs[i].Dispose();
+        subs.Clear();
+    }
+
+    private void OnBlockGround(BlockGroundEvent _)
+    {
+        if (context.Grid == null) return;
+
+        // Copy current blocks into a scratch list so we iterate over a stable
+        // snapshot even if future hooks mutate the grid indirectly.
+        scratch.Clear();
+        foreach (var pair in context.Grid.Blocks)
+            scratch.Add(pair.Value);
+
+        for (int i = 0; i < scratch.Count; i++)
+        {
+            var block = scratch[i];
+            if (!block.IsIced) continue;
+
+            int prevLevel = block.IceLevel;
+            block.TickIce();
+
+            if (prevLevel > 0 && block.IceLevel == 0)
+            {
+                if (viewRegistry.TryGet(block.Id, out var view) && view != null)
+                    view.RefreshIceOverlay();
+                bus.Publish(new BlockRevealedEvent(block.Id));
+            }
+        }
+
+        scratch.Clear();
+    }
+}

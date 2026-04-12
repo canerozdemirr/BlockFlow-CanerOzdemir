@@ -7,29 +7,36 @@ using UnityEngine;
 /// systems (bootstrapper, editor reload menu, level select UI) can ask one
 /// object "what am I playing?".
 ///
-/// The runner deliberately does not inherit from MonoBehaviour or ITickable;
-/// it is a plain service, constructed once via DI, stateless apart from the
-/// current level reference. Lifecycle side effects (spawning, tearing down)
-/// happen synchronously — fine at mobile scales and much easier to reason
-/// about than an async pipeline would be here.
+/// The runner is the one place that publishes lifecycle events on the
+/// <see cref="IEventBus"/>. Keeping the publishes here (rather than inside
+/// <see cref="LevelBuilder"/>) means the builder stays a pure "take payload,
+/// spawn stuff" worker and the runner owns sequencing: teardown → publish
+/// ended → load → publish started.
+///
+/// Lifecycle side effects happen synchronously — fine at mobile scales and
+/// much easier to reason about than an async pipeline would be here.
 /// </summary>
 public sealed class LevelRunner
 {
     private readonly LevelLoader loader;
     private readonly LevelBuilder builder;
+    private readonly IEventBus bus;
 
     /// <summary>The level currently loaded, or null if none.</summary>
     public LevelConfig Current { get; private set; }
 
-    public LevelRunner(LevelLoader loader, LevelBuilder builder)
+    public LevelRunner(LevelLoader loader, LevelBuilder builder, IEventBus bus)
     {
         this.loader = loader;
         this.builder = builder;
+        this.bus = bus;
     }
 
     /// <summary>
     /// Tears down any previously loaded level and builds the given one.
-    /// Safe to call with the same config to reload in-place.
+    /// Safe to call with the same config to reload in-place. Publishes
+    /// <see cref="LevelStartedEvent"/> on success so the timer, evaluators
+    /// and HUD all initialize together.
     /// </summary>
     public void Load(LevelConfig config)
     {
@@ -48,6 +55,7 @@ public sealed class LevelRunner
         {
             builder.Build(payload);
             Current = config;
+            bus.Publish(new LevelStartedEvent(payload.Id ?? config.name, payload.TimeLimit));
         }
         catch (System.Exception e)
         {
@@ -59,12 +67,16 @@ public sealed class LevelRunner
     }
 
     /// <summary>
-    /// Unloads the current level. No-op if nothing is loaded.
+    /// Unloads the current level. Publishes <see cref="LevelEndedEvent"/>
+    /// after teardown so subscribers can reset per-level caches.
     /// </summary>
     public void Unload()
     {
+        var previousId = Current != null ? Current.name : string.Empty;
         builder.Teardown();
         Current = null;
+        if (!string.IsNullOrEmpty(previousId))
+            bus.Publish(new LevelEndedEvent(previousId));
     }
 
     /// <summary>

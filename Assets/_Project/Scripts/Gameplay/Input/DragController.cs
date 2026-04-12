@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using PrimeTween;
 using UnityEngine;
 using VContainer.Unity;
@@ -12,6 +13,17 @@ using VContainer.Unity;
 /// Key design decisions:
 ///
 /// <list type="bullet">
+///   <item>
+///     <b>Event bus only.</b> Phase 6 replaced the Phase 4 C# events with
+///     bus publishes so the grinder service, audio, and VFX can all react
+///     to the same signals without the drag controller knowing they exist.
+///   </item>
+///   <item>
+///     <b>Gated by game phase.</b> The tick short-circuits unless
+///     <see cref="GameStateService.Current"/> is <see cref="GamePhase.Playing"/>.
+///     When a level is won, lost, or unloading, the drag controller sits
+///     idle instead of processing a now-invalid grid.
+///   </item>
 ///   <item>
 ///     <b>Axis lock per drag.</b> Once a session picks an axis — either from
 ///     the block's authored <see cref="BlockAxisLock"/> or from the first
@@ -41,10 +53,12 @@ using VContainer.Unity;
 ///   </item>
 /// </list>
 ///
-/// Runs as a VContainer <see cref="ITickable"/> entry point — no
-/// MonoBehaviour, no scene placement, and fully resolved through DI.
+/// Runs as a VContainer entry point — no MonoBehaviour, no scene placement,
+/// fully resolved through DI. <see cref="IStartable"/> lets us subscribe to
+/// <see cref="LevelEndedEvent"/> so a dangling drag session can't leak across
+/// levels.
 /// </summary>
-public sealed class DragController : ITickable
+public sealed class DragController : ITickable, IStartable, IDisposable
 {
     // ---------- dependencies ----------
 
@@ -54,6 +68,10 @@ public sealed class DragController : ITickable
     private readonly BlockViewRegistry viewRegistry;
     private readonly IMovementStrategy movementStrategy;
     private readonly GameplayCameraFitter cameraFitter;
+    private readonly IEventBus bus;
+    private readonly GameStateService state;
+
+    private readonly List<IDisposable> subs = new List<IDisposable>();
 
     // ---------- tuning ----------
 
@@ -81,13 +99,6 @@ public sealed class DragController : ITickable
     private Session session;
     private Tween viewFollowTween;
 
-    // ---------- events (Phase 7 hooks audio/juice here) ----------
-
-    public event Action<BlockId> DragStarted;
-    public event Action<BlockId, int> BlockStepped;  // blockId, cells moved
-    public event Action<BlockId> DragEnded;
-    public event Action<BlockId, GridDirection> BumpedWall;
-
     // ---------- ctor ----------
 
     public DragController(
@@ -96,7 +107,9 @@ public sealed class DragController : ITickable
         CellSpace cellSpace,
         BlockViewRegistry viewRegistry,
         IMovementStrategy movementStrategy,
-        GameplayCameraFitter cameraFitter)
+        GameplayCameraFitter cameraFitter,
+        IEventBus bus,
+        GameStateService state)
     {
         this.input = input;
         this.context = context;
@@ -104,12 +117,30 @@ public sealed class DragController : ITickable
         this.viewRegistry = viewRegistry;
         this.movementStrategy = movementStrategy;
         this.cameraFitter = cameraFitter;
+        this.bus = bus;
+        this.state = state;
+    }
+
+    // ---------- lifecycle ----------
+
+    public void Start()
+    {
+        // If a level ends mid-drag (reload, win, lose), drop the session so
+        // the next level starts from a clean state.
+        subs.Add(bus.Subscribe<LevelEndedEvent>(_ => ClearSession()));
+    }
+
+    public void Dispose()
+    {
+        for (int i = 0; i < subs.Count; i++) subs[i].Dispose();
+        subs.Clear();
     }
 
     // ---------- tick ----------
 
     public void Tick()
     {
+        if (state.Current != GamePhase.Playing) return;
         if (!context.IsActive || input == null) return;
         if (!input.TryGetPointer(out var pointer)) return;
 
@@ -157,7 +188,7 @@ public sealed class DragController : ITickable
             StartLocalHit = localHit
         };
 
-        DragStarted?.Invoke(blockId);
+        bus.Publish(new BlockDragStartedEvent(blockId));
     }
 
     // ---------- update ----------
@@ -219,13 +250,13 @@ public sealed class DragController : ITickable
 
         if (moved > 0)
         {
-            BlockStepped?.Invoke(session.BlockId, moved);
+            bus.Publish(new BlockSteppedEvent(session.BlockId, moved));
             TweenViewToModel();
         }
         else
         {
             // Finger wants to keep going but the model refused — that's a wall/neighbor bump.
-            BumpedWall?.Invoke(session.BlockId, direction);
+            bus.Publish(new BlockBumpedWallEvent(session.BlockId, direction));
         }
     }
 
@@ -244,7 +275,7 @@ public sealed class DragController : ITickable
         }
 
         ClearSession();
-        DragEnded?.Invoke(ended);
+        bus.Publish(new BlockDragEndedEvent(ended));
     }
 
     // ---------- helpers ----------
