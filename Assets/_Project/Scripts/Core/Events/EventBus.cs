@@ -17,7 +17,7 @@ public sealed class EventBus : IEventBus
 
     public void Publish<T>(T evt)
     {
-        if (handlers.TryGetValue(typeof(T), out var existing))
+        if (handlers.TryGetValue(typeof(T), out Delegate existing))
             (existing as Action<T>)?.Invoke(evt);
     }
 
@@ -25,18 +25,18 @@ public sealed class EventBus : IEventBus
     {
         if (handler == null) throw new ArgumentNullException(nameof(handler));
 
-        var key = typeof(T);
-        handlers.TryGetValue(key, out var existing);
+        Type key = typeof(T);
+        handlers.TryGetValue(key, out Delegate existing);
         handlers[key] = (existing as Action<T>) + handler;
         return new Subscription<T>(this, handler);
     }
 
     private void UnsubscribeInternal<T>(Action<T> handler)
     {
-        var key = typeof(T);
-        if (!handlers.TryGetValue(key, out var existing)) return;
+        Type key = typeof(T);
+        if (!handlers.TryGetValue(key, out Delegate existing)) return;
 
-        var updated = (existing as Action<T>) - handler;
+        Action<T> updated = (existing as Action<T>) - handler;
         if (updated == null) handlers.Remove(key);
         else                 handlers[key] = updated;
     }

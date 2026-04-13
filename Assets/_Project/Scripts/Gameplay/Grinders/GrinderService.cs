@@ -41,7 +41,7 @@ public sealed class GrinderService : IStartable, IDisposable
     private readonly List<GrinderModel> grinders = new List<GrinderModel>();
     private readonly List<IDisposable> subs = new List<IDisposable>();
 
-    private const float ConsumeTweenDuration = 0.35f;
+    private const float ConsumeTweenDuration = 0.5f;
 
     public IReadOnlyList<GrinderModel> Grinders => grinders;
 
@@ -175,11 +175,55 @@ public sealed class GrinderService : IStartable, IDisposable
             var captured = view;
             var slideDir = EdgeToDirection(grinder.Edge);
             var slideDist = cellSpace.CellSize * 1.5f;
-            captured.DismissToGrinder(slideDir, slideDist, ConsumeTweenDuration,
+
+            // Compute the grinder's center world position for particle spawn
+            var grinderCenter = ComputeGrinderWorldCenter(grinder);
+
+            captured.DismissToGrinder(slideDir, slideDist, grinderCenter, ConsumeTweenDuration,
                 () => blockViewFactory.Release(captured));
         }
 
         bus.Publish(new BlockGroundEvent(id, grinder.Id, colorId));
+    }
+
+    /// <summary>
+    /// Computes the world-space center of the grinder's coverage area,
+    /// raised slightly on Y so particles are visible above the grid.
+    /// </summary>
+    private Vector3 ComputeGrinderWorldCenter(GrinderModel grinder)
+    {
+        var gridSize = context.Grid.Size;
+        float centerAlongEdge = (grinder.Position + (grinder.Width - 1) * 0.5f) * cellSpace.CellSize;
+        float edgeCoord;
+
+        Vector3 localPos;
+        switch (grinder.Edge)
+        {
+            case GridEdge.Right:
+                edgeCoord = (gridSize.width - 0.5f) * cellSpace.CellSize;
+                localPos = new Vector3(edgeCoord, 0.3f, centerAlongEdge);
+                break;
+            case GridEdge.Left:
+                edgeCoord = -0.5f * cellSpace.CellSize;
+                localPos = new Vector3(edgeCoord, 0.3f, centerAlongEdge);
+                break;
+            case GridEdge.Top:
+                edgeCoord = (gridSize.height - 0.5f) * cellSpace.CellSize;
+                localPos = new Vector3(centerAlongEdge, 0.3f, edgeCoord);
+                break;
+            case GridEdge.Bottom:
+                edgeCoord = -0.5f * cellSpace.CellSize;
+                localPos = new Vector3(centerAlongEdge, 0.3f, edgeCoord);
+                break;
+            default:
+                localPos = Vector3.zero;
+                break;
+        }
+
+        // Convert from grid-local to world space
+        if (context.GridRoot != null)
+            return context.GridRoot.TransformPoint(localPos);
+        return localPos;
     }
 
     /// <summary>

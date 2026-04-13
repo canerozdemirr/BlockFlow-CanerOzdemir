@@ -53,7 +53,7 @@ public sealed class PrefabPool<T> where T : Component
 
     private T Create()
     {
-        var instance = UnityEngine.Object.Instantiate(prefab, parent);
+        T instance = UnityEngine.Object.Instantiate(prefab, parent);
         instance.gameObject.SetActive(false);
         return instance;
     }

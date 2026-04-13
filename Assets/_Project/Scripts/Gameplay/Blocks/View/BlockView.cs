@@ -1,6 +1,7 @@
 using System;
 using PrimeTween;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 /// <summary>
 /// The visual representation of a single <see cref="BlockModel"/>. Follows the
@@ -83,31 +84,71 @@ public sealed class BlockView : MonoBehaviour
     }
 
     /// <summary>
-    /// Plays the "pulled into grinder" animation: the block slides toward
-    /// the grinder while uniformly shrinking and sinking slightly downward,
-    /// as if being swallowed by the grinder mechanism.
+    /// The block slides toward the grinder while a continuous particle effect
+    /// at the grinder's center emits small colored cubes that scatter,
+    /// simulating the block being ground down.
     /// </summary>
-    public void DismissToGrinder(Vector3 slideDir, float slideDist, float duration, Action onComplete)
+    public void DismissToGrinder(Vector3 slideDir, float slideDist, Vector3 grinderWorldCenter,
+        float duration, Action onComplete)
     {
         if (dismissTween.isAlive) dismissTween.Stop();
 
-        var startPos = transform.localPosition;
-        var startScale = transform.localScale;
-        var callback = onComplete;
+        Color debrisColor = GetBlockColor();
+
+        Vector3 startPos = transform.localPosition;
+        Vector3 startScale = transform.localScale;
+        Action callback = onComplete;
+
+        // Spawn continuous particle effect at the grinder's center (raised slightly)
+        Transform particles = BlockShatterEffect.SpawnContinuous(
+            grinderWorldCenter, debrisColor, slideDir, transform.parent);
 
         dismissTween = Tween.Custom(0f, 1f, duration, (float t) =>
         {
-            // Slide toward the grinder edge.
-            var pos = startPos + slideDir * (t * slideDist);
-            // Sink downward slightly (pulled into the grinder).
-            pos.y -= t * slideDist * 0.3f;
-            transform.localPosition = pos;
+            // Slide toward the grinder
+            transform.localPosition = startPos + slideDir * (t * slideDist);
 
-            // Uniform scale-down: starts at full size, ends at zero.
-            transform.localScale = startScale * (1f - t);
+            // Scale down along the slide axis — block gets "eaten"
+            Vector3 scale = startScale;
+            float shrink = 1f - t;
+            if (slideDir.x != 0) scale.x = startScale.x * Mathf.Max(shrink, 0.01f);
+            else if (slideDir.z != 0) scale.z = startScale.z * Mathf.Max(shrink, 0.01f);
+            else scale.y = startScale.y * Mathf.Max(shrink, 0.01f);
+            transform.localScale = scale;
+
+            // Particles stay fixed at the grinder center — no need to move them
+        }, ease: Ease.InQuad);
+
+        dismissTween.OnComplete(() =>
+        {
+            if (particles != null)
+            {
+                ParticleSystem ps = particles.GetComponent<ParticleSystem>();
+                if (ps != null) ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                Destroy(particles.gameObject, 0.6f);
+            }
+
+            transform.localScale = Vector3.one;
+            callback?.Invoke();
         });
+    }
 
-        dismissTween.OnComplete(() => callback?.Invoke());
+    private Color GetBlockColor()
+    {
+        if (colorRenderer == null) return Color.white;
+        mpb ??= new MaterialPropertyBlock();
+        colorRenderer.GetPropertyBlock(mpb);
+        Color c = mpb.GetColor(BaseColorId);
+        return c == Color.clear ? Color.white : c;
+    }
+
+    /// <summary>Returns half the renderer extent along the given direction.</summary>
+    private float GetRendererHalfExtent(Vector3 direction)
+    {
+        if (colorRenderer == null) return 0.5f;
+        Bounds bounds = colorRenderer.bounds;
+        Vector3 localDir = direction.normalized;
+        return Mathf.Abs(Vector3.Dot(bounds.extents, localDir));
     }
 
     /// <summary>Fallback dismiss (simple scale-down) if no grinder context is available.</summary>
@@ -116,7 +157,7 @@ public sealed class BlockView : MonoBehaviour
         if (dismissTween.isAlive) dismissTween.Stop();
 
         dismissTween = Tween.Scale(transform, Vector3.zero, duration, Ease.InBack);
-        var callback = onComplete;
+        Action callback = onComplete;
         dismissTween.OnComplete(() => callback?.Invoke());
     }
 

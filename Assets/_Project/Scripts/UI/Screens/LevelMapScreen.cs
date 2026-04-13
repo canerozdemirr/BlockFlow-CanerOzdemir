@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using PrimeTween;
 using UnityEngine;
@@ -6,36 +5,49 @@ using UnityEngine.UIElements;
 using VContainer;
 
 /// <summary>
-/// UI Toolkit level map: 3 hex nodes in zigzag, dashed path lines,
-/// big Play button. Levels loop endlessly after catalog exhausted.
-/// Nodes created programmatically as VisualElements.
+/// Level Map screen for the dedicated Level Map scene.
+/// Vertical scrolling list of level nodes connected by path lines.
+/// Current = green, completed = blue, locked = dark with lock icon.
+/// Shows extra locked levels beyond the catalog to fill the map.
+/// Auto-scrolls to current level on show.
 /// </summary>
 [RequireComponent(typeof(UIDocument))]
 public sealed class LevelMapScreen : MonoBehaviour
 {
     private VisualElement root;
+    private ScrollView scrollView;
     private VisualElement content;
     private Label levelLabel;
     private Button playBtn;
-    private Button closeBtn;
+    private bool uiReady;
 
     private LevelProgressionService progression;
-    private LevelRunner runner;
 
-    private readonly List<VisualElement> spawnedElements = new List<VisualElement>();
+    private readonly List<VisualElement> nodeElements = new List<VisualElement>();
+
+    /// <summary>
+    /// Total levels to display on the map. Shows extra locked levels
+    /// beyond the catalog so the map feels full.
+    /// </summary>
+    private const int ExtraLockedLevels = 10;
 
     [Inject]
-    public void Construct(LevelProgressionService progression, LevelRunner runner)
+    public void Construct(LevelProgressionService progression)
     {
         this.progression = progression;
-        this.runner = runner;
     }
 
-    private bool uiReady;
+    private void Start()
+    {
+        InitUI();
+        SceneFlowManager.OnGameplayUnloaded += Refresh;
+    }
 
     private void OnEnable()
     {
-        if (!uiReady) InitUI();
+        // When returning from gameplay, re-build the map
+        if (progression != null && uiReady)
+            BuildMap();
     }
 
     private void InitUI()
@@ -45,175 +57,156 @@ public sealed class LevelMapScreen : MonoBehaviour
         var ve = doc.rootVisualElement;
         if (ve == null) return;
 
+        // Use GeometryChangedEvent to apply stretch AFTER layout resolves
+        ve.RegisterCallback<GeometryChangedEvent>(OnTemplateContainerGeometryChanged);
+
+        // Also apply immediately in case it already resolved
+        ForceStretchTemplateContainer(ve);
+
+        root       = ve.Q("ui_map_root");
+        scrollView = ve.Q<ScrollView>("ui_map_scroll");
+        content    = ve.Q("ui_map_content");
+        levelLabel = ve.Q<Label>("ui_map_level_label_value");
+        playBtn    = ve.Q<Button>("ui_map_btn_play");
+
+        if (playBtn != null)
+            playBtn.clicked += OnPlayClicked;
+
+        uiReady = root != null && content != null;
+
+        // Deferred build after layout resolves
+        if (uiReady)
+            ve.schedule.Execute(BuildMap).ExecuteLater(100);
+    }
+
+    private void ForceStretchTemplateContainer(VisualElement ve)
+    {
         ve.style.flexGrow = 1;
+        ve.style.position = Position.Absolute;
+        ve.style.left = 0;
+        ve.style.top = 0;
+        ve.style.right = 0;
+        ve.style.bottom = 0;
+    }
 
-        root      = ve.Q("ui_map_root");
-        content   = ve.Q("ui_map_content");
-        levelLabel = ve.Q<Label>("ui_map_bottom_level_value");
-        playBtn   = ve.Q<Button>("ui_map_btn_play");
-        closeBtn  = ve.Q<Button>("ui_map_btn_close");
+    private void OnTemplateContainerGeometryChanged(GeometryChangedEvent evt)
+    {
+        var ve = evt.target as VisualElement;
+        if (ve == null) return;
 
-        if (playBtn != null)  playBtn.clicked  += OnPlayClicked;
-        if (closeBtn != null) closeBtn.clicked += OnCloseClicked;
-
-        uiReady = root != null;
-        HideImmediate();
+        // Re-apply stretch every time geometry changes until it sticks
+        if (ve.resolvedStyle.height <= 0)
+        {
+            ForceStretchTemplateContainer(ve);
+        }
+        else
+        {
+            // Layout resolved, rebuild map if not already done
+            if (content != null && content.childCount == 0 && progression != null)
+                BuildMap();
+        }
     }
 
     private void OnDestroy()
     {
-        if (playBtn != null)  playBtn.clicked  -= OnPlayClicked;
-        if (closeBtn != null) closeBtn.clicked -= OnCloseClicked;
-    }
-
-    public void ShowMap()
-    {
-        if (!uiReady) InitUI();
-        if (root == null) return;
-        root.RemoveFromClassList("hidden");
-        BuildMap();
-    }
-
-    private void HideImmediate()
-    {
-        UIToolkitPopupAnimator.HideImmediate(root);
+        if (playBtn != null)
+            playBtn.clicked -= OnPlayClicked;
+        SceneFlowManager.OnGameplayUnloaded -= Refresh;
     }
 
     // ================================================================
-    //  MAP BUILDER — 3 hex nodes, zigzag, dashed paths
+    //  MAP BUILDER
     // ================================================================
 
     private void BuildMap()
     {
-        ClearSpawned();
+        if (!uiReady || progression == null) return;
 
-        if (progression == null || content == null) return;
+        content.Clear();
+        nodeElements.Clear();
 
-        int currentIndex = progression.CurrentIndex;
-        int catalogCount = progression.Catalog != null ? progression.Catalog.Count : 5;
-        if (catalogCount == 0) return;
+        int currentLevelNum = progression.LevelNumber; // 1-based
+        int nodesToShow = ExtraLockedLevels + 1; // current + locked above
 
-        int baseLevelNumber = currentIndex + 1;
-
-        // Content area dimensions (approximate from USS)
-        float contentWidth = 800f;
-        float contentHeight = 1000f;
-
-        // 3 nodes: current (bottom-center), next (middle), next+1 (top)
-        float nodeSpacing = 300f;
-        float zigzagX = 140f;
-
-        float[] xPositions = {
-            contentWidth * 0.5f - zigzagX,   // bottom-left
-            contentWidth * 0.5f + zigzagX,   // middle-right
-            contentWidth * 0.5f - zigzagX    // top-left
-        };
-        float startY = contentHeight - 200f;
-
-        for (int i = 0; i < 3; i++)
+        // Build top-to-bottom: highest future level at top, current at bottom.
+        // offset 0 = current level (bottom), offset 1 = next, offset 2 = next+1, etc.
+        for (int offset = nodesToShow - 1; offset >= 0; offset--)
         {
-            float x = xPositions[i];
-            float y = startY - i * nodeSpacing;
+            int levelNum = currentLevelNum + offset;
+            bool isCurrent = (offset == 0);
 
-            // Dashed path to previous node
-            if (i > 0)
+            var node = CreateNode(levelNum, isCurrent);
+            content.Add(node);
+            nodeElements.Add(node);
+
+            // Path line below the node (except for the bottom-most = current)
+            if (offset > 0)
             {
-                float prevX = xPositions[i - 1];
-                float prevY = startY - (i - 1) * nodeSpacing;
-                CreateDashedPath(prevX, prevY, x, y, i == 0);
+                var pathLine = new VisualElement();
+                pathLine.AddToClassList("path-line");
+                pathLine.AddToClassList("path-line-inactive");
+                pathLine.pickingMode = PickingMode.Ignore;
+                content.Add(pathLine);
             }
-
-            // Node
-            bool isCurrent = (i == 0);
-            bool isLocked = (i > 0);
-            int levelNum = baseLevelNumber + i;
-            int catalogIdx = (currentIndex + i) % catalogCount;
-
-            CreateNode(levelNum, x, y, isCurrent, isLocked);
         }
 
+        // Update level label
         if (levelLabel != null)
-            levelLabel.text = $"LEVEL {baseLevelNumber}";
+            levelLabel.text = $"Level {currentLevelNum}";
+
+        // Auto-scroll to bottom (current level)
+        root.schedule.Execute(() =>
+        {
+            if (scrollView != null)
+                scrollView.scrollOffset = new Vector2(0, scrollView.contentContainer.layout.height);
+        }).ExecuteLater(200);
 
         AnimateNodesIn();
     }
 
-    private void CreateNode(int levelNumber, float x, float y,
-        bool isCurrent, bool isLocked)
+    private VisualElement CreateNode(int levelNumber, bool isCurrent)
     {
+        bool isLocked = !isCurrent;
+
         var node = new VisualElement();
         node.AddToClassList("level-node");
-        if (isCurrent) node.AddToClassList("level-node-current");
-        else if (isLocked) node.AddToClassList("level-node-locked");
-        else node.AddToClassList("level-node-completed");
 
-        node.style.left = x - 70;
-        node.style.top = y - 80;
+        if (isCurrent) node.AddToClassList("level-node-current");
+        else node.AddToClassList("level-node-locked");
+
         node.pickingMode = PickingMode.Ignore;
 
-        // Hex shape (rounded rect as approximation)
-        var hex = new VisualElement();
-        hex.AddToClassList("level-node-hex");
-        hex.pickingMode = PickingMode.Ignore;
-
-        // Number label
         var numLabel = new Label(levelNumber.ToString());
         numLabel.AddToClassList("level-node-number");
         numLabel.pickingMode = PickingMode.Ignore;
+        node.Add(numLabel);
 
-        hex.Add(numLabel);
-        node.Add(hex);
-        content.Add(node);
-        spawnedElements.Add(node);
-    }
-
-    private void CreateDashedPath(float x1, float y1, float x2, float y2, bool active)
-    {
-        float dx = x2 - x1;
-        float dy = y2 - y1;
-        float length = Mathf.Sqrt(dx * dx + dy * dy);
-        int dashCount = Mathf.Max(1, (int)(length / 24f));
-
-        for (int d = 0; d < dashCount; d++)
+        if (isLocked)
         {
-            float t = (float)d / dashCount;
-            // Skip every other for dashed effect
-            if (d % 2 != 0) continue;
-
-            float px = Mathf.Lerp(x1, x2, t);
-            float py = Mathf.Lerp(y1, y2, t);
-
-            var dash = new VisualElement();
-            dash.AddToClassList("path-dash");
-            if (active) dash.AddToClassList("path-segment-active");
-            dash.style.left = px - 4;
-            dash.style.top = py - 2;
-            dash.pickingMode = PickingMode.Ignore;
-
-            content.Add(dash);
-            spawnedElements.Add(dash);
+            var lockLabel = new Label("\U0001F512");
+            lockLabel.AddToClassList("level-node-lock");
+            lockLabel.pickingMode = PickingMode.Ignore;
+            node.Add(lockLabel);
         }
+
+        return node;
     }
 
     private void AnimateNodesIn()
     {
-        int nodeIdx = 0;
-        foreach (var elem in spawnedElements)
+        // Animate only the nodes closest to the current level
+        for (int i = 0; i < nodeElements.Count; i++)
         {
-            if (!elem.ClassListContains("level-node")) continue;
+            var capturedNode = nodeElements[i];
+            float delay = i * 0.04f;
 
-            var captured = elem;
-            float delay = nodeIdx * 0.12f;
-            captured.transform.scale = Vector3.zero;
-
+            capturedNode.transform.scale = Vector3.zero;
             Tween.Delay(delay, () =>
             {
-                Tween.Custom(0f, 1f, 0.35f, val =>
-                    captured.transform.scale = new Vector3(val, val, 1f),
+                Tween.Custom(0f, 1f, 0.25f, val =>
+                    capturedNode.transform.scale = new Vector3(val, val, 1f),
                     ease: Ease.OutBack);
             });
-
-            nodeIdx++;
         }
     }
 
@@ -223,27 +216,35 @@ public sealed class LevelMapScreen : MonoBehaviour
 
     private void OnPlayClicked()
     {
-        if (progression == null || runner == null) return;
-        var level = progression.Current;
-        if (level == null) return;
-
-        runner.Load(level);
-        HideImmediate();
+        if (SceneFlowManager.IsLoading) return;
+        HideMapUI();
+        SceneFlowManager.LoadGameplay();
     }
 
-    private void OnCloseClicked()
+    private void HideMapUI()
     {
-        HideImmediate();
+        if (root != null)
+            root.AddToClassList("hidden");
     }
 
-    // ================================================================
-    //  CLEANUP
-    // ================================================================
-
-    private void ClearSpawned()
+    /// <summary>
+    /// Called when returning from gameplay. Refreshes the map.
+    /// </summary>
+    public void Refresh()
     {
-        foreach (var elem in spawnedElements)
-            elem?.RemoveFromHierarchy();
-        spawnedElements.Clear();
+        // Re-read progression from PlayerPrefs — gameplay scene may have advanced it
+        progression?.ReloadFromDisk();
+
+        var doc = GetComponent<UIDocument>();
+        if (doc != null && doc.rootVisualElement != null)
+            ForceStretchTemplateContainer(doc.rootVisualElement);
+
+        if (root != null)
+            root.RemoveFromClassList("hidden");
+
+        if (root != null)
+            root.schedule.Execute(BuildMap).ExecuteLater(100);
+        else
+            BuildMap();
     }
 }

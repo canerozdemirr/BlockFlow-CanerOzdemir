@@ -159,6 +159,10 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         if (winNextBtn != null)
             winNextBtn.style.display = DisplayStyle.Flex;
 
+        // Hide Restart on win — only Next and Home
+        if (winRestartBtn != null)
+            winRestartBtn.style.display = DisplayStyle.None;
+
         UIToolkitPopupAnimator.AnimateShow(winRoot, winOverlay, winPanel, 0.45f,
             () => AnimateStarsBouncy(starCount));
     }
@@ -262,14 +266,9 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
     {
         UIToolkitPopupAnimator.AnimateHide(winRoot, winOverlay, winPanel, 0.25f, () =>
         {
-            if (progression == null || runner == null) return;
-            if (progression.AdvanceToNext())
+            progression?.AdvanceToNext();
+            if (runner != null && progression != null)
                 runner.Load(progression.Current);
-            else
-            {
-                progression.SetIndex(0);
-                runner.Load(progression.Current);
-            }
         });
     }
 
@@ -281,8 +280,7 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
 
         UIToolkitPopupAnimator.AnimateHide(activeRoot, activeOverlay, activePanel, 0.25f, () =>
         {
-            var levelMap = FindObjectOfType<LevelMapScreen>(true);
-            if (levelMap != null) levelMap.ShowMap();
+            SceneFlowManager.UnloadGameplay();
         });
     }
 }

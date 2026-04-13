@@ -2,27 +2,21 @@
     <Style src="../USS/Common.uss" />
     <Style src="../USS/LevelMap.uss" />
 
-    <ui:VisualElement name="ui_map_root" class="map-root hidden">
-        <!-- Background -->
+    <ui:VisualElement name="ui_map_root" class="map-root">
+        <!-- Background with diamond pattern -->
         <ui:VisualElement name="ui_map_bg" class="map-bg no-pick" />
 
-        <!-- Header -->
-        <ui:VisualElement name="ui_map_header" class="map-header no-pick">
-            <ui:Label name="ui_map_header_title" text="SELECT LEVEL" class="map-header-title no-pick" />
+        <!-- Scrollable node area -->
+        <ui:ScrollView name="ui_map_scroll" class="map-scroll" direction="Vertical">
+            <ui:VisualElement name="ui_map_content" class="map-content no-pick" />
+        </ui:ScrollView>
+
+        <!-- Bottom fixed area: level label + play button -->
+        <ui:VisualElement name="ui_map_bottom_area" class="map-bottom-area">
+            <ui:VisualElement name="ui_map_level_badge" class="map-level-badge no-pick">
+                <ui:Label name="ui_map_level_label_value" text="Level 1" class="map-level-label no-pick" />
+            </ui:VisualElement>
+            <ui:Button name="ui_map_btn_play" text="PLAY" class="map-play-btn" />
         </ui:VisualElement>
-
-        <!-- Content area — hex nodes created programmatically -->
-        <ui:VisualElement name="ui_map_content" class="map-content no-pick" />
-
-        <!-- Current level label -->
-        <ui:VisualElement name="ui_map_bottom" class="map-bottom no-pick">
-            <ui:Label name="ui_map_bottom_level_value" text="LEVEL 1" class="map-bottom-text no-pick" />
-        </ui:VisualElement>
-
-        <!-- Play button -->
-        <ui:Button name="ui_map_btn_play" text="PLAY" class="map-play-btn" />
-
-        <!-- Close button -->
-        <ui:Button name="ui_map_btn_close" text="X" class="map-close-btn" />
     </ui:VisualElement>
 </ui:UXML>

@@ -1,167 +1,171 @@
 /* ═══════════════════════════════════════════════════════
-   BlockFlow — Level Map
-   Blue theme, 3 hex nodes in zigzag, dashed path lines,
-   big Play button at bottom
+   BlockFlow — Level Map (dedicated scene)
+   Vertical scrolling, straight path, blue background
    ═══════════════════════════════════════════════════════ */
 
 .map-root {
-    position: absolute;
-    left: 0; top: 0; right: 0; bottom: 0;
+    flex-grow: 1;
+    background-color: rgb(45, 85, 200);
 }
 
 .map-bg {
     position: absolute;
     left: 0; top: 0; right: 0; bottom: 0;
-    background-color: rgb(14, 20, 60);
+    background-color: rgb(50, 90, 210);
 }
 
-/* ── Header ── */
-.map-header {
+/* ── Scroll area ── */
+.map-scroll {
     position: absolute;
     left: 0;
     top: 0;
     right: 0;
-    height: 140px;
-    background-color: rgb(12, 16, 50);
-    border-bottom-width: 3px;
-    border-bottom-color: rgba(255, 255, 255, 0.08);
+    bottom: 320px;
+}
+
+.map-scroll .unity-scroller--vertical {
+    width: 0;
+}
+
+.map-content {
+    align-items: center;
+    padding-top: 80px;
+    padding-bottom: 120px;
+}
+
+/* ═══════════════════════════════════════════
+   LEVEL NODE
+   ═══════════════════════════════════════════ */
+.level-node {
+    width: 180px;
+    height: 180px;
+    border-radius: 28px;
+    border-width: 5px;
+    border-color: rgb(60, 85, 140);
+    background-color: rgb(50, 65, 120);
     justify-content: center;
     align-items: center;
 }
 
-.map-header-title {
+/* Current level — green, larger, gold border */
+.level-node-current {
+    background-color: rgb(76, 200, 80);
+    border-color: rgb(200, 170, 30);
+    border-width: 7px;
+    width: 210px;
+    height: 210px;
+    border-radius: 32px;
+}
+
+/* Completed level — muted blue */
+.level-node-completed {
+    background-color: rgb(80, 110, 170);
+    border-color: rgb(65, 90, 150);
+}
+
+/* Locked level — dark, dimmed */
+.level-node-locked {
+    background-color: rgb(45, 55, 100);
+    border-color: rgb(35, 45, 80);
+}
+
+/* Node number text */
+.level-node-number {
     -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
-    font-size: 48px;
+    font-size: 52px;
     -unity-text-align: middle-center;
-    color: rgb(255, 220, 60);
+    color: rgb(255, 255, 255);
     -unity-font-style: bold;
     text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.4);
 }
 
-/* ── Content (nodes area) ── */
-.map-content {
-    position: absolute;
-    left: 0;
-    top: 150px;
-    right: 0;
-    bottom: 280px;
-}
-
-/* ── Level nodes (created programmatically) ── */
-.level-node {
-    position: absolute;
-    width: 140px;
-    height: 160px;
-    justify-content: center;
-    align-items: center;
-}
-
-.level-node-hex {
-    width: 130px;
-    height: 150px;
-    background-color: rgb(30, 50, 120);
-    border-radius: 20px;
-    border-width: 5px;
-    border-color: rgb(18, 26, 77);
-    justify-content: center;
-    align-items: center;
-    /* Rotate 0deg for hex-like look — actual hex shape via clip-path not supported in UI Toolkit 2022,
-       so we use a rotated rounded rect */
-    rotate: 0deg;
-}
-
-.level-node-current .level-node-hex {
-    background-color: rgb(64, 140, 242);
-    border-color: rgb(255, 204, 26);
-    border-width: 6px;
-    scale: 1.15 1.15;
-}
-
-.level-node-completed .level-node-hex {
-    background-color: rgb(40, 80, 170);
-    border-color: rgb(30, 60, 140);
-}
-
-.level-node-locked .level-node-hex {
-    background-color: rgb(25, 35, 80);
-    border-color: rgb(18, 26, 60);
-    opacity: 0.6;
-}
-
-.level-node-number {
-    -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
-    font-size: 48px;
-    -unity-text-align: middle-center;
-    color: rgb(255, 255, 255);
-    -unity-font-style: bold;
-    text-shadow: 1px 2px 0 rgba(0, 0, 0, 0.4);
+.level-node-current .level-node-number {
+    font-size: 58px;
 }
 
 .level-node-locked .level-node-number {
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 44px;
 }
 
-/* ── Path segments (dashed line between nodes) ── */
-.path-segment {
+/* Lock icon */
+.level-node-lock {
     position: absolute;
-    background-color: rgba(100, 160, 255, 0.3);
-    border-radius: 4px;
+    left: 50%;
+    top: 60%;
+    translate: -50% -50%;
+    -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
+    font-size: 36px;
+    -unity-text-align: middle-center;
+    color: rgb(200, 165, 40);
 }
 
-.path-segment-active {
-    background-color: rgba(100, 160, 255, 0.6);
+/* ═══════════════════════════════════════════
+   PATH LINE between nodes
+   ═══════════════════════════════════════════ */
+.path-line {
+    width: 14px;
+    height: 100px;
+    background-color: rgb(200, 170, 40);
+    border-radius: 7px;
+    align-self: center;
 }
 
-/* Dashed effect via repeating thin segments */
-.path-dash {
+.path-line-inactive {
+    background-color: rgb(55, 70, 120);
+}
+
+/* ═══════════════════════════════════════════
+   BOTTOM AREA
+   ═══════════════════════════════════════════ */
+.map-bottom-area {
     position: absolute;
-    width: 8px;
-    height: 4px;
-    background-color: rgb(100, 160, 255);
-    border-radius: 2px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 310px;
+    padding: 20px 80px 70px 80px;
+    align-items: center;
+    justify-content: flex-end;
+    /* Subtle gradient overlay at bottom */
+    background-color: rgba(30, 55, 150, 0.6);
 }
 
-/* ── Bottom bar ── */
-.map-bottom {
-    position: absolute;
-    left: 15%;
-    right: 15%;
-    bottom: 200px;
-    height: 60px;
-    background-color: rgb(255, 150, 0);
-    border-radius: 16px;
+.map-level-badge {
+    width: 460px;
+    height: 75px;
+    background-color: rgb(40, 60, 130);
+    border-radius: 18px;
+    border-width: 4px;
+    border-color: rgb(200, 170, 40);
     justify-content: center;
     align-items: center;
+    margin-bottom: 20px;
 }
 
-.map-bottom-text {
+.map-level-label {
     -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
-    font-size: 32px;
+    font-size: 36px;
     -unity-text-align: middle-center;
     color: rgb(255, 255, 255);
     -unity-font-style: bold;
 }
 
-/* ── Play button ── */
 #ui_map_btn_play {
-    position: absolute;
-    left: 50%;
-    bottom: 60px;
-    translate: -50% 0;
-    width: 400px;
+    width: 460px;
     height: 120px;
-    border-radius: 30px;
+    border-radius: 28px;
     background-color: rgb(76, 200, 80);
-    border-width: 5px;
-    border-color: rgb(50, 160, 55);
+    border-width: 6px;
+    border-color: rgb(55, 165, 58);
     margin: 0;
     padding: 0;
     -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
-    font-size: 52px;
+    font-size: 54px;
     color: rgb(255, 255, 255);
     -unity-font-style: bold;
     -unity-text-align: middle-center;
-    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+    text-shadow: 2px 3px 0 rgba(0, 0, 0, 0.3);
     background-image: none;
 }
 
@@ -170,30 +174,6 @@
 }
 
 #ui_map_btn_play:active {
-    scale: 0.95 0.95;
+    scale: 0.96 0.96;
     background-color: rgb(60, 180, 65);
-}
-
-/* ── Close button ── */
-#ui_map_btn_close {
-    position: absolute;
-    right: 30px;
-    top: 35px;
-    width: 70px;
-    height: 70px;
-    border-radius: 35px;
-    background-color: rgba(255, 255, 255, 0.15);
-    border-width: 2px;
-    border-color: rgba(255, 255, 255, 0.2);
-    margin: 0;
-    padding: 0;
-    -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
-    font-size: 32px;
-    color: rgb(255, 255, 255);
-    -unity-text-align: middle-center;
-    background-image: none;
-}
-
-#ui_map_btn_close:hover {
-    background-color: rgba(255, 255, 255, 0.25);
 }

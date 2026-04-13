@@ -113,8 +113,7 @@ public sealed class PausePopupView : MonoBehaviour
         UIToolkitPopupAnimator.AnimateHide(root, overlay, panel, 0.25f, () =>
         {
             state?.RequestResume();
-            var levelMap = FindObjectOfType<LevelMapScreen>(true);
-            if (levelMap != null) levelMap.ShowMap();
+            SceneFlowManager.UnloadGameplay();
         });
     }
 }

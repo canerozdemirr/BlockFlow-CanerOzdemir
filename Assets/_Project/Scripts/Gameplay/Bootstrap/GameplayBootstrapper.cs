@@ -72,7 +72,7 @@ public sealed class GameplayBootstrapper : MonoBehaviour
     public bool LoadNext()
     {
         if (runner == null || progression == null) return false;
-        if (!progression.AdvanceToNext()) return false;
+        progression.AdvanceToNext();
         var next = progression.Current;
         if (next == null) return false;
         runner.Load(next);

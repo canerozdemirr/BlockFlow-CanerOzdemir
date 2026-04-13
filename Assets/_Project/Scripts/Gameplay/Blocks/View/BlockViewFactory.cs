@@ -31,16 +31,16 @@ public sealed class BlockViewFactory : IBlockViewFactory
     {
         if (model == null || definition == null) return null;
 
-        var prefab = definition.MeshPrefab;
+        GameObject prefab = definition.MeshPrefab;
         if (prefab == null)
         {
             Debug.LogError($"[BlockViewFactory] BlockDefinition '{definition.ShapeId}' has no mesh prefab assigned.");
             return null;
         }
 
-        if (!poolsByPrefab.TryGetValue(prefab, out var pool))
+        if (!poolsByPrefab.TryGetValue(prefab, out PrefabPool<BlockView> pool))
         {
-            var prefabView = prefab.GetComponent<BlockView>();
+            BlockView prefabView = prefab.GetComponent<BlockView>();
             if (prefabView == null)
             {
                 Debug.LogError($"[BlockViewFactory] BlockDefinition '{definition.ShapeId}' mesh prefab is missing a BlockView component at its root.");
@@ -50,10 +50,10 @@ public sealed class BlockViewFactory : IBlockViewFactory
             poolsByPrefab[prefab] = pool;
         }
 
-        var view = pool.Get();
+        BlockView view = pool.Get();
         activeViews[view] = pool;
 
-        var color = ResolveColor(model.ColorId);
+        Color color = ResolveColor(model.ColorId);
         view.Bind(model, color, cellSpace);
         return view;
     }
@@ -61,7 +61,7 @@ public sealed class BlockViewFactory : IBlockViewFactory
     public void Release(BlockView view)
     {
         if (view == null) return;
-        if (!activeViews.TryGetValue(view, out var pool)) return;
+        if (!activeViews.TryGetValue(view, out PrefabPool<BlockView> pool)) return;
 
         view.Unbind();
         pool.Release(view);
@@ -71,14 +71,14 @@ public sealed class BlockViewFactory : IBlockViewFactory
     public void Clear()
     {
         // Return active views first so pool capacity bookkeeping stays consistent.
-        foreach (var pair in activeViews)
+        foreach (KeyValuePair<BlockView, PrefabPool<BlockView>> pair in activeViews)
         {
             pair.Key.Unbind();
             pair.Value.Release(pair.Key);
         }
         activeViews.Clear();
 
-        foreach (var pool in poolsByPrefab.Values)
+        foreach (PrefabPool<BlockView> pool in poolsByPrefab.Values)
             pool.Clear();
         poolsByPrefab.Clear();
     }
@@ -87,7 +87,7 @@ public sealed class BlockViewFactory : IBlockViewFactory
 
     private Color ResolveColor(string colorId)
     {
-        if (palette != null && palette.TryGet(colorId, out var entry) && entry != null)
+        if (palette != null && palette.TryGet(colorId, out BlockColor entry) && entry != null)
             return entry.DisplayColor;
         return Color.white;
     }
