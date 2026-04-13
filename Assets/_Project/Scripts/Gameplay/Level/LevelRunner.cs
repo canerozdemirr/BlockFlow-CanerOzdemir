@@ -68,15 +68,16 @@ public sealed class LevelRunner
 
     /// <summary>
     /// Unloads the current level. Publishes <see cref="LevelEndedEvent"/>
-    /// after teardown so subscribers can reset per-level caches.
+    /// BEFORE teardown so subscribers can still access grid/views during
+    /// cleanup, then tears down and clears the handle.
     /// </summary>
     public void Unload()
     {
         var previousId = Current != null ? Current.name : string.Empty;
-        builder.Teardown();
-        Current = null;
         if (!string.IsNullOrEmpty(previousId))
             bus.Publish(new LevelEndedEvent(previousId));
+        builder.Teardown();
+        Current = null;
     }
 
     /// <summary>

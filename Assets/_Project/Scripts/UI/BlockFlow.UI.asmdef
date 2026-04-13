@@ -9,7 +9,8 @@
         "UniTask",
         "PrimeTween.Runtime",
         "Unity.TextMeshPro",
-        "UnityEngine.UI"
+        "UnityEngine.UI",
+        "UnityEngine.UIElementsModule"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

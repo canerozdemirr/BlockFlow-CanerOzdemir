@@ -1,0 +1,51 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:Template name="GameplayHud" />
+    <Style src="../USS/Common.uss" />
+    <Style src="../USS/GameplayHud.uss" />
+
+    <ui:VisualElement name="ui_hud_root" class="hud-root no-pick">
+        <ui:VisualElement name="ui_hud_safe_area" class="hud-safe-area no-pick">
+
+            <!-- ══════════════════════════════════════
+                 LEVEL BADGE — top-left circle
+                 ══════════════════════════════════════ -->
+            <ui:VisualElement name="ui_hud_level" class="level-badge no-pick">
+                <ui:VisualElement name="ui_hud_level_shadow" class="level-shadow no-pick" />
+                <ui:VisualElement name="ui_hud_level_border" class="level-border no-pick" />
+                <ui:VisualElement name="ui_hud_level_fill" class="level-fill no-pick" />
+                <ui:Label name="ui_hud_level_label" text="LEVEL" class="level-label no-pick" />
+                <ui:Label name="ui_hud_level_number_value" text="1" class="level-number no-pick" />
+            </ui:VisualElement>
+
+            <!-- ══════════════════════════════════════
+                 TIMER — top-center bar
+                 ══════════════════════════════════════ -->
+            <ui:VisualElement name="ui_hud_timer" class="timer-group no-pick">
+                <!-- "TIME" header badge -->
+                <ui:VisualElement name="ui_hud_timer_header" class="timer-header no-pick">
+                    <ui:VisualElement name="ui_hud_timer_header_deco_l" class="timer-header-deco no-pick" />
+                    <ui:Label name="ui_hud_timer_header_text" text="TIME" class="timer-header-text no-pick" />
+                    <ui:VisualElement name="ui_hud_timer_header_deco_r" class="timer-header-deco no-pick" />
+                </ui:VisualElement>
+
+                <!-- Timer pill bar -->
+                <ui:VisualElement name="ui_hud_timer_pill" class="timer-pill no-pick">
+                    <ui:VisualElement name="ui_hud_timer_pill_fill" class="timer-pill-fill no-pick" />
+                    <ui:Label name="ui_hud_timer_text_value" text="01:00" class="timer-text no-pick" />
+                    <!-- Circular icon on right edge -->
+                    <ui:VisualElement name="ui_hud_timer_icon" class="timer-icon no-pick">
+                        <ui:VisualElement name="ui_hud_timer_icon_inner" class="timer-icon-inner no-pick" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <!-- ══════════════════════════════════════
+                 PAUSE BUTTON — bottom-center
+                 ══════════════════════════════════════ -->
+            <ui:Button name="ui_hud_btn_pause" class="pause-button">
+                <ui:VisualElement name="ui_hud_btn_pause_icon" class="pause-icon no-pick" />
+            </ui:Button>
+
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

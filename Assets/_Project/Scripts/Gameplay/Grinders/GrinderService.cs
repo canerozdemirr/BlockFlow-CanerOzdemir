@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 using VContainer.Unity;
 
 /// <summary>
@@ -35,11 +36,12 @@ public sealed class GrinderService : IStartable, IDisposable
     private readonly GameStateService state;
     private readonly BlockViewRegistry viewRegistry;
     private readonly IBlockViewFactory blockViewFactory;
+    private readonly CellSpace cellSpace;
 
     private readonly List<GrinderModel> grinders = new List<GrinderModel>();
     private readonly List<IDisposable> subs = new List<IDisposable>();
 
-    private const float ConsumeTweenDuration = 0.2f;
+    private const float ConsumeTweenDuration = 0.35f;
 
     public IReadOnlyList<GrinderModel> Grinders => grinders;
 
@@ -48,13 +50,15 @@ public sealed class GrinderService : IStartable, IDisposable
         LevelContext context,
         GameStateService state,
         BlockViewRegistry viewRegistry,
-        IBlockViewFactory blockViewFactory)
+        IBlockViewFactory blockViewFactory,
+        CellSpace cellSpace)
     {
         this.bus = bus;
         this.context = context;
         this.state = state;
         this.viewRegistry = viewRegistry;
         this.blockViewFactory = blockViewFactory;
+        this.cellSpace = cellSpace;
     }
 
     public void Start()
@@ -162,9 +166,28 @@ public sealed class GrinderService : IStartable, IDisposable
         {
             viewRegistry.Unregister(id);
             var captured = view;
-            captured.Dismiss(ConsumeTweenDuration, () => blockViewFactory.Release(captured));
+            var slideDir = EdgeToDirection(grinder.Edge);
+            var slideDist = cellSpace.CellSize * 1.5f;
+            captured.DismissToGrinder(slideDir, slideDist, ConsumeTweenDuration,
+                () => blockViewFactory.Release(captured));
         }
 
         bus.Publish(new BlockGroundEvent(id, grinder.Id, colorId));
+    }
+
+    /// <summary>
+    /// Returns the world-space direction a block should slide toward
+    /// when being consumed by a grinder on the given edge.
+    /// </summary>
+    private static Vector3 EdgeToDirection(GridEdge edge)
+    {
+        switch (edge)
+        {
+            case GridEdge.Top:    return Vector3.forward;   //  +Z
+            case GridEdge.Bottom: return Vector3.back;      //  -Z
+            case GridEdge.Left:   return Vector3.left;      //  -X
+            case GridEdge.Right:  return Vector3.right;     //  +X
+            default:              return Vector3.forward;
+        }
     }
 }

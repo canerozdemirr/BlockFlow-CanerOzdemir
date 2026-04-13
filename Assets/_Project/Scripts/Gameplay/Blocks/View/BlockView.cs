@@ -83,11 +83,34 @@ public sealed class BlockView : MonoBehaviour
     }
 
     /// <summary>
-    /// Plays the "consumed by grinder" scale-down tween and invokes
-    /// <paramref name="onComplete"/> when it finishes. If a previous dismiss
-    /// is still in flight, it is stopped first so we never stack callbacks.
-    /// Invoked by <see cref="GrinderService"/> on a successful consumption.
+    /// Plays the "pulled into grinder" animation: the block slides toward
+    /// the grinder while uniformly shrinking and sinking slightly downward,
+    /// as if being swallowed by the grinder mechanism.
     /// </summary>
+    public void DismissToGrinder(Vector3 slideDir, float slideDist, float duration, Action onComplete)
+    {
+        if (dismissTween.isAlive) dismissTween.Stop();
+
+        var startPos = transform.localPosition;
+        var startScale = transform.localScale;
+        var callback = onComplete;
+
+        dismissTween = Tween.Custom(0f, 1f, duration, (float t) =>
+        {
+            // Slide toward the grinder edge.
+            var pos = startPos + slideDir * (t * slideDist);
+            // Sink downward slightly (pulled into the grinder).
+            pos.y -= t * slideDist * 0.3f;
+            transform.localPosition = pos;
+
+            // Uniform scale-down: starts at full size, ends at zero.
+            transform.localScale = startScale * (1f - t);
+        });
+
+        dismissTween.OnComplete(() => callback?.Invoke());
+    }
+
+    /// <summary>Fallback dismiss (simple scale-down) if no grinder context is available.</summary>
     public void Dismiss(float duration, Action onComplete)
     {
         if (dismissTween.isAlive) dismissTween.Stop();

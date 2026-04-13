@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!687078895 &4343727234628468602
+SpriteAtlas:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: UI_GameplayAtlas
+  m_EditorData:
+    serializedVersion: 2
+    textureSettings:
+      serializedVersion: 2
+      anisoLevel: 1
+      compressionQuality: 50
+      maxTextureSize: 2048
+      textureCompression: 0
+      filterMode: 1
+      generateMipMaps: 0
+      readable: 0
+      crunchedCompression: 0
+      sRGB: 1
+    platformSettings: []
+    packingSettings:
+      serializedVersion: 2
+      padding: 4
+      blockOffset: 1
+      allowAlphaSplitting: 0
+      enableRotation: 0
+      enableTightPacking: 0
+      enableAlphaDilation: 0
+    secondaryTextureSettings: {}
+    variantMultiplier: 1
+    packables:
+    - {fileID: 102900000, guid: 67f504c1ad2f1411884198a096f0ed72, type: 3}
+    - {fileID: 102900000, guid: 5695d6959b77c483e874d5374ab295b1, type: 3}
+    - {fileID: 102900000, guid: 10b9cdab6324f4a28a0b87c18137e48c, type: 3}
+    - {fileID: 102900000, guid: 4a61fc767e2554116b3e1b528d1e16f2, type: 3}
+    - {fileID: 102900000, guid: 995574e44e59c45758638b6462329301, type: 3}
+    - {fileID: 102900000, guid: 67f504c1ad2f1411884198a096f0ed72, type: 3}
+    - {fileID: 102900000, guid: 5695d6959b77c483e874d5374ab295b1, type: 3}
+    - {fileID: 102900000, guid: 10b9cdab6324f4a28a0b87c18137e48c, type: 3}
+    - {fileID: 102900000, guid: 4a61fc767e2554116b3e1b528d1e16f2, type: 3}
+    - {fileID: 102900000, guid: 995574e44e59c45758638b6462329301, type: 3}
+    - {fileID: 102900000, guid: 67f504c1ad2f1411884198a096f0ed72, type: 3}
+    - {fileID: 102900000, guid: 5695d6959b77c483e874d5374ab295b1, type: 3}
+    - {fileID: 102900000, guid: 10b9cdab6324f4a28a0b87c18137e48c, type: 3}
+    - {fileID: 102900000, guid: 4a61fc767e2554116b3e1b528d1e16f2, type: 3}
+    bindAsDefault: 1
+    isAtlasV2: 0
+    cachedData: {fileID: 0}
+    packedSpriteRenderDataKeys: []
+  m_MasterAtlas: {fileID: 0}
+  m_PackedSprites: []
+  m_PackedSpriteNamesToIndex: []
+  m_RenderDataMap: {}
+  m_Tag: UI_GameplayAtlas
+  m_IsVariant: 0

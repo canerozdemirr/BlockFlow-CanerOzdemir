@@ -39,6 +39,18 @@ public sealed class GameStateService : IStartable, IDisposable
         subs.Clear();
     }
 
+    /// <summary>Pauses gameplay. Only works while Playing.</summary>
+    public void RequestPause()
+    {
+        if (Current == GamePhase.Playing) Set(GamePhase.Paused);
+    }
+
+    /// <summary>Resumes gameplay. Only works while Paused.</summary>
+    public void RequestResume()
+    {
+        if (Current == GamePhase.Paused) Set(GamePhase.Playing);
+    }
+
     private void Set(GamePhase phase)
     {
         if (Current == phase) return;

@@ -97,3 +97,9 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# Large asset pack files (>10 MB, SourceTree limit)
+Assets/Layer Lab/GUI Pro-CasualGame/Scenes/DemoScene_CasualGame.unity
+Assets/Layer Lab/GUI Pro-CasualGame/Scenes/DemoScene_CasualGame.unity.meta
+Assets/Layer Lab/GUI Pro-CasualGame/ResourcesData/Fonts/LilitaOne-Regular Outline_Extended ASCII_210 SDF.asset
+Assets/Layer Lab/GUI Pro-CasualGame/ResourcesData/Fonts/LilitaOne-Regular Outline_Extended ASCII_210 SDF.asset.meta

@@ -1,0 +1,97 @@
+/* ═══════════════════════════════════════════════════════
+   BlockFlow — Level Outcome Popups (Win & Lose)
+   Full-screen celebration. Stars below title (win only).
+   ═══════════════════════════════════════════════════════ */
+
+.popup-root {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* The overlay and center-wrap are children of popup-root.
+   popup-root gets height from flex-grow:1 on TemplateContainer.
+   overlay + center-wrap are absolute to cover full area. */
+
+.outcome-panel {
+    width: 960px;
+    height: 1250px;
+    padding: 80px 50px 50px 50px;
+    background-color: rgb(18, 26, 77);
+    border-radius: 48px;
+    border-width: 5px;
+    border-color: rgb(10, 15, 50);
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* ── Icon ── */
+.outcome-icon {
+    width: 180px;
+    height: 180px;
+    margin-top: 20px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* ── Title ── */
+.outcome-title {
+    -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
+    font-size: 64px;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    text-shadow: 2px 3px 0 rgba(0, 0, 0, 0.5);
+}
+
+.outcome-title-win {
+    color: rgb(255, 220, 40);
+}
+
+.outcome-title-lose {
+    color: rgb(255, 100, 70);
+}
+
+/* ── Stars ── */
+.stars-row {
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-end;
+    height: 160px;
+}
+
+.star {
+    width: 120px;
+    height: 120px;
+    margin: 0 15px;
+    -unity-background-scale-mode: scale-to-fit;
+    opacity: 0.25;
+}
+
+.star-center {
+    width: 145px;
+    height: 145px;
+}
+
+.star-filled {
+    opacity: 1;
+}
+
+.star-empty {
+    opacity: 0.25;
+}
+
+/* ── Buttons ── */
+.outcome-btn-row {
+    flex-direction: row;
+    justify-content: center;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.outcome-panel .popup-btn {
+    height: 120px;
+    min-width: 240px;
+    flex-grow: 1;
+    margin: 0 10px;
+}

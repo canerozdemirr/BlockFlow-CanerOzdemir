@@ -1,0 +1,28 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../USS/Common.uss" />
+    <Style src="../USS/LevelMap.uss" />
+
+    <ui:VisualElement name="ui_map_root" class="map-root hidden">
+        <!-- Background -->
+        <ui:VisualElement name="ui_map_bg" class="map-bg no-pick" />
+
+        <!-- Header -->
+        <ui:VisualElement name="ui_map_header" class="map-header no-pick">
+            <ui:Label name="ui_map_header_title" text="SELECT LEVEL" class="map-header-title no-pick" />
+        </ui:VisualElement>
+
+        <!-- Content area — hex nodes created programmatically -->
+        <ui:VisualElement name="ui_map_content" class="map-content no-pick" />
+
+        <!-- Current level label -->
+        <ui:VisualElement name="ui_map_bottom" class="map-bottom no-pick">
+            <ui:Label name="ui_map_bottom_level_value" text="LEVEL 1" class="map-bottom-text no-pick" />
+        </ui:VisualElement>
+
+        <!-- Play button -->
+        <ui:Button name="ui_map_btn_play" text="PLAY" class="map-play-btn" />
+
+        <!-- Close button -->
+        <ui:Button name="ui_map_btn_close" text="X" class="map-close-btn" />
+    </ui:VisualElement>
+</ui:UXML>

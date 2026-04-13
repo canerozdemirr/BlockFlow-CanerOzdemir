@@ -116,7 +116,7 @@ public class GameplayLifetimeScope : LifetimeScope
         // services resolve them by concrete type (not just via interfaces).
 
         builder.RegisterEntryPoint<GameStateService>().AsSelf();
-        builder.RegisterEntryPoint<CountdownTimer>();
+        builder.RegisterEntryPoint<CountdownTimer>().AsSelf();
         builder.RegisterEntryPoint<GrinderService>().AsSelf();
         builder.RegisterEntryPoint<IceMeltService>();
         builder.RegisterEntryPoint<WinConditionEvaluator>();

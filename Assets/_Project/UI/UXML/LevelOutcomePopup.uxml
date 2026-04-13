@@ -1,0 +1,40 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../USS/Common.uss" />
+    <Style src="../USS/LevelOutcomePopup.uss" />
+
+    <!-- WIN POPUP -->
+    <ui:VisualElement name="ui_popup_win_root" class="popup-root hidden">
+        <ui:VisualElement name="ui_popup_win_overlay" class="popup-overlay" />
+        <ui:VisualElement class="popup-center-wrap">
+            <ui:VisualElement name="ui_popup_win_panel" class="outcome-panel">
+                <ui:VisualElement name="ui_popup_win_icon" class="outcome-icon no-pick" />
+                <ui:Label name="ui_popup_win_title_value" text="Level Complete!" class="outcome-title outcome-title-win no-pick" />
+                <ui:VisualElement name="ui_popup_win_stars" class="stars-row no-pick">
+                    <ui:VisualElement name="ui_popup_win_star_1" class="star no-pick" />
+                    <ui:VisualElement name="ui_popup_win_star_2" class="star star-center no-pick" />
+                    <ui:VisualElement name="ui_popup_win_star_3" class="star no-pick" />
+                </ui:VisualElement>
+                <ui:VisualElement class="outcome-btn-row">
+                    <ui:Button name="ui_popup_win_btn_next" text="Next" class="popup-btn popup-btn-green" />
+                    <ui:Button name="ui_popup_win_btn_restart" text="Restart" class="popup-btn popup-btn-orange" />
+                    <ui:Button name="ui_popup_win_btn_home" text="Home" class="popup-btn popup-btn-blue" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+
+    <!-- LOSE POPUP -->
+    <ui:VisualElement name="ui_popup_lose_root" class="popup-root hidden">
+        <ui:VisualElement name="ui_popup_lose_overlay" class="popup-overlay" />
+        <ui:VisualElement class="popup-center-wrap">
+            <ui:VisualElement name="ui_popup_lose_panel" class="outcome-panel">
+                <ui:VisualElement name="ui_popup_lose_icon" class="outcome-icon outcome-icon-lose no-pick" />
+                <ui:Label name="ui_popup_lose_title_value" text="Time's Up!" class="outcome-title outcome-title-lose no-pick" />
+                <ui:VisualElement class="outcome-btn-row">
+                    <ui:Button name="ui_popup_lose_btn_retry" text="Retry" class="popup-btn popup-btn-orange" />
+                    <ui:Button name="ui_popup_lose_btn_home" text="Home" class="popup-btn popup-btn-blue" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
