@@ -112,14 +112,21 @@ public sealed class GrinderService : IStartable, IDisposable
         int touchingCells = 0;
         var offsets = block.CellOffsets;
 
+        // First pass: ALL cells of the block must fit within the grinder's
+        // coverage range along the edge's parallel axis. This prevents a
+        // block that is wider/taller than the grinder from being consumed.
         for (int i = 0; i < offsets.Length; i++)
         {
             var cell = block.Origin + offsets[i];
-            if (!IsOnEdge(cell, grinder.Edge, size)) continue;
-
-            // Cell is in the grinder's row/column — it must also fit inside the grinder's coverage.
             if (!IsInsideGrinderCoverage(cell, grinder)) return false;
-            touchingCells++;
+        }
+
+        // Second pass: at least one cell must actually touch the grinder's edge.
+        for (int i = 0; i < offsets.Length; i++)
+        {
+            var cell = block.Origin + offsets[i];
+            if (IsOnEdge(cell, grinder.Edge, size))
+                touchingCells++;
         }
 
         return touchingCells > 0;
