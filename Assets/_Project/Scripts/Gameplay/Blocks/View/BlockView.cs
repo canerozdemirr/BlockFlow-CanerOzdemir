@@ -165,7 +165,7 @@ public sealed class BlockView : MonoBehaviour
     /// is being swallowed. Particles play at the grinder contact point.
     /// </summary>
     public void DismissToGrinder(Vector3 slideDir, float slideDist, Vector3 grinderWorldCenter,
-        float duration, Action onComplete)
+        float duration, Action onComplete, int grinderWidth = 1)
     {
         if (dismissTween.isAlive) dismissTween.Stop();
 
@@ -178,7 +178,7 @@ public sealed class BlockView : MonoBehaviour
 
         // Spawn particles at the grinder
         Transform particles = BlockShatterEffect.SpawnContinuous(
-            grinderWorldCenter, debrisColor, slideDir, transform.parent);
+            grinderWorldCenter, debrisColor, slideDir, transform.parent, grinderWidth);
 
         // Slide the block through the grinder at full size — no scaling
         dismissTween = Tween.Custom(0f, 1f, duration, (float t) =>

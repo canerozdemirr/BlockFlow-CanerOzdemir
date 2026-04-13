@@ -14,7 +14,7 @@ public static class BlockShatterEffect
     /// tints all particle systems to the block color, and starts playing.
     /// </summary>
     public static Transform SpawnContinuous(Vector3 worldPosition, Color color,
-        Vector3 slideDir, Transform parent = null)
+        Vector3 slideDir, Transform parent = null, int grinderWidth = 1)
     {
         var prefab = GetPrefab();
         if (prefab == null)
@@ -27,13 +27,24 @@ public static class BlockShatterEffect
         if (parent != null) go.transform.SetParent(parent, true);
         go.transform.position = worldPosition;
 
-        // Orient the cone shape to point away from the grinder (opposite of slide dir)
-        go.transform.rotation = Quaternion.LookRotation(-slideDir);
+        // Orient the cone shape to spray outward from the grid (same direction as slide)
+        go.transform.rotation = Quaternion.LookRotation(slideDir);
+
+        // Scale particle shape and intensity based on grinder width
+        float widthScale = Mathf.Max(1f, grinderWidth);
 
         // Tint all particle systems to the block's color
         var systems = go.GetComponentsInChildren<ParticleSystem>(true);
         foreach (var ps in systems)
         {
+            // Scale shape X and emission rate by grinder width
+            var shape = ps.shape;
+            var shapeScale = shape.scale;
+            shapeScale.x = widthScale;
+            shape.scale = shapeScale;
+
+            var emission = ps.emission;
+            emission.rateOverTime = emission.rateOverTime.constant * widthScale;
             var main = ps.main;
             var currentColor = main.startColor;
 

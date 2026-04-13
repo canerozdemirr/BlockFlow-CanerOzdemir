@@ -187,7 +187,7 @@ public sealed class GrinderService : IStartable, IDisposable
             var grinderCenter = ComputeGrinderWorldCenter(grinder);
 
             captured.DismissToGrinder(slideDir, slideDist, grinderCenter, duration,
-                () => blockViewFactory.Release(captured));
+                () => blockViewFactory.Release(captured), grinder.Width);
         }
 
         bus.Publish(new BlockGroundEvent(id, grinder.Id, colorId));
