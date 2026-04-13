@@ -174,12 +174,19 @@ public sealed class GrinderService : IStartable, IDisposable
             viewRegistry.Unregister(id);
             var captured = view;
             var slideDir = EdgeToDirection(grinder.Edge);
-            var slideDist = cellSpace.CellSize * 1.5f;
 
-            // Compute the grinder's center world position for particle spawn
+            // Slide distance must be large enough to push the entire block
+            // past the clip plane. Compute from block's cell extent along
+            // the slide axis + extra margin.
+            float blockExtent = ComputeBlockExtent(block, grinder.Edge);
+            float slideDist = (blockExtent + 1.5f) * cellSpace.CellSize;
+
+            // Scale duration proportionally so bigger blocks don't rush through
+            float duration = ConsumeTweenDuration + blockExtent * 0.1f;
+
             var grinderCenter = ComputeGrinderWorldCenter(grinder);
 
-            captured.DismissToGrinder(slideDir, slideDist, grinderCenter, ConsumeTweenDuration,
+            captured.DismissToGrinder(slideDir, slideDist, grinderCenter, duration,
                 () => blockViewFactory.Release(captured));
         }
 
@@ -224,6 +231,36 @@ public sealed class GrinderService : IStartable, IDisposable
         if (context.GridRoot != null)
             return context.GridRoot.TransformPoint(localPos);
         return localPos;
+    }
+
+    /// <summary>
+    /// Returns how many cells the block extends along the axis perpendicular
+    /// to the grinder edge. This determines how far the block must slide
+    /// to fully pass through the clip plane.
+    /// </summary>
+    private static float ComputeBlockExtent(BlockModel block, GridEdge edge)
+    {
+        var offsets = block.CellOffsets;
+        if (offsets == null || offsets.Length == 0) return 1f;
+
+        // For left/right edges, measure extent along X axis
+        // For top/bottom edges, measure extent along Y axis
+        int min = int.MaxValue;
+        int max = int.MinValue;
+
+        for (int i = 0; i < offsets.Length; i++)
+        {
+            int val;
+            if (edge == GridEdge.Left || edge == GridEdge.Right)
+                val = offsets[i].x;
+            else
+                val = offsets[i].y;
+
+            if (val < min) min = val;
+            if (val > max) max = val;
+        }
+
+        return max - min + 1;
     }
 
     /// <summary>

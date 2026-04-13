@@ -2,28 +2,42 @@
     <Style src="../USS/Common.uss" />
     <Style src="../USS/PausePopup.uss" />
 
-    <ui:VisualElement name="ui_popup_pause_root" class="popup-root hidden">
-        <ui:VisualElement name="ui_popup_pause_overlay" class="popup-overlay" />
-        <ui:VisualElement class="popup-center-wrap">
+    <ui:VisualElement name="ui_popup_pause_root" class="pause-root hidden">
+        <ui:VisualElement name="ui_popup_pause_overlay" class="pause-overlay" />
+
+        <ui:VisualElement class="pause-center-wrap">
             <ui:VisualElement name="ui_popup_pause_panel" class="pause-panel">
-                <ui:Label name="ui_popup_pause_title" text="PAUSED" class="pause-title no-pick" />
-                <ui:VisualElement class="pause-separator no-pick" />
-                <ui:VisualElement class="pause-settings no-pick">
-                    <ui:VisualElement class="setting-row">
-                        <ui:Label text="Sound" class="setting-label no-pick" />
-                        <ui:Toggle name="ui_popup_pause_toggle_sound" class="setting-toggle" value="true" />
+                <!-- Header -->
+                <ui:VisualElement class="pause-header no-pick">
+                    <ui:VisualElement class="pause-title-bg no-pick">
+                        <ui:Label text="SETTINGS" class="pause-title-text no-pick" />
                     </ui:VisualElement>
-                    <ui:VisualElement class="setting-row">
-                        <ui:Label text="Music" class="setting-label no-pick" />
-                        <ui:Toggle name="ui_popup_pause_toggle_music" class="setting-toggle" value="true" />
+                    <ui:Button name="ui_popup_pause_btn_close" text="X" class="pause-close-btn" />
+                </ui:VisualElement>
+
+                <!-- Settings body -->
+                <ui:VisualElement class="pause-body no-pick">
+                    <!-- Sound -->
+                    <ui:VisualElement class="pause-setting-row">
+                        <ui:Label text="Sound" class="pause-setting-label no-pick" />
+                        <ui:Toggle name="ui_popup_pause_toggle_sound" class="pause-toggle" value="true" />
+                    </ui:VisualElement>
+
+                    <!-- Music -->
+                    <ui:VisualElement class="pause-setting-row">
+                        <ui:Label text="Music" class="pause-setting-label no-pick" />
+                        <ui:Toggle name="ui_popup_pause_toggle_music" class="pause-toggle" value="true" />
+                    </ui:VisualElement>
+
+                    <!-- Haptic -->
+                    <ui:VisualElement class="pause-setting-row">
+                        <ui:Label text="Haptic" class="pause-setting-label no-pick" />
+                        <ui:Toggle name="ui_popup_pause_toggle_haptic" class="pause-toggle" value="true" />
                     </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement class="pause-separator no-pick" />
-                <ui:VisualElement class="pause-btn-row">
-                    <ui:Button name="ui_popup_pause_btn_resume" text="Resume" class="popup-btn popup-btn-green" />
-                    <ui:Button name="ui_popup_pause_btn_restart" text="Restart" class="popup-btn popup-btn-orange" />
-                    <ui:Button name="ui_popup_pause_btn_home" text="Home" class="popup-btn popup-btn-blue" />
-                </ui:VisualElement>
+
+                <!-- HOME button -->
+                <ui:Button name="ui_popup_pause_btn_home" text="HOME" class="pause-home-btn" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

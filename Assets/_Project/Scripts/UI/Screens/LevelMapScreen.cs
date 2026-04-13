@@ -181,13 +181,6 @@ public sealed class LevelMapScreen : MonoBehaviour
         numLabel.pickingMode = PickingMode.Ignore;
         node.Add(numLabel);
 
-        if (isLocked)
-        {
-            var lockLabel = new Label("\U0001F512");
-            lockLabel.AddToClassList("level-node-lock");
-            lockLabel.pickingMode = PickingMode.Ignore;
-            node.Add(lockLabel);
-        }
 
         return node;
     }

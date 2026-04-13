@@ -1,84 +1,201 @@
 /* ═══════════════════════════════════════════════════════
-   BlockFlow — Pause Popup
-   PAUSED title, settings toggles, Resume/Restart/Home
-   ~65% screen height, space-between layout
+   BlockFlow — Pause / Settings Panel
+   Slides down from top. Settings-style layout with toggles.
+   Reference: 1080×1920 portrait
    ═══════════════════════════════════════════════════════ */
 
-.popup-root {
+.pause-root {
+    flex-grow: 1;
+}
+
+.pause-overlay {
     position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.55);
 }
 
-.pause-panel {
-    width: 960px;
-    height: 1250px;
-    padding: 80px 50px 50px 50px;
-    background-color: rgb(18, 26, 77);
-    border-radius: 48px;
-    border-width: 5px;
-    border-color: rgb(12, 18, 55);
+/* Centering wrapper — flexbox centering (translate % doesn't work in Unity 2022) */
+.pause-center-wrap {
+    position: absolute;
+    left: 0; top: 0; right: 0; bottom: 0;
+    justify-content: center;
     align-items: center;
-    justify-content: space-between;
 }
 
-.pause-title {
+/* ═══════════════════════════════════════════
+   PANEL — centered via parent flexbox
+   ═══════════════════════════════════════════ */
+.pause-panel {
+    width: 780px;
+    padding: 0 0 40px 0;
+    background-color: rgb(30, 110, 230);
+    border-radius: 40px;
+    border-width: 6px;
+    border-color: rgb(60, 140, 255);
+    align-items: center;
+}
+
+/* ═══════════════════════════════════════════
+   HEADER — title bar + close button
+   ═══════════════════════════════════════════ */
+.pause-header {
+    width: 100%;
+    height: 110px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.pause-title-bg {
+    background-color: rgb(20, 80, 190);
+    border-radius: 0 0 30px 30px;
+    padding: 15px 60px;
+    margin-top: -6px;
+    border-width: 0 4px 4px 4px;
+    border-color: rgb(60, 140, 255);
+}
+
+.pause-title-text {
     -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
-    font-size: 64px;
+    font-size: 48px;
     -unity-text-align: middle-center;
     color: rgb(255, 255, 255);
     -unity-font-style: bold;
-    margin-top: 20px;
-    text-shadow: 2px 3px 0 rgba(0, 0, 0, 0.4);
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
 }
 
-.pause-separator {
-    width: 85%;
-    height: 3px;
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Settings */
-.pause-settings {
-    width: 100%;
-    padding: 10px 60px;
-}
-
-.setting-row {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    height: 100px;
-}
-
-.setting-label {
+/* Close X button — top right corner */
+#ui_popup_pause_btn_close {
+    position: absolute;
+    right: -15px;
+    top: -15px;
+    width: 70px;
+    height: 70px;
+    border-radius: 35px;
+    background-color: rgb(220, 50, 40);
+    border-width: 4px;
+    border-color: rgb(180, 35, 30);
+    margin: 0;
+    padding: 0;
     -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
-    font-size: 40px;
-    color: rgb(180, 200, 255);
+    font-size: 32px;
+    color: rgb(255, 255, 255);
     -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    background-image: none;
 }
 
-/* Toggle override */
-.setting-toggle {
+#ui_popup_pause_btn_close:hover {
+    background-color: rgb(240, 70, 60);
+}
+
+#ui_popup_pause_btn_close:active {
+    scale: 0.9 0.9;
+}
+
+/* ═══════════════════════════════════════════
+   BODY — settings rows
+   ═══════════════════════════════════════════ */
+.pause-body {
+    width: 90%;
+    background-color: rgb(20, 75, 180);
+    border-radius: 28px;
+    padding: 25px 35px;
+    margin: 10px 0 25px 0;
+    border-width: 3px;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.pause-setting-row {
+    flex-direction: row;
+    align-items: center;
+    height: 90px;
+    border-bottom-width: 2px;
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+    padding: 0 10px;
+}
+
+/* Remove border on last row */
+.pause-setting-row:last-child {
+    border-bottom-width: 0;
+}
+
+.pause-setting-label {
+    flex-grow: 1;
+    -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
+    font-size: 36px;
+    color: rgb(220, 230, 255);
+    -unity-font-style: bold;
+    -unity-text-align: middle-left;
+}
+
+/* Toggle styling — make it bigger and more visible */
+.pause-toggle {
     width: 110px;
     height: 55px;
+    flex-shrink: 0;
 }
 
-/* Button row */
-.pause-btn-row {
-    flex-direction: row;
+/* Style the toggle's internal checkmark/background */
+.pause-toggle .unity-toggle__input {
+    width: 110px;
+    height: 55px;
+    border-radius: 28px;
+    background-color: rgb(60, 80, 150);
+    border-width: 3px;
+    border-color: rgb(40, 55, 110);
     justify-content: center;
-    margin-bottom: 20px;
-    width: 100%;
+    padding: 4px;
 }
 
-/* Button overrides */
-.pause-panel .popup-btn {
-    height: 120px;
-    min-width: 240px;
-    flex-grow: 1;
-    margin: 0 10px;
+.pause-toggle .unity-toggle__checkmark {
+    width: 45px;
+    height: 45px;
+    border-radius: 23px;
+    background-color: rgb(180, 190, 220);
+    border-width: 0;
+    -unity-background-image-tint-color: rgba(0, 0, 0, 0);
+    align-self: flex-start;
+}
+
+/* Checked state */
+.pause-toggle:checked .unity-toggle__input {
+    background-color: rgb(76, 200, 80);
+    border-color: rgb(55, 165, 58);
+}
+
+.pause-toggle:checked .unity-toggle__checkmark {
+    background-color: rgb(255, 255, 255);
+    align-self: flex-end;
+}
+
+/* ═══════════════════════════════════════════
+   HOME BUTTON — green, bottom
+   ═══════════════════════════════════════════ */
+#ui_popup_pause_btn_home {
+    width: 85%;
+    height: 110px;
     border-radius: 24px;
+    background-color: rgb(76, 200, 80);
+    border-width: 5px;
+    border-color: rgb(55, 165, 58);
+    margin: 0;
+    padding: 0;
+    -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
+    font-size: 44px;
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+    background-image: none;
+}
+
+#ui_popup_pause_btn_home:hover {
+    background-color: rgb(90, 220, 95);
+}
+
+#ui_popup_pause_btn_home:active {
+    scale: 0.96 0.96;
+    background-color: rgb(60, 180, 65);
 }

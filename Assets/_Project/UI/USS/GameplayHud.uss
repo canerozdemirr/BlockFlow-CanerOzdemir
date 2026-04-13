@@ -1,238 +1,157 @@
 /* ═══════════════════════════════════════════════════════
-   BlockFlow — Gameplay HUD Stylesheet
-   Casual block puzzle game reference layout
-   Reference: 1080×1920 portrait
+   BlockFlow — Gameplay HUD
+   Single strip background containing level, timer, pause.
+   Fixed width (900px), centered, no stretch on wider screens.
+   Reference: 1080×1920 (16:9 portrait)
    ═══════════════════════════════════════════════════════ */
 
 .hud-root {
     position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
+    left: 0; top: 0; right: 0; bottom: 0;
 }
 
 .hud-safe-area {
     position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-}
-
-/* ═══════════════════════════════════════════
-   LEVEL BADGE — top-left, 180×180 circle
-   ═══════════════════════════════════════════ */
-.level-badge {
-    position: absolute;
-    left: 30px;
-    top: 25px;
-    width: 180px;
-    height: 180px;
-}
-
-.level-shadow {
-    position: absolute;
-    left: -4px;
-    top: 2px;
-    right: -4px;
-    bottom: -6px;
-    border-radius: 50%;
-    background-color: rgba(0, 0, 0, 0.35);
-}
-
-.level-border {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 50%;
-    background-color: rgb(18, 26, 77);
-}
-
-.level-fill {
-    position: absolute;
-    left: 12px;
-    top: 12px;
-    right: 12px;
-    bottom: 12px;
-    border-radius: 50%;
-    background-color: rgb(120, 190, 255);
-    border-width: 3px;
-    border-color: rgba(255, 255, 255, 0.25);
-}
-
-.level-label {
-    position: absolute;
-    left: 10%;
-    top: 22%;
-    right: 10%;
-    height: 28%;
-    -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
-    font-size: 28px;
-    -unity-text-align: middle-center;
-    color: rgb(20, 40, 110);
-    -unity-font-style: bold;
-}
-
-.level-number {
-    position: absolute;
-    left: 10%;
-    top: 46%;
-    right: 10%;
-    height: 38%;
-    -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
-    font-size: 64px;
-    -unity-text-align: middle-center;
-    color: rgb(255, 255, 255);
-    -unity-font-style: bold;
-    text-shadow: 2px 2px 0 rgb(18, 26, 77);
-}
-
-/* ═══════════════════════════════════════════
-   TIMER — top-center
-   ═══════════════════════════════════════════ */
-.timer-group {
-    position: absolute;
-    left: 220px;
-    top: 25px;
-    right: 130px;
-    height: 120px;
-}
-
-/* -- "TIME" header badge -- */
-.timer-header {
-    position: absolute;
-    left: 50%;
-    top: 0;
-    translate: -50% 0;
-    width: 160px;
-    height: 36px;
-    flex-direction: row;
-    justify-content: center;
+    left: 0; top: 0; right: 0; bottom: 0;
     align-items: center;
-    background-color: rgb(18, 26, 77);
-    border-radius: 10px 10px 4px 4px;
 }
 
-.timer-header-text {
+/* ═══════════════════════════════════════════
+   HUD STRIP — fixed width, centered, slightly lower
+   ═══════════════════════════════════════════ */
+.hud-strip {
+    width: 940px;
+    height: 120px;
+    margin-top: 55px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 15px;
+}
+
+/* Background layer — sits behind all HUD elements */
+.hud-strip-bg {
+    position: absolute;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background-color: rgb(30, 100, 220);
+    border-radius: 60px;
+    border-width: 5px;
+    border-color: rgb(20, 70, 170);
+}
+
+/* ═══════════════════════════════════════════
+   LEVEL BADGE — circle on the left
+   ═══════════════════════════════════════════ */
+.hud-level {
+    width: 170px;
+    height: 170px;
+    margin-left: -20px;
+    margin-top: -25px;
+    flex-shrink: 0;
+}
+
+.hud-level-border {
+    position: absolute;
+    left: 0; top: 0; right: 0; bottom: 0;
+    border-radius: 50%;
+    background-color: rgb(60, 80, 140);
+    border-width: 4px;
+    border-color: rgb(45, 60, 110);
+}
+
+.hud-level-fill {
+    position: absolute;
+    left: 10px; top: 10px; right: 10px; bottom: 10px;
+    border-radius: 50%;
+    background-color: rgb(80, 150, 240);
+    border-width: 3px;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.hud-level-label {
+    position: absolute;
+    left: 10%; top: 18%; right: 10%; height: 28%;
     -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
     font-size: 22px;
     -unity-text-align: middle-center;
-    color: rgb(255, 204, 26);
+    color: rgba(255, 255, 255, 0.85);
     -unity-font-style: bold;
-    padding: 0 6px;
 }
 
-.timer-header-deco {
-    width: 10px;
-    height: 10px;
-    background-color: rgb(255, 204, 26);
-}
-
-/* -- Timer pill bar -- */
-.timer-pill {
+.hud-level-number {
     position: absolute;
-    left: 0;
-    top: 28px;
-    right: 0;
-    height: 80px;
-    background-color: rgb(18, 26, 77);
-    border-radius: 40px;
-    border-width: 4px;
-    border-color: rgb(12, 18, 55);
-    /* NO overflow:hidden — icon needs to protrude */
-}
-
-.timer-pill-fill {
-    position: absolute;
-    left: 8px;
-    top: 8px;
-    right: 8px;
-    bottom: 8px;
-    /* right value driven from code to shrink fill */
-    background-color: rgb(77, 191, 255);
-    border-radius: 32px;
-}
-
-.timer-text {
-    position: absolute;
-    left: 20px;
-    top: 0;
-    right: 80px;
-    bottom: 0;
+    left: 10%; top: 42%; right: 10%; height: 40%;
     -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
-    font-size: 42px;
+    font-size: 56px;
     -unity-text-align: middle-center;
     color: rgb(255, 255, 255);
     -unity-font-style: bold;
-    text-shadow: 1px 2px 0 rgba(0, 0, 0, 0.4);
-}
-
-/* -- Circular icon on right edge -- */
-.timer-icon {
-    position: absolute;
-    right: -10px;
-    top: 50%;
-    translate: 0 -50%;
-    width: 68px;
-    height: 68px;
-    border-radius: 50%;
-    background-color: rgb(18, 26, 77);
-    border-width: 4px;
-    border-color: rgb(12, 18, 55);
-    justify-content: center;
-    align-items: center;
-}
-
-.timer-icon-inner {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background-color: rgb(64, 140, 242);
+    text-shadow: 1px 2px 0 rgba(0, 0, 0, 0.35);
 }
 
 /* ═══════════════════════════════════════════
-   PAUSE BUTTON — bottom-center, 120×120
+   TIMER — center of strip
    ═══════════════════════════════════════════ */
-/* Pause button — top-right, beside timer icon */
+.hud-timer {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px;
+}
+
+.hud-timer-header {
+    -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
+    font-size: 22px;
+    -unity-text-align: middle-center;
+    color: rgba(255, 255, 255, 0.7);
+    -unity-font-style: bold;
+    margin-bottom: 2px;
+}
+
+.hud-timer-text {
+    -unity-font-definition: url("project://database/Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf");
+    font-size: 52px;
+    -unity-text-align: middle-center;
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    text-shadow: 1px 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* ═══════════════════════════════════════════
+   PAUSE BUTTON — right side of strip
+   ═══════════════════════════════════════════ */
 #ui_hud_btn_pause {
-    position: absolute;
-    right: 25px;
-    top: 55px;
     width: 90px;
     height: 90px;
-    border-radius: 45px;
-    background-color: rgb(255, 204, 26);
-    border-width: 5px;
-    border-color: rgb(190, 145, 0);
+    border-radius: 22px;
+    background-color: rgb(180, 140, 40);
+    border-width: 4px;
+    border-color: rgb(140, 105, 25);
     margin: 0;
+    margin-right: 15px;
     padding: 0;
+    flex-shrink: 0;
     justify-content: center;
     align-items: center;
     -unity-font-definition: none;
     color: rgba(0, 0, 0, 0);
     background-image: none;
-    -unity-background-image-tint-color: rgba(0, 0, 0, 0);
 }
 
 #ui_hud_btn_pause:hover {
-    background-color: rgb(255, 220, 70);
-    border-color: rgb(190, 145, 0);
+    background-color: rgb(200, 160, 50);
 }
 
 #ui_hud_btn_pause:active {
-    scale: 0.92 0.92;
-    background-color: rgb(230, 184, 20);
-    border-color: rgb(170, 130, 0);
+    scale: 0.93 0.93;
+    background-color: rgb(160, 120, 35);
 }
 
-.pause-icon {
-    width: 28px;
-    height: 34px;
-    border-left-width: 10px;
-    border-right-width: 10px;
+.hud-pause-icon {
+    width: 36px;
+    height: 40px;
+    border-left-width: 11px;
+    border-right-width: 11px;
     border-top-width: 0;
     border-bottom-width: 0;
     border-left-color: rgb(255, 255, 255);

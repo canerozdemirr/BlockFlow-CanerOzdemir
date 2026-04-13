@@ -46,5 +46,9 @@
       "Bash(curl -sL \"https://github.com/google/fonts/raw/main/ofl/lilitaone/LilitaOne-Regular.ttf\" -o \"Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf\")",
       "Bash(npx unity-mcp-cli:*)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "ai-game-developer"
+  ],
+  "enableAllProjectMcpServers": true
 }

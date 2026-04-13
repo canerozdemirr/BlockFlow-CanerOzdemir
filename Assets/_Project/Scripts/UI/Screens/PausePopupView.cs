@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
+using PrimeTween;
 using UnityEngine;
 using UnityEngine.UIElements;
 using VContainer;
 
 /// <summary>
-/// UI Toolkit pause popup. Defers element queries to OnEnable
-/// to ensure UIDocument visual tree is ready.
+/// Settings-style pause panel. Slides down from top.
+/// Sets Time.timeScale to 0 on open, 1 on close.
+/// Contains Sound/Music/Haptic toggles and HOME button.
 /// </summary>
 [RequireComponent(typeof(UIDocument))]
 public sealed class PausePopupView : MonoBehaviour
@@ -14,8 +16,7 @@ public sealed class PausePopupView : MonoBehaviour
     private VisualElement root;
     private VisualElement overlay;
     private VisualElement panel;
-    private Button resumeBtn;
-    private Button restartBtn;
+    private Button closeBtn;
     private Button homeBtn;
     private bool uiReady;
 
@@ -23,6 +24,8 @@ public sealed class PausePopupView : MonoBehaviour
     private LevelRunner runner;
     private GameStateService state;
     private readonly List<IDisposable> subs = new List<IDisposable>();
+
+    private const float SlideDuration = 0.35f;
 
     [Inject]
     public void Construct(IEventBus bus, LevelRunner runner, GameStateService state)
@@ -58,13 +61,11 @@ public sealed class PausePopupView : MonoBehaviour
         overlay = ve.Q("ui_popup_pause_overlay");
         panel   = ve.Q("ui_popup_pause_panel");
 
-        resumeBtn  = ve.Q<Button>("ui_popup_pause_btn_resume");
-        restartBtn = ve.Q<Button>("ui_popup_pause_btn_restart");
-        homeBtn    = ve.Q<Button>("ui_popup_pause_btn_home");
+        closeBtn = ve.Q<Button>("ui_popup_pause_btn_close");
+        homeBtn  = ve.Q<Button>("ui_popup_pause_btn_home");
 
-        if (resumeBtn != null)  resumeBtn.clicked  += OnResume;
-        if (restartBtn != null) restartBtn.clicked += OnRestart;
-        if (homeBtn != null)    homeBtn.clicked    += OnHome;
+        if (closeBtn != null) closeBtn.clicked += OnClose;
+        if (homeBtn != null)  homeBtn.clicked  += OnHome;
 
         uiReady = root != null;
         HideImmediate();
@@ -75,42 +76,81 @@ public sealed class PausePopupView : MonoBehaviour
         for (int i = 0; i < subs.Count; i++) subs[i].Dispose();
         subs.Clear();
 
-        if (resumeBtn != null)  resumeBtn.clicked  -= OnResume;
-        if (restartBtn != null) restartBtn.clicked -= OnRestart;
-        if (homeBtn != null)    homeBtn.clicked    -= OnHome;
+        if (closeBtn != null) closeBtn.clicked -= OnClose;
+        if (homeBtn != null)  homeBtn.clicked  -= OnHome;
     }
 
     public void Show()
     {
         if (state == null || state.Current != GamePhase.Playing) return;
         if (!uiReady) InitUI();
+
         state.RequestPause();
-        UIToolkitPopupAnimator.AnimateShow(root, overlay, panel);
+        Time.timeScale = 0f;
+
+        if (root == null) return;
+        root.RemoveFromClassList("hidden");
+
+        // Overlay fade in
+        if (overlay != null)
+        {
+            overlay.style.opacity = 0f;
+            Tween.Custom(0f, 1f, SlideDuration, val => overlay.style.opacity = val,
+                ease: Ease.OutQuad, useUnscaledTime: true);
+        }
+
+        // Panel slides down from above
+        if (panel != null)
+        {
+            panel.transform.position = new Vector3(0, -800f, 0);
+            panel.style.opacity = 1f;
+            Tween.Custom(-800f, 0f, SlideDuration, val =>
+                panel.transform.position = new Vector3(0, val, 0),
+                ease: Ease.OutBack, useUnscaledTime: true);
+        }
     }
 
     private void HideImmediate()
     {
         UIToolkitPopupAnimator.HideImmediate(root);
+        Time.timeScale = 1f;
     }
 
-    private void OnResume()
+    private void AnimateHide(Action onComplete = null)
     {
-        UIToolkitPopupAnimator.AnimateHide(root, overlay, panel, 0.25f,
-            () => state?.RequestResume());
-    }
-
-    private void OnRestart()
-    {
-        UIToolkitPopupAnimator.AnimateHide(root, overlay, panel, 0.25f, () =>
+        // Panel slides up
+        if (panel != null)
         {
-            state?.RequestResume();
-            runner?.Reload();
-        });
+            Tween.Custom(0f, -800f, SlideDuration * 0.7f, val =>
+                panel.transform.position = new Vector3(0, val, 0),
+                ease: Ease.InBack, useUnscaledTime: true);
+        }
+
+        // Overlay fade out
+        if (overlay != null)
+        {
+            Tween.Custom(1f, 0f, SlideDuration * 0.7f, val => overlay.style.opacity = val,
+                ease: Ease.InQuad, useUnscaledTime: true);
+        }
+
+        Tween.Delay(SlideDuration * 0.7f, () =>
+        {
+            root?.AddToClassList("hidden");
+            if (panel != null)
+                panel.transform.position = Vector3.zero;
+            Time.timeScale = 1f;
+            onComplete?.Invoke();
+        }, useUnscaledTime: true);
+    }
+
+    private void OnClose()
+    {
+        AnimateHide(() => state?.RequestResume());
     }
 
     private void OnHome()
     {
-        UIToolkitPopupAnimator.AnimateHide(root, overlay, panel, 0.25f, () =>
+        AnimateHide(() =>
         {
             state?.RequestResume();
             SceneFlowManager.UnloadGameplay();

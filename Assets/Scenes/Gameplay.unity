@@ -881,7 +881,7 @@ MonoBehaviour:
   levelCatalog: {fileID: 11400000, guid: 8c9612476c8d39749914bdf3ccfcacd8, type: 2}
   audioLibrary: {fileID: 0}
   cellSize: 1
-  grinderDepthOffset: 0
+  grinderDepthOffset: 0.5
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

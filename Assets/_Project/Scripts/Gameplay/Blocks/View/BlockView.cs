@@ -28,9 +28,14 @@ public sealed class BlockView : MonoBehaviour
 
     private MaterialPropertyBlock mpb;
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private static readonly int ClipPlanePosId = Shader.PropertyToID("_ClipPlanePos");
+    private static readonly int ClipPlaneNormalId = Shader.PropertyToID("_ClipPlaneNormal");
+    private static readonly int ClipEnabledId = Shader.PropertyToID("_ClipEnabled");
 
-    // Active dismiss tween, cleaned up in Unbind so a pool release
-    // doesn't leak a callback onto a re-acquired instance.
+    private static Shader clipPlaneShader;
+    private Material originalMaterial;
+    private Material clipMaterial;
+
     private Tween dismissTween;
 
     public BlockModel Model { get; private set; }
@@ -57,6 +62,7 @@ public sealed class BlockView : MonoBehaviour
     public void Unbind()
     {
         if (dismissTween.isAlive) dismissTween.Stop();
+        RestoreOriginalMaterial();
         Model = null;
         transform.localScale = Vector3.one;
     }
@@ -84,9 +90,9 @@ public sealed class BlockView : MonoBehaviour
     }
 
     /// <summary>
-    /// The block slides toward the grinder while a continuous particle effect
-    /// at the grinder's center emits small colored cubes that scatter,
-    /// simulating the block being ground down.
+    /// The block slides into the grinder at full size. A clip plane shader
+    /// discards pixels past the grinder edge, making it look like the block
+    /// is being swallowed. Particles play at the grinder contact point.
     /// </summary>
     public void DismissToGrinder(Vector3 slideDir, float slideDist, Vector3 grinderWorldCenter,
         float duration, Action onComplete)
@@ -94,29 +100,20 @@ public sealed class BlockView : MonoBehaviour
         if (dismissTween.isAlive) dismissTween.Stop();
 
         Color debrisColor = GetBlockColor();
-
         Vector3 startPos = transform.localPosition;
-        Vector3 startScale = transform.localScale;
         Action callback = onComplete;
 
-        // Spawn continuous particle effect at the grinder's center (raised slightly)
+        // Switch to clip plane shader
+        EnableClipPlane(grinderWorldCenter, slideDir);
+
+        // Spawn particles at the grinder
         Transform particles = BlockShatterEffect.SpawnContinuous(
             grinderWorldCenter, debrisColor, slideDir, transform.parent);
 
+        // Slide the block through the grinder at full size — no scaling
         dismissTween = Tween.Custom(0f, 1f, duration, (float t) =>
         {
-            // Slide toward the grinder
             transform.localPosition = startPos + slideDir * (t * slideDist);
-
-            // Scale down along the slide axis — block gets "eaten"
-            Vector3 scale = startScale;
-            float shrink = 1f - t;
-            if (slideDir.x != 0) scale.x = startScale.x * Mathf.Max(shrink, 0.01f);
-            else if (slideDir.z != 0) scale.z = startScale.z * Mathf.Max(shrink, 0.01f);
-            else scale.y = startScale.y * Mathf.Max(shrink, 0.01f);
-            transform.localScale = scale;
-
-            // Particles stay fixed at the grinder center — no need to move them
         }, ease: Ease.InQuad);
 
         dismissTween.OnComplete(() =>
@@ -128,9 +125,55 @@ public sealed class BlockView : MonoBehaviour
                 Destroy(particles.gameObject, 0.6f);
             }
 
-            transform.localScale = Vector3.one;
+            RestoreOriginalMaterial();
             callback?.Invoke();
         });
+    }
+
+    /// <summary>
+    /// Swaps the renderer to the clip plane shader and sets the clip plane
+    /// at the grinder's world position, facing back toward the block.
+    /// </summary>
+    private void EnableClipPlane(Vector3 planePosition, Vector3 slideDir)
+    {
+        if (colorRenderer == null) return;
+
+        // Cache and load shader
+        if (clipPlaneShader == null)
+            clipPlaneShader = Shader.Find("BlockFlow/BlockClipPlane");
+        if (clipPlaneShader == null) return;
+
+        // Save original material for restore
+        originalMaterial = colorRenderer.sharedMaterial;
+
+        // Create clip material instance with same base color
+        clipMaterial = new Material(clipPlaneShader);
+        Color blockColor = GetBlockColor();
+        clipMaterial.SetColor(BaseColorId, blockColor);
+        clipMaterial.SetVector(ClipPlanePosId, planePosition);
+        // Normal points AGAINST the slide direction — pixels on the far side get clipped
+        clipMaterial.SetVector(ClipPlaneNormalId, slideDir.normalized);
+        clipMaterial.SetFloat(ClipEnabledId, 1f);
+
+        colorRenderer.material = clipMaterial;
+    }
+
+    /// <summary>Restores the original shared material after grind completes.</summary>
+    private void RestoreOriginalMaterial()
+    {
+        if (colorRenderer != null && originalMaterial != null)
+        {
+            colorRenderer.sharedMaterial = originalMaterial;
+            // Re-apply color via MPB
+            Color c = GetBlockColor();
+            if (c != Color.clear) ApplyColor(c);
+        }
+        if (clipMaterial != null)
+        {
+            Destroy(clipMaterial);
+            clipMaterial = null;
+        }
+        originalMaterial = null;
     }
 
     private Color GetBlockColor()
