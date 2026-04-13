@@ -169,6 +169,8 @@ public sealed class BlockView : MonoBehaviour
     {
         if (dismissTween.isAlive) dismissTween.Stop();
 
+        HideArrows();
+
         Color debrisColor = GetBlockColor();
         Vector3 startPos = transform.localPosition;
         Action callback = onComplete;

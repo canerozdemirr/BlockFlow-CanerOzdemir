@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using VContainer.Unity;
+using Object = UnityEngine.Object;
 
 /// <summary>
 /// Implements the "global grind counter" rule picked during planning: every
@@ -79,55 +80,26 @@ public sealed class IceMeltService : IStartable, IDisposable
         scratch.Clear();
     }
 
+    private static GameObject cachedIcePrefab;
+
     /// <summary>
-    /// Spawns a burst of light blue/white ice shard particles at the block's position.
+    /// Spawns the IceShatterEffect prefab at the block's position.
+    /// The prefab plays on awake and self-destructs via StopAction.Destroy.
     /// </summary>
     private static void SpawnIceShatter(Vector3 worldPosition)
     {
-        var go = new GameObject("IceShatter");
-        go.transform.position = worldPosition + Vector3.up * 0.5f;
+        if (cachedIcePrefab == null)
+        {
+            cachedIcePrefab = Resources.Load<GameObject>("IceShatterEffect");
+            #if UNITY_EDITOR
+            if (cachedIcePrefab == null)
+                cachedIcePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/_Project/Prefabs/Gameplay/IceShatterEffect.prefab");
+            #endif
+        }
 
-        var ps = go.AddComponent<ParticleSystem>();
-        var main = ps.main;
-        main.duration = 0.5f;
-        main.loop = false;
-        main.startLifetime = new ParticleSystem.MinMaxCurve(0.3f, 0.6f);
-        main.startSpeed = new ParticleSystem.MinMaxCurve(3f, 6f);
-        main.startSize = new ParticleSystem.MinMaxCurve(0.08f, 0.18f);
-        main.startColor = new Color(0.75f, 0.9f, 1f, 0.9f);
-        main.maxParticles = 30;
-        main.simulationSpace = ParticleSystemSimulationSpace.World;
-        main.gravityModifier = 2f;
-        main.playOnAwake = false;
-        main.stopAction = ParticleSystemStopAction.Destroy;
+        if (cachedIcePrefab == null) return;
 
-        var emission = ps.emission;
-        emission.rateOverTime = 0;
-        emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 20, 30) });
-
-        var shape = ps.shape;
-        shape.shapeType = ParticleSystemShapeType.Sphere;
-        shape.radius = 0.3f;
-
-        var sol = ps.sizeOverLifetime;
-        sol.enabled = true;
-        sol.size = new ParticleSystem.MinMaxCurve(1f,
-            new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(1f, 0f)));
-
-        var col = ps.colorOverLifetime;
-        col.enabled = true;
-        var gradient = new Gradient();
-        gradient.SetKeys(
-            new[] { new GradientColorKey(new Color(0.8f, 0.92f, 1f), 0f), new GradientColorKey(Color.white, 1f) },
-            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) });
-        col.color = gradient;
-
-        var renderer = go.GetComponent<ParticleSystemRenderer>();
-        var shader = Shader.Find("Particles/Standard Unlit");
-        if (shader == null) shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
-        renderer.material = new Material(shader);
-        renderer.material.SetColor("_Color", new Color(0.75f, 0.9f, 1f));
-
-        ps.Play();
+        Object.Instantiate(cachedIcePrefab, worldPosition + Vector3.up * 1.0f, Quaternion.identity);
     }
 }

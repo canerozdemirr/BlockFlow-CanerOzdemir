@@ -184,10 +184,11 @@ public sealed class GrinderService : IStartable, IDisposable
             // Scale duration proportionally so bigger blocks don't rush through
             float duration = ConsumeTweenDuration + blockExtent * 0.1f;
 
-            var grinderCenter = ComputeGrinderWorldCenter(grinder);
+            int blockParallelExtent = ComputeBlockParallelExtent(block, grinder.Edge);
+            var blockEntryPoint = ComputeBlockEdgeCenter(block, grinder);
 
-            captured.DismissToGrinder(slideDir, slideDist, grinderCenter, duration,
-                () => blockViewFactory.Release(captured), grinder.Width);
+            captured.DismissToGrinder(slideDir, slideDist, blockEntryPoint, duration,
+                () => blockViewFactory.Release(captured), blockParallelExtent);
         }
 
         bus.Publish(new BlockGroundEvent(id, grinder.Id, colorId));
@@ -228,6 +229,86 @@ public sealed class GrinderService : IStartable, IDisposable
         }
 
         // Convert from grid-local to world space
+        if (context.GridRoot != null)
+            return context.GridRoot.TransformPoint(localPos);
+        return localPos;
+    }
+
+    /// <summary>
+    /// Returns how many cells the block spans along the grinder's parallel axis.
+    /// Used to size the grind particles to match the block, not the grinder.
+    /// </summary>
+    private static int ComputeBlockParallelExtent(BlockModel block, GridEdge edge)
+    {
+        var offsets = block.CellOffsets;
+        if (offsets == null || offsets.Length == 0) return 1;
+
+        int min = int.MaxValue;
+        int max = int.MinValue;
+
+        for (int i = 0; i < offsets.Length; i++)
+        {
+            // Parallel axis: X for Top/Bottom, Y for Left/Right
+            int val = (edge == GridEdge.Top || edge == GridEdge.Bottom)
+                ? offsets[i].x
+                : offsets[i].y;
+            if (val < min) min = val;
+            if (val > max) max = val;
+        }
+
+        return max - min + 1;
+    }
+
+    /// <summary>
+    /// Computes the world-space point where the block meets the grinder edge,
+    /// centered along the block's cells on that edge. Particles spawn here
+    /// so they align with the block, not the grinder's full coverage area.
+    /// </summary>
+    private Vector3 ComputeBlockEdgeCenter(BlockModel block, GrinderModel grinder)
+    {
+        var gridSize = context.Grid.Size;
+        var offsets = block.CellOffsets;
+        var origin = block.Origin;
+
+        // Find block's min/max along the grinder's parallel axis
+        int min = int.MaxValue;
+        int max = int.MinValue;
+        for (int i = 0; i < offsets.Length; i++)
+        {
+            int val = (grinder.Edge == GridEdge.Top || grinder.Edge == GridEdge.Bottom)
+                ? (origin.x + offsets[i].x)
+                : (origin.y + offsets[i].y);
+            if (val < min) min = val;
+            if (val > max) max = val;
+        }
+
+        float centerAlongEdge = (min + max) * 0.5f * cellSpace.CellSize;
+        float edgeCoord;
+
+        Vector3 localPos;
+        switch (grinder.Edge)
+        {
+            case GridEdge.Right:
+                edgeCoord = (gridSize.width - 0.5f) * cellSpace.CellSize;
+                localPos = new Vector3(edgeCoord, 0.3f, centerAlongEdge);
+                break;
+            case GridEdge.Left:
+                edgeCoord = -0.5f * cellSpace.CellSize;
+                localPos = new Vector3(edgeCoord, 0.3f, centerAlongEdge);
+                break;
+            case GridEdge.Top:
+                edgeCoord = (gridSize.height - 0.5f) * cellSpace.CellSize;
+                localPos = new Vector3(centerAlongEdge, 0.3f, edgeCoord);
+                break;
+            case GridEdge.Bottom:
+                edgeCoord = -0.5f * cellSpace.CellSize;
+                localPos = new Vector3(centerAlongEdge, 0.3f, edgeCoord);
+                break;
+            default:
+                localPos = Vector3.zero;
+                break;
+        }
+
         if (context.GridRoot != null)
             return context.GridRoot.TransformPoint(localPos);
         return localPos;

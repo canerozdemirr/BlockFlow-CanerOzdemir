@@ -38,7 +38,7 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         public GridCoord StartOrigin;
         public Vector3 StartLocalHit;
         public Vector3 StartViewLocalPos;
-        // Max distance the block can slide from start, in local units
+        // Max distance the block can slide from start, in local units (axis-locked)
         public float MaxPositive;
         public float MaxNegative;
         public bool LimitsComputed;
@@ -166,19 +166,69 @@ public sealed class DragController : ITickable, IStartable, IDisposable
 
         var deltaLocal = localHit - session.StartLocalHit;
 
-        // Lock axis on first significant movement
+        if (!context.Grid.TryGetBlock(session.BlockId, out var block))
+        {
+            ClearSession();
+            return;
+        }
+
+        // Free blocks (no axis lock) move in both axes simultaneously
+        if (session.BlockLock == BlockAxisLock.None)
+        {
+            // Recompute limits each frame from current model position
+            var grid = context.Grid;
+
+            int rightMax = grid.SlideUntilBlocked(session.BlockId, GridDirection.Right, 100, out _);
+            if (rightMax > 0) grid.SlideUntilBlocked(session.BlockId, GridDirection.Left, rightMax, out _);
+
+            int leftMax = grid.SlideUntilBlocked(session.BlockId, GridDirection.Left, 100, out _);
+            if (leftMax > 0) grid.SlideUntilBlocked(session.BlockId, GridDirection.Right, leftMax, out _);
+
+            int upMax = grid.SlideUntilBlocked(session.BlockId, GridDirection.Up, 100, out _);
+            if (upMax > 0) grid.SlideUntilBlocked(session.BlockId, GridDirection.Down, upMax, out _);
+
+            int downMax = grid.SlideUntilBlocked(session.BlockId, GridDirection.Down, 100, out _);
+            if (downMax > 0) grid.SlideUntilBlocked(session.BlockId, GridDirection.Up, downMax, out _);
+
+            int curOffX = block.Origin.x - session.StartOrigin.x;
+            int curOffY = block.Origin.y - session.StartOrigin.y;
+
+            float maxDxPos = (curOffX + rightMax) * cellSpace.CellSize;
+            float maxDxNeg = (curOffX - leftMax) * cellSpace.CellSize;
+            float maxDzPos = (curOffY + upMax) * cellSpace.CellSize;
+            float maxDzNeg = (curOffY - downMax) * cellSpace.CellSize;
+
+            float dx = Mathf.Clamp(deltaLocal.x, maxDxNeg, maxDxPos);
+            float dz = Mathf.Clamp(deltaLocal.z, maxDzNeg, maxDzPos);
+
+            // If clamped on any axis, reset the start hit so delta doesn't
+            // accumulate in the background and cause snapping when freed.
+            bool clampedX = !Mathf.Approximately(dx, deltaLocal.x);
+            bool clampedZ = !Mathf.Approximately(dz, deltaLocal.z);
+            if (clampedX || clampedZ)
+            {
+                var adjust = session.StartLocalHit;
+                if (clampedX) adjust.x = localHit.x - dx;
+                if (clampedZ) adjust.z = localHit.z - dz;
+                session.StartLocalHit = adjust;
+            }
+
+            var viewPos = session.StartViewLocalPos;
+            viewPos.x += dx;
+            viewPos.z += dz;
+            session.View.transform.localPosition = viewPos;
+
+            UpdateModelToNearestFree(block, dx, dz);
+            return;
+        }
+
+        // Axis-locked blocks: lock on first significant movement
         if (session.LockedAxis == DragAxis.None)
         {
             float absX = Mathf.Abs(deltaLocal.x);
             float absZ = Mathf.Abs(deltaLocal.z);
             if (absX < AxisLockThreshold && absZ < AxisLockThreshold) return;
             session.LockedAxis = absX > absZ ? DragAxis.Horizontal : DragAxis.Vertical;
-        }
-
-        if (!context.Grid.TryGetBlock(session.BlockId, out var block))
-        {
-            ClearSession();
-            return;
         }
 
         // Compute slide limits once after axis is locked
@@ -196,13 +246,13 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         axisDelta = Mathf.Clamp(axisDelta, -session.MaxNegative, session.MaxPositive);
 
         // Move view freely to follow finger
-        var viewPos = session.StartViewLocalPos;
+        var viewPos2 = session.StartViewLocalPos;
         if (session.LockedAxis == DragAxis.Horizontal)
-            viewPos.x = session.StartViewLocalPos.x + axisDelta;
+            viewPos2.x = session.StartViewLocalPos.x + axisDelta;
         else
-            viewPos.z = session.StartViewLocalPos.z + axisDelta;
+            viewPos2.z = session.StartViewLocalPos.z + axisDelta;
 
-        session.View.transform.localPosition = viewPos;
+        session.View.transform.localPosition = viewPos2;
 
         // Update model to nearest valid cell (silently, no view tween)
         UpdateModelToNearest(block, axisDelta);
@@ -248,6 +298,40 @@ public sealed class DragController : ITickable, IStartable, IDisposable
 
         session.MaxPositive = posSteps * cellSpace.CellSize;
         session.MaxNegative = negSteps * cellSpace.CellSize;
+    }
+
+    /// <summary>
+    /// Updates the model for free-movement blocks along both axes.
+    /// </summary>
+    private void UpdateModelToNearestFree(BlockModel block, float dx, float dz)
+    {
+        int desiredX = Mathf.RoundToInt(dx / cellSpace.CellSize);
+        int desiredZ = Mathf.RoundToInt(dz / cellSpace.CellSize);
+
+        int currentOffsetX = block.Origin.x - session.StartOrigin.x;
+        int currentOffsetZ = block.Origin.y - session.StartOrigin.y;
+
+        int diffX = desiredX - currentOffsetX;
+        int diffZ = desiredZ - currentOffsetZ;
+
+        int totalMoved = 0;
+
+        if (diffX != 0)
+        {
+            var dir = diffX > 0 ? GridDirection.Right : GridDirection.Left;
+            int moved = context.Grid.SlideUntilBlocked(session.BlockId, dir, Mathf.Abs(diffX), out _);
+            totalMoved += moved;
+        }
+
+        if (diffZ != 0)
+        {
+            var dir = diffZ > 0 ? GridDirection.Up : GridDirection.Down;
+            int moved = context.Grid.SlideUntilBlocked(session.BlockId, dir, Mathf.Abs(diffZ), out _);
+            totalMoved += moved;
+        }
+
+        if (totalMoved > 0)
+            bus.Publish(new BlockSteppedEvent(session.BlockId, totalMoved));
     }
 
     /// <summary>

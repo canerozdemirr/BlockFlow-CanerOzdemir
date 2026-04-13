@@ -47,7 +47,8 @@
       "Bash(npx unity-mcp-cli:*)",
       "Bash(git ls-remote:*)",
       "Bash(grep -r \"public static void\" Library/PackageCache/xyz.candycoded.hapticfeedback@*/Scripts/)",
-      "Bash(grep -r \"public static void\" Library/PackageCache/xyz.candycoded.hapticfeedback@*/*.cs)"
+      "Bash(grep -r \"public static void\" Library/PackageCache/xyz.candycoded.hapticfeedback@*/*.cs)",
+      "mcp__ai-game-developer__gameobject-modify"
     ]
   },
   "enableAllProjectMcpServers": true,
