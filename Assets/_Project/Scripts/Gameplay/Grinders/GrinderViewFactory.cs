@@ -63,8 +63,6 @@ public sealed class GrinderViewFactory : IGrinderViewFactory
         t.localPosition = pos;
         t.localRotation = rot;
 
-        Debug.Log($"[GrinderPlacement] edge={model.Edge} pos={model.Position} w={model.Width} grid={gridSize.width}x{gridSize.height} → localPos={pos} rot={rot.eulerAngles} worldBounds={view.GetComponentInChildren<MeshRenderer>()?.bounds}");
-
         view.Bind(model, ResolveColor(model.ColorId));
         return view;
     }

@@ -100,6 +100,9 @@ public sealed class LevelBuilder
         // 5. Grinder spawn pass.
         SpawnGrinders(payload, size);
 
+        // 5b. Fill uncovered edge cells with walls.
+        gridBuilder.BuildEdgeWalls(grid, payload.Grinders, levelRoot);
+
         // 6. Bind the level context so other systems (drag, UI, evaluators) can read it.
         levelContext.Bind(grid, levelRoot);
 

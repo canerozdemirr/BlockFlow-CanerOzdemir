@@ -14,13 +14,17 @@ public sealed class GridBuilder
 {
     private readonly GameObject groundTilePrefab;
     private readonly GameObject wallPrefab;
+    private readonly GameObject cornerWallPrefab;
     private readonly CellSpace cellSpace;
+    private readonly float grinderDepthOffset;
 
-    public GridBuilder(GameObject groundTilePrefab, GameObject wallPrefab, CellSpace cellSpace)
+    public GridBuilder(GameObject groundTilePrefab, GameObject wallPrefab, GameObject cornerWallPrefab, CellSpace cellSpace, float grinderDepthOffset = 0f)
     {
         this.groundTilePrefab = groundTilePrefab;
         this.wallPrefab = wallPrefab;
+        this.cornerWallPrefab = cornerWallPrefab;
         this.cellSpace = cellSpace;
+        this.grinderDepthOffset = grinderDepthOffset;
     }
 
     /// <summary>
@@ -62,6 +66,133 @@ public sealed class GridBuilder
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Places wall prefabs along every grid edge cell that is NOT covered by
+    /// a grinder. Uses the same placement conventions as <see cref="GrinderPlacement"/>
+    /// so walls sit flush against the tile boundary.
+    /// </summary>
+    public void BuildEdgeWalls(GridModel grid, GrinderDto[] grinders, Transform parent)
+    {
+        if (wallPrefab == null || grid == null || cellSpace == null) return;
+
+        var size = grid.Size;
+        float cs = cellSpace.CellSize;
+        float half = cs * 0.5f;
+
+        float boundaryTop    = (size.height - 1) * cs + half;
+        float boundaryBottom = -half;
+        float boundaryRight  = (size.width  - 1) * cs + half;
+        float boundaryLeft   = -half;
+
+        // Build coverage masks: true = covered by a grinder.
+        bool[] topCov    = new bool[size.width];
+        bool[] bottomCov = new bool[size.width];
+        bool[] leftCov   = new bool[size.height];
+        bool[] rightCov  = new bool[size.height];
+
+        if (grinders != null)
+        {
+            for (int i = 0; i < grinders.Length; i++)
+            {
+                var g = grinders[i];
+                if (g == null) continue;
+                bool[] mask;
+                switch (g.Edge)
+                {
+                    case "Top":    mask = topCov;    break;
+                    case "Bottom": mask = bottomCov; break;
+                    case "Left":   mask = leftCov;   break;
+                    case "Right":  mask = rightCov;  break;
+                    default: continue;
+                }
+                for (int c = g.Position; c < g.Position + g.Width && c < mask.Length; c++)
+                    mask[c] = true;
+            }
+        }
+
+        // The wall mesh (child rotation 270,180,0) extends +X in depth and
+        // +Z along the edge from its pivot at identity rotation.
+        // Rotations per edge:
+        //   Right:  identity       → depth +X (outward), along +Z, pivot at cell - half
+        //   Left:   Euler(0,180,0) → depth -X (outward), along -Z, pivot at cell + half
+        //   Bottom: Euler(0,90,0)  → depth -Z (outward), along +X, pivot at cell - half
+        //   Top:    Euler(0,270,0) → depth +Z (outward), along -X, pivot at cell + half
+
+        // Top edge
+        for (int x = 0; x < size.width; x++)
+        {
+            if (topCov[x]) continue;
+            var pos = new Vector3(x * cs + half, 0f, boundaryTop);
+            var rot = Quaternion.Euler(0f, 270f, 0f);
+            SpawnEdgeWall(pos, rot, $"EdgeWall_Top ({x})", parent);
+        }
+
+        // Bottom edge
+        for (int x = 0; x < size.width; x++)
+        {
+            if (bottomCov[x]) continue;
+            var pos = new Vector3(x * cs - half, 0f, boundaryBottom);
+            var rot = Quaternion.Euler(0f, 90f, 0f);
+            SpawnEdgeWall(pos, rot, $"EdgeWall_Bottom ({x})", parent);
+        }
+
+        // Left edge
+        for (int y = 0; y < size.height; y++)
+        {
+            if (leftCov[y]) continue;
+            var pos = new Vector3(boundaryLeft, 0f, y * cs + half);
+            var rot = Quaternion.Euler(0f, 180f, 0f);
+            SpawnEdgeWall(pos, rot, $"EdgeWall_Left ({y})", parent);
+        }
+
+        // Right edge
+        for (int y = 0; y < size.height; y++)
+        {
+            if (rightCov[y]) continue;
+            var pos = new Vector3(boundaryRight, 0f, y * cs - half);
+            var rot = Quaternion.identity;
+            SpawnEdgeWall(pos, rot, $"EdgeWall_Right ({y})", parent);
+        }
+
+        // Corners — bridge the gap where two edge wall lines meet.
+        // The corner mesh at identity covers -X and -Z from pivot (0.30 × 0.30).
+        // Each corner is rotated so it fills the outward-facing gap.
+        if (cornerWallPrefab != null)
+        {
+            // Bottom-Left
+            SpawnCorner(new Vector3(boundaryLeft, 0f, boundaryBottom),
+                Quaternion.identity, "EdgeCorner_BL", parent);
+
+            // Bottom-Right
+            SpawnCorner(new Vector3(boundaryRight, 0f, boundaryBottom),
+                Quaternion.Euler(0f, 270f, 0f), "EdgeCorner_BR", parent);
+
+            // Top-Left
+            SpawnCorner(new Vector3(boundaryLeft, 0f, boundaryTop),
+                Quaternion.Euler(0f, 90f, 0f), "EdgeCorner_TL", parent);
+
+            // Top-Right
+            SpawnCorner(new Vector3(boundaryRight, 0f, boundaryTop),
+                Quaternion.Euler(0f, 180f, 0f), "EdgeCorner_TR", parent);
+        }
+    }
+
+    private void SpawnEdgeWall(Vector3 localPos, Quaternion localRot, string name, Transform parent)
+    {
+        var wall = Object.Instantiate(wallPrefab, parent);
+        wall.transform.localPosition = localPos;
+        wall.transform.localRotation = localRot;
+        wall.name = name;
+    }
+
+    private void SpawnCorner(Vector3 localPos, Quaternion localRot, string name, Transform parent)
+    {
+        var corner = Object.Instantiate(cornerWallPrefab, parent);
+        corner.transform.localPosition = localPos;
+        corner.transform.localRotation = localRot;
+        corner.name = name;
     }
 
     /// <summary>

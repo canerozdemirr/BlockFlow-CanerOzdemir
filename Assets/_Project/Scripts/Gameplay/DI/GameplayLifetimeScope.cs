@@ -32,8 +32,11 @@ public class GameplayLifetimeScope : LifetimeScope
     [SerializeField, Tooltip("Ground tile prefab stamped once per cell by the GridBuilder.")]
     private GameObject groundTilePrefab;
 
-    [SerializeField, Tooltip("Wall prefab stamped on cells flagged IsWall.")]
+    [SerializeField, Tooltip("Wall prefab stamped on cells flagged IsWall and on uncovered grid edges.")]
     private GameObject wallPrefab;
+
+    [SerializeField, Tooltip("Corner wall prefab placed at the four grid corners to bridge edge wall gaps.")]
+    private GameObject cornerWallPrefab;
 
     [Header("Data")]
     [SerializeField, Tooltip("Palette used to resolve color ids to display colors.")]
@@ -105,7 +108,9 @@ public class GameplayLifetimeScope : LifetimeScope
         builder.Register(container => new GridBuilder(
             groundTilePrefab,
             wallPrefab,
-            container.Resolve<CellSpace>()),
+            cornerWallPrefab,
+            container.Resolve<CellSpace>(),
+            grinderDepthOffset),
             Lifetime.Singleton);
 
         // ---------- input & drag ----------

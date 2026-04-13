@@ -873,7 +873,9 @@ MonoBehaviour:
   viewParent: {fileID: 1248215614}
   groundTilePrefab: {fileID: 2816931157235360966, guid: 9d8e21bb8accd434491edb82f4228e5f,
     type: 3}
-  wallPrefab: {fileID: 7605759113495226311, guid: 22a85bf5991ee404c88d2f56d5901116,
+  wallPrefab: {fileID: 7066157528613775252, guid: 22a85bf5991ee404c88d2f56d5901116,
+    type: 3}
+  cornerWallPrefab: {fileID: 3092450049840823669, guid: aaac6219587a91f4c9e43544ee840515,
     type: 3}
   defaultPalette: {fileID: 11400000, guid: c33db65a6597c30459a5ff224841ee55, type: 2}
   blockCatalog: {fileID: 11400000, guid: 79ddab088f2fb114db4be1cf40308fad, type: 2}
