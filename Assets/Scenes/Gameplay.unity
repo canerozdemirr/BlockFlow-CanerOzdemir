@@ -882,7 +882,7 @@ MonoBehaviour:
   audioLibrary: {fileID: 0}
   arrowDecalMaterial: {fileID: 2100000, guid: c9937da7e1277a14db84988db8156244, type: 2}
   cellSize: 1
-  grinderDepthOffset: 0.5
+  grinderDepthOffset: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

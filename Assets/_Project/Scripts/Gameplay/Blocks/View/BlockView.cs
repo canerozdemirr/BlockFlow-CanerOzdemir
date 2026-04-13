@@ -87,14 +87,54 @@ public sealed class BlockView : MonoBehaviour
     }
 
     /// <summary>
-    /// Re-checks <see cref="BlockModel.IsIced"/> and toggles the ice overlay
-    /// accordingly. Called on bind and whenever the global grind counter
-    /// ticks ice down (Phase 6).
+    /// Re-checks <see cref="BlockModel.IsIced"/> and toggles the ice overlay.
+    /// Updates the ice count text and overlay opacity based on ice level.
+    /// Called on bind and whenever the global grind counter ticks ice down.
     /// </summary>
     public void RefreshIceOverlay()
     {
-        if (iceOverlay != null)
-            iceOverlay.SetActive(Model != null && Model.IsIced);
+        if (iceOverlay == null) return;
+
+        bool isIced = Model != null && Model.IsIced;
+        iceOverlay.SetActive(isIced);
+
+        if (!isIced) return;
+
+        // Update ice count text
+        var textMesh = iceOverlay.GetComponentInChildren<TextMesh>();
+        if (textMesh != null)
+        {
+            textMesh.text = Model.IceLevel.ToString();
+
+            // Create a runtime material from the font's own material, swapping the
+            // shader to AlwaysOnTop. This keeps the font atlas in sync when TextMesh
+            // regenerates its mesh on text changes.
+            var textRenderer = textMesh.GetComponent<MeshRenderer>();
+            if (textRenderer != null && textMesh.font != null && textMesh.font.material != null)
+            {
+                var alwaysOnTopShader = Shader.Find("BlockFlow/AlwaysOnTop");
+                if (alwaysOnTopShader != null && (textRenderer.material == null || textRenderer.material.shader != alwaysOnTopShader))
+                {
+                    var mat = new Material(textMesh.font.material);
+                    mat.shader = alwaysOnTopShader;
+                    mat.color = Color.white;
+                    textRenderer.material = mat;
+                }
+            }
+        }
+
+        // Update overlay opacity based on ice level — thicker ice = more opaque
+        var overlayRenderer = iceOverlay.GetComponent<Renderer>();
+        if (overlayRenderer != null)
+        {
+            float baseAlpha = 0.4f;
+            float alphaPerLevel = 0.15f;
+            float alpha = Mathf.Clamp01(baseAlpha + Model.IceLevel * alphaPerLevel);
+            var mpbIce = new MaterialPropertyBlock();
+            overlayRenderer.GetPropertyBlock(mpbIce);
+            mpbIce.SetColor("_Color", new Color(0.7f, 0.85f, 1f, alpha));
+            overlayRenderer.SetPropertyBlock(mpbIce);
+        }
     }
 
     /// <summary>
