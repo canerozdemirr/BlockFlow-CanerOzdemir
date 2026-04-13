@@ -18,6 +18,9 @@ public sealed class PausePopupView : MonoBehaviour
     private VisualElement panel;
     private Button closeBtn;
     private Button homeBtn;
+    private Toggle soundToggle;
+    private Toggle musicToggle;
+    private Toggle hapticToggle;
     private bool uiReady;
 
     private IEventBus bus;
@@ -64,8 +67,20 @@ public sealed class PausePopupView : MonoBehaviour
         closeBtn = ve.Q<Button>("ui_popup_pause_btn_close");
         homeBtn  = ve.Q<Button>("ui_popup_pause_btn_home");
 
+        soundToggle  = ve.Q<Toggle>("ui_popup_pause_toggle_sound");
+        musicToggle  = ve.Q<Toggle>("ui_popup_pause_toggle_music");
+        hapticToggle = ve.Q<Toggle>("ui_popup_pause_toggle_haptic");
+
         if (closeBtn != null) closeBtn.clicked += OnClose;
         if (homeBtn != null)  homeBtn.clicked  += OnHome;
+
+        if (hapticToggle != null)
+        {
+            hapticToggle.value = HapticsService.Enabled;
+            hapticToggle.RegisterValueChangedCallback(evt => HapticsService.Enabled = evt.newValue);
+        }
+
+        // TODO: Wire sound/music toggles to AudioService when implemented
 
         uiReady = root != null;
         HideImmediate();

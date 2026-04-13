@@ -7,7 +7,9 @@
         "VContainer",
         "UniTask",
         "PrimeTween.Runtime",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "CandyCoded.HapticFeedback",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

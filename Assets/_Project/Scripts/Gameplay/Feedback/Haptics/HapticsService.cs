@@ -4,20 +4,28 @@ using UnityEngine;
 using VContainer.Unity;
 
 /// <summary>
-/// Minimal haptics wrapper. Subscribes to the highest-value bus events and
-/// calls into <see cref="Handheld.Vibrate"/> on mobile targets. Unity's
-/// built-in API is a single "vibrate" call with no intensity control, so
-/// the <see cref="Tap"/>/<see cref="Bump"/>/<see cref="Strong"/> distinction
-/// is aspirational today — swapping in a real iOS Core Haptics plugin or
-/// Lofelt Nice Vibrations later is a drop-in change.
+/// Haptic feedback service using CandyCoded.HapticFeedback for native
+/// iOS Core Haptics and Android vibration patterns.
 ///
-/// On desktop the methods are no-ops so the same service works in editor
-/// without spamming anything.
+/// Intensity levels:
+///   Tap    → Selection feedback (lightest, drag pickup)
+///   Bump   → Light impact (wall bump, grind complete)
+///   Strong → Success/heavy (level win)
+///
+/// Respects an enabled flag that the pause settings toggle can control.
 /// </summary>
 public sealed class HapticsService : IStartable, IDisposable
 {
     private readonly IEventBus bus;
     private readonly List<IDisposable> subs = new List<IDisposable>();
+
+    private static bool enabled = true;
+
+    public static bool Enabled
+    {
+        get => enabled;
+        set => enabled = value;
+    }
 
     public HapticsService(IEventBus bus)
     {
@@ -39,19 +47,30 @@ public sealed class HapticsService : IStartable, IDisposable
         subs.Clear();
     }
 
-    /// <summary>Short, low-intensity pulse for light confirmations (drag pickup).</summary>
-    public void Tap() => Vibrate();
-
-    /// <summary>Medium pulse for impact feedback (wall bump, grind).</summary>
-    public void Bump() => Vibrate();
-
-    /// <summary>Heavier pulse for high-intensity moments (win, lose).</summary>
-    public void Strong() => Vibrate();
-
-    private static void Vibrate()
+    /// <summary>Lightest feedback — drag pickup, selection.</summary>
+    public void Tap()
     {
+        if (!enabled) return;
 #if UNITY_IOS || UNITY_ANDROID
-        Handheld.Vibrate();
+        CandyCoded.HapticFeedback.HapticFeedback.LightFeedback();
+#endif
+    }
+
+    /// <summary>Medium feedback — wall bump, grind, lose.</summary>
+    public void Bump()
+    {
+        if (!enabled) return;
+#if UNITY_IOS || UNITY_ANDROID
+        CandyCoded.HapticFeedback.HapticFeedback.MediumFeedback();
+#endif
+    }
+
+    /// <summary>Heavy feedback — level win.</summary>
+    public void Strong()
+    {
+        if (!enabled) return;
+#if UNITY_IOS || UNITY_ANDROID
+        CandyCoded.HapticFeedback.HapticFeedback.HeavyFeedback();
 #endif
     }
 }

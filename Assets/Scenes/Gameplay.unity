@@ -880,6 +880,7 @@ MonoBehaviour:
   grinderCatalog: {fileID: 11400000, guid: 4389eeadd44f7254a80b88b28f69ba7b, type: 2}
   levelCatalog: {fileID: 11400000, guid: 8c9612476c8d39749914bdf3ccfcacd8, type: 2}
   audioLibrary: {fileID: 0}
+  arrowDecalMaterial: {fileID: 2100000, guid: c9937da7e1277a14db84988db8156244, type: 2}
   cellSize: 1
   grinderDepthOffset: 0.5
 --- !u!1660057539 &9223372036854775807

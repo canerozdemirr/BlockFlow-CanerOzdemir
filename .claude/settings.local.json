@@ -44,11 +44,14 @@
       "Bash(unzip -o /tmp/lilita_one.zip -d /tmp/lilita_one)",
       "Bash(cp /tmp/lilita_one/LilitaOne-Regular.ttf \"Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf\")",
       "Bash(curl -sL \"https://github.com/google/fonts/raw/main/ofl/lilitaone/LilitaOne-Regular.ttf\" -o \"Assets/_Project/Art/Fonts/LilitaOne-Regular.ttf\")",
-      "Bash(npx unity-mcp-cli:*)"
+      "Bash(npx unity-mcp-cli:*)",
+      "Bash(git ls-remote:*)",
+      "Bash(grep -r \"public static void\" Library/PackageCache/xyz.candycoded.hapticfeedback@*/Scripts/)",
+      "Bash(grep -r \"public static void\" Library/PackageCache/xyz.candycoded.hapticfeedback@*/*.cs)"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "ai-game-developer"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

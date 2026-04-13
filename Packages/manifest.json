@@ -46,6 +46,7 @@
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
     "com.unity.modules.xr": "1.0.0",
+    "xyz.candycoded.hapticfeedback": "https://github.com/CandyCoded/HapticFeedback.git#v1.0.3",
     "com.ivanmurzak.unity.mcp": "0.63.4",
     "com.ivanmurzak.unity.mcp.animation": "1.1.23",
     "com.ivanmurzak.unity.mcp.particlesystem": "1.0.50",

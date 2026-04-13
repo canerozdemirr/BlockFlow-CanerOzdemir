@@ -51,6 +51,9 @@ public class GameplayLifetimeScope : LifetimeScope
     [SerializeField, Tooltip("Audio cue library consumed by AudioService. Optional; missing cues no-op so the scene still runs.")]
     private AudioLibrary audioLibrary;
 
+    [SerializeField, Tooltip("Decal material for block movement arrows. Uses SP_Arrow_BlockMove_03 texture.")]
+    private Material arrowDecalMaterial;
+
     [Header("Tuning")]
     [SerializeField, Min(0.1f), Tooltip("World-space size of a single cell. 1 is a sensible default; bump for chunkier layouts.")]
     private float cellSize = 1f;

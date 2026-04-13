@@ -26,6 +26,12 @@ public sealed class BlockView : MonoBehaviour
     [SerializeField, Tooltip("Transform used as the pivot for juicy tweens in Phase 7 (squash, wobble, pop). Never the transform being positioned by the factory.")]
     private Transform visualRoot;
 
+    [SerializeField, Tooltip("Horizontal arrow indicator quad (child of prefab, starts inactive).")]
+    private GameObject arrowHorizontal;
+
+    [SerializeField, Tooltip("Vertical arrow indicator quad (child of prefab, starts inactive).")]
+    private GameObject arrowVertical;
+
     private MaterialPropertyBlock mpb;
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
     private static readonly int ClipPlanePosId = Shader.PropertyToID("_ClipPlanePos");
@@ -52,6 +58,7 @@ public sealed class BlockView : MonoBehaviour
         ApplyColor(color);
         SyncTransform(space);
         RefreshIceOverlay();
+        RefreshArrows();
     }
 
     /// <summary>
@@ -63,6 +70,7 @@ public sealed class BlockView : MonoBehaviour
     {
         if (dismissTween.isAlive) dismissTween.Stop();
         RestoreOriginalMaterial();
+        HideArrows();
         Model = null;
         transform.localScale = Vector3.one;
     }
@@ -87,6 +95,28 @@ public sealed class BlockView : MonoBehaviour
     {
         if (iceOverlay != null)
             iceOverlay.SetActive(Model != null && Model.IsIced);
+    }
+
+    /// <summary>
+    /// Shows the appropriate arrow indicators based on the block's axis lock.
+    /// </summary>
+    public void RefreshArrows()
+    {
+        if (Model == null || Model.AxisLock == BlockAxisLock.None)
+        {
+            HideArrows();
+            return;
+        }
+
+        if (arrowHorizontal != null) arrowHorizontal.SetActive(Model.AxisLock == BlockAxisLock.Horizontal);
+        if (arrowVertical != null)   arrowVertical.SetActive(Model.AxisLock == BlockAxisLock.Vertical);
+    }
+
+    /// <summary>Hides both arrow indicators.</summary>
+    public void HideArrows()
+    {
+        if (arrowHorizontal != null) arrowHorizontal.SetActive(false);
+        if (arrowVertical != null)   arrowVertical.SetActive(false);
     }
 
     /// <summary>
