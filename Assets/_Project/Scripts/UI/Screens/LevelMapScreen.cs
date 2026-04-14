@@ -89,6 +89,8 @@ public sealed class LevelMapScreen : MonoBehaviour
         ve.style.top = 0;
         ve.style.right = 0;
         ve.style.bottom = 0;
+        // Keep the root transparent to picks — child buttons still register.
+        ve.pickingMode = PickingMode.Ignore;
     }
 
     private void OnTemplateContainerGeometryChanged(GeometryChangedEvent evt)

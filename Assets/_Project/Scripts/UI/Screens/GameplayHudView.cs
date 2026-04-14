@@ -50,6 +50,10 @@ public sealed class GameplayHudView : MonoBehaviour
         root.style.top = 0;
         root.style.right = 0;
         root.style.bottom = 0;
+        // Fullscreen root must not swallow picks; otherwise popup UIDocuments
+        // sharing this PanelSettings can have their clicks intercepted by the
+        // HUD's otherwise-empty root region.
+        root.pickingMode = PickingMode.Ignore;
 
         timerLabel       = root.Q<Label>("ui_hud_timer_text_value");
         levelNumberLabel = root.Q<Label>("ui_hud_level_number_value");

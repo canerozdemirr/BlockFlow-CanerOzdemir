@@ -26,12 +26,27 @@ public static class BlockShatterEffect
             return SpawnFallback(worldPosition, color, parent);
         }
 
-        var go = Object.Instantiate(prefab, worldPosition, Quaternion.identity);
-        if (parent != null) go.transform.SetParent(parent, true);
-        go.transform.position = worldPosition;
+        // Pull the spawn back toward the grid along -slideDir so particles appear
+        // at the grinder contact edge instead of floating past it. Without this,
+        // the cone's backward-straying particles render inside the grid because
+        // the caller passes the grinder's world center (which sits outside the
+        // grid by grinderDepthOffset).
+        float inset = Config != null ? Config.SpawnInsetFromGrinder : 0f;
+        Vector3 spawnPos = slideDir.sqrMagnitude > 0.0001f
+            ? worldPosition - slideDir.normalized * inset
+            : worldPosition;
 
-        // Orient the cone shape to spray outward from the grid (same direction as slide)
-        go.transform.rotation = Quaternion.LookRotation(slideDir);
+        var go = Object.Instantiate(prefab, spawnPos, Quaternion.identity);
+        if (parent != null) go.transform.SetParent(parent, true);
+        go.transform.position = spawnPos;
+
+        // Orient the cone shape to spray outward from the grid (same direction as slide).
+        // LookRotation requires a non-zero vector — fall back to identity otherwise
+        // so particles never fire toward a random axis (the "sometimes spawns
+        // backwards" case when slideDir is degenerate).
+        go.transform.rotation = slideDir.sqrMagnitude > 0.0001f
+            ? Quaternion.LookRotation(slideDir.normalized)
+            : Quaternion.identity;
 
         // Scale particle shape and intensity based on grinder width
         float widthScale = Mathf.Max(1f, grinderWidth);
@@ -45,6 +60,12 @@ public static class BlockShatterEffect
             var shapeScale = shape.scale;
             shapeScale.x = widthScale;
             shape.scale = shapeScale;
+
+            // Tighten the cone so fewer particles stray sideways/backwards.
+            // Only applies when Config authored a non-zero override.
+            float coneAngle = Config != null ? Config.ConeAngleOverride : 0f;
+            if (coneAngle > 0f && shape.shapeType == ParticleSystemShapeType.Cone)
+                shape.angle = coneAngle;
 
             var emission = ps.emission;
             emission.rateOverTime = emission.rateOverTime.constant * widthScale;
@@ -126,10 +147,17 @@ public static class BlockShatterEffect
         shape.radius = 0.2f;
 
         var renderer = go.GetComponent<ParticleSystemRenderer>();
-        var shader = Shader.Find("Particles/Standard Unlit");
-        if (shader == null) shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
-        renderer.material = new Material(shader);
-        renderer.material.SetColor("_Color", color);
+        var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+        if (shader == null) shader = Shader.Find("Particles/Standard Unlit");
+        if (shader == null) shader = Shader.Find("Sprites/Default");
+        // Guard: if every candidate was stripped we still must not throw; the
+        // caller depends on this method returning so the slide tween starts.
+        if (shader != null)
+        {
+            renderer.material = new Material(shader);
+            if (renderer.material.HasProperty("_Color"))     renderer.material.SetColor("_Color", color);
+            if (renderer.material.HasProperty("_BaseColor")) renderer.material.SetColor("_BaseColor", color);
+        }
 
         ps.Play();
         return go.transform;

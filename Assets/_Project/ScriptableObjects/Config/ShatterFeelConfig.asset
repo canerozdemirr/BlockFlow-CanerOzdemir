@@ -14,3 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sparkBlendRatio: 0.3
   sparkHighlightColor: {r: 1, g: 0.9, b: 0.6, a: 1}
+  spawnInsetFromGrinder: -0.5
+  coneAngleOverride: 20

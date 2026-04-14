@@ -64,6 +64,9 @@ public sealed class PausePopupView : MonoBehaviour
         ve.style.top = 0;
         ve.style.right = 0;
         ve.style.bottom = 0;
+        // See LevelOutcomePopupView: fullscreen root must not intercept picks
+        // so higher-sort docs don't block lower-sort popup buttons.
+        ve.pickingMode = PickingMode.Ignore;
 
         root    = ve.Q("ui_popup_pause_root");
         overlay = ve.Q("ui_popup_pause_overlay");

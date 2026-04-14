@@ -151,6 +151,11 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         tc.style.top = 0;
         tc.style.right = 0;
         tc.style.bottom = 0;
+        // Root covers the whole screen but must not intercept clicks itself —
+        // otherwise, when another UIDocument with a higher sortingOrder shares
+        // the panel (e.g. the pause doc), its root wins every pick test and
+        // swallows input to our buttons. Children still pick normally.
+        tc.pickingMode = PickingMode.Ignore;
         return tc;
     }
 
