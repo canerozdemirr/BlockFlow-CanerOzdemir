@@ -132,6 +132,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   colorRenderer: {fileID: 1976594079431097184}
   visualRoot: {fileID: 736411035167275250}
+  teethRoot: {fileID: 1904038412210720917}
 --- !u!1 &707041001462821487
 GameObject:
   m_ObjectHideFlags: 0

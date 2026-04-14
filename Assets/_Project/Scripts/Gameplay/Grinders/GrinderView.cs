@@ -19,6 +19,11 @@ public sealed class GrinderView : MonoBehaviour
     [SerializeField, Tooltip("Transform pivot for Phase 7 chew / pulse animations.")]
     private Transform visualRoot;
 
+    [SerializeField, Tooltip("Teeth child transform. Rotated +90° on Y for Bottom/Right edges so teeth align with the grid.")]
+    private Transform teethRoot;
+
+    private Quaternion teethBaseRotation;
+
     private MaterialPropertyBlock mpb;
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
@@ -35,12 +40,34 @@ public sealed class GrinderView : MonoBehaviour
     private void Awake()
     {
         BaseRotation = transform.localRotation;
+        if (teethRoot != null)
+            teethBaseRotation = teethRoot.localRotation;
     }
 
     public void Bind(GrinderModel model, Color color)
     {
         Model = model;
+        ApplyTeethRotation(model.Edge);
         ApplyColor(color);
+    }
+
+    /// <summary>
+    /// Keeps the authored teeth rotation for Top/Left edges. For Bottom/Right
+    /// edges, overrides only the Y euler to 90 while preserving authored X/Z.
+    /// </summary>
+    private void ApplyTeethRotation(GridEdge edge)
+    {
+        if (teethRoot == null) return;
+        bool flip = edge == GridEdge.Bottom || edge == GridEdge.Right;
+        if (flip)
+        {
+            var e = teethBaseRotation.eulerAngles;
+            teethRoot.localRotation = Quaternion.Euler(e.x, 90f, e.z);
+        }
+        else
+        {
+            teethRoot.localRotation = teethBaseRotation;
+        }
     }
 
     public void Unbind()
