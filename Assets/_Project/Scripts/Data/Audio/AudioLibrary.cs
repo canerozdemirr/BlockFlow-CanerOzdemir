@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 /// <summary>
 /// Designer-authored mapping from <see cref="SfxKey"/> to the actual audio
@@ -24,10 +25,24 @@ public sealed class AudioLibrary : ScriptableObject
 
         [Tooltip("Min/max pitch. Leave both at 1 for no jitter; spread them for per-play variation.")]
         public Vector2 pitchRange;
+
+        [Min(0f), Tooltip("Seconds to skip from the start of the clip. 0 plays from the beginning. Use to trim dead air or a ramp-in baked into the clip.")]
+        public float startOffset;
+
+        [Min(0f), Tooltip("Minimum seconds between successive plays of this cue. Rapid-fire events (step, bump) stack multiple triggers in the same frame; this debounces them. 0 = no cooldown.")]
+        public float minInterval;
     }
 
     [SerializeField, Tooltip("All audio cues the gameplay layer may play. Entries with null clips are ignored at runtime.")]
     private Entry[] entries;
+
+    [SerializeField, Tooltip("Optional mixer group every SFX source is routed through. Lets you control SFX volume, duck under music, or apply bus effects without touching per-source volume. Leave null to play direct to the AudioListener.")]
+    private AudioMixerGroup sfxMixerGroup;
+
+    /// <summary>
+    /// Mixer group the SFX ring should route through. Null = direct output.
+    /// </summary>
+    public AudioMixerGroup SfxMixerGroup => sfxMixerGroup;
 
     private Dictionary<SfxKey, Entry> byKey;
 

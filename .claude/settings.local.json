@@ -48,7 +48,10 @@
       "Bash(git ls-remote:*)",
       "Bash(grep -r \"public static void\" Library/PackageCache/xyz.candycoded.hapticfeedback@*/Scripts/)",
       "Bash(grep -r \"public static void\" Library/PackageCache/xyz.candycoded.hapticfeedback@*/*.cs)",
-      "mcp__ai-game-developer__gameobject-modify"
+      "mcp__ai-game-developer__gameobject-modify",
+      "Bash(grep -h '\"colorId\"' \"C:/Users/caner/Documents/BlockFlow-CanerOzdemir/Assets/_Project/Levels/\"*.json)",
+      "Bash(grep -hE '\"color\"|\"Color\"' \"C:/Users/caner/Documents/BlockFlow-CanerOzdemir/Assets/_Project/Levels/\"*.json)",
+      "Bash(grep -v \"//\")"
     ]
   },
   "enableAllProjectMcpServers": true,

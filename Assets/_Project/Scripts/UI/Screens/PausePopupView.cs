@@ -85,7 +85,17 @@ public sealed class PausePopupView : MonoBehaviour
             hapticToggle.RegisterValueChangedCallback(evt => HapticsService.Enabled = evt.newValue);
         }
 
-        // TODO: Wire sound/music toggles to AudioService when implemented
+        if (soundToggle != null)
+        {
+            soundToggle.value = AudioService.SfxEnabled;
+            soundToggle.RegisterValueChangedCallback(evt => AudioService.SfxEnabled = evt.newValue);
+        }
+
+        if (musicToggle != null)
+        {
+            musicToggle.value = AudioService.MusicEnabled;
+            musicToggle.RegisterValueChangedCallback(evt => AudioService.MusicEnabled = evt.newValue);
+        }
 
         uiReady = root != null;
         HideImmediate();

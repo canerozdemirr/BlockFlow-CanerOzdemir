@@ -167,6 +167,8 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         if (winRestartBtn != null)
             winRestartBtn.style.display = DisplayStyle.None;
 
+        bus?.Publish(new LevelOutcomePopupShownEvent(true));
+
         UIToolkitPopupAnimator.AnimateShow(winRoot, winOverlay, winPanel, 0.45f,
             () => AnimateStarsBouncy(starCount));
     }
@@ -180,6 +182,8 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         if (loseTitle != null)
             loseTitle.text = evt.Reason == LevelLoseReason.TimerExpired
                 ? "Time's Up!" : "No Moves Left!";
+
+        bus?.Publish(new LevelOutcomePopupShownEvent(false));
 
         UIToolkitPopupAnimator.AnimateShow(loseRoot, loseOverlay, losePanel);
     }

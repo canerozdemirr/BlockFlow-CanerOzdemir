@@ -201,7 +201,18 @@ public sealed class GrinderService : IStartable, IDisposable
                 block, grinder, context.Grid.Size, cellSpace.CellSize, context.GridRoot);
 
             captured.DismissToGrinder(slideDir, slideDist, blockEntryPoint, duration,
-                () => blockViewFactory.Release(captured), blockParallelExtent);
+                () =>
+                {
+                    blockViewFactory.Release(captured);
+                    bus.Publish(new BlockGrindCompletedEvent(id));
+                },
+                blockParallelExtent);
+        }
+        else
+        {
+            // No view (headless state) — still signal completion so listeners
+            // tracking the grind timeline stay correct.
+            bus.Publish(new BlockGrindCompletedEvent(id));
         }
 
         bus.Publish(new BlockGroundEvent(id, grinder.Id, colorId));

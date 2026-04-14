@@ -474,6 +474,10 @@ MonoBehaviour:
   autoInjectGameObjects:
   - {fileID: 1568990871}
   levelCatalog: {fileID: 11400000, guid: 8c9612476c8d39749914bdf3ccfcacd8, type: 2}
+  mapMusic: {fileID: 8300000, guid: d66104bf5463c854394af44125cdcb76, type: 3}
+  mapMusicVolume: 0.5
+  musicMixerGroup: {fileID: 3109354324802708612, guid: 861023a37f1d72543be71a4267198aca,
+    type: 2}
 --- !u!4 &1888853835
 Transform:
   m_ObjectHideFlags: 0

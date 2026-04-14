@@ -881,7 +881,11 @@ MonoBehaviour:
   blockCatalog: {fileID: 11400000, guid: 79ddab088f2fb114db4be1cf40308fad, type: 2}
   grinderCatalog: {fileID: 11400000, guid: 4389eeadd44f7254a80b88b28f69ba7b, type: 2}
   levelCatalog: {fileID: 11400000, guid: 8c9612476c8d39749914bdf3ccfcacd8, type: 2}
-  audioLibrary: {fileID: 0}
+  audioLibrary: {fileID: 11400000, guid: 9c59b73982f0dbd46af00924d50389ab, type: 2}
+  gameplayMusic: {fileID: 8300000, guid: 3a7d84dc4188ed840bb4ea9e7cdbc085, type: 3}
+  gameplayMusicVolume: 0.2
+  musicMixerGroup: {fileID: 3109354324802708612, guid: 861023a37f1d72543be71a4267198aca,
+    type: 2}
   arrowDecalMaterial: {fileID: 2100000, guid: c9937da7e1277a14db84988db8156244, type: 2}
   grinderFeel: {fileID: 11400000, guid: a1c570bf53be25c438a242ad92207874, type: 2}
   iceFeel: {fileID: 11400000, guid: 99d3b59cc780330409c23314fc646ee5, type: 2}

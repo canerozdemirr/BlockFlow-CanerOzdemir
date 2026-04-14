@@ -145,6 +145,10 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         if (!blockId.IsValid) return;
         if (inputLock != null && inputLock.IsLocked(blockId)) return;
         if (!context.Grid.TryGetBlock(blockId, out var block)) return;
+        // Iced blocks are non-interactive until their ice counter hits zero.
+        // The grinder also refuses iced blocks (GrinderService.OnDragEnded),
+        // so blocking the drag at source keeps the ice gate authoritative.
+        if (block.IsIced) return;
         if (!viewRegistry.TryGet(blockId, out var view)) return;
 
         if (snapTween.isAlive) snapTween.Stop();

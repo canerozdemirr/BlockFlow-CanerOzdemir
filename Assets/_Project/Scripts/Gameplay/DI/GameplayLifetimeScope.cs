@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Audio;
 using VContainer;
 using VContainer.Unity;
 
@@ -53,6 +54,15 @@ public class GameplayLifetimeScope : LifetimeScope
 
     [SerializeField, Tooltip("Audio cue library consumed by AudioService. Optional; missing cues no-op so the scene still runs.")]
     private AudioLibrary audioLibrary;
+
+    [SerializeField, Tooltip("Looping background track for gameplay. Null = silence.")]
+    private AudioClip gameplayMusic;
+
+    [SerializeField, Range(0f, 1f), Tooltip("Playback volume for the gameplay music track.")]
+    private float gameplayMusicVolume = 0.4f;
+
+    [SerializeField, Tooltip("Mixer group the gameplay music source routes through. Set to the Music group on GameAudioMixer so the Music toggle controls bus volume. Null = direct output (bool gate still works).")]
+    private AudioMixerGroup musicMixerGroup;
 
     [SerializeField, Tooltip("Decal material for block movement arrows. Uses SP_Arrow_BlockMove_03 texture.")]
     private Material arrowDecalMaterial;
@@ -197,6 +207,10 @@ public class GameplayLifetimeScope : LifetimeScope
 
         builder.Register(_ => new AudioService(audioLibrary), Lifetime.Singleton);
         builder.RegisterEntryPoint<AudioFeedbackRouter>();
+        builder.RegisterEntryPoint<MusicService>()
+            .WithParameter(gameplayMusic)
+            .WithParameter(gameplayMusicVolume)
+            .WithParameter(musicMixerGroup);
         builder.RegisterEntryPoint<HapticsService>();
         builder.RegisterEntryPoint<BlockJuiceService>();
 

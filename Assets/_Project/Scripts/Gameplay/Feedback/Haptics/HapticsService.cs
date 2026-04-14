@@ -19,12 +19,19 @@ public sealed class HapticsService : IStartable, IDisposable
     private readonly IEventBus bus;
     private readonly List<IDisposable> subs = new List<IDisposable>();
 
-    private static bool enabled = true;
+    private const string PrefKey = "haptics.enabled";
+    private static bool enabled = PlayerPrefs.GetInt(PrefKey, 1) == 1;
 
     public static bool Enabled
     {
         get => enabled;
-        set => enabled = value;
+        set
+        {
+            if (enabled == value) return;
+            enabled = value;
+            PlayerPrefs.SetInt(PrefKey, value ? 1 : 0);
+            PlayerPrefs.Save();
+        }
     }
 
     public HapticsService(IEventBus bus)

@@ -10,7 +10,7 @@ namespace BlockFlow.Core.Bootstrap
     /// </summary>
     public static class GameBootstrap
     {
-        private const int TargetFrameRate = 60;
+        private const int TargetFrameRate = 120;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()

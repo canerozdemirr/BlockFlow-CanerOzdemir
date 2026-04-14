@@ -34,9 +34,14 @@ public sealed class AudioFeedbackRouter : IStartable, IDisposable
         subs.Add(bus.Subscribe<BlockSteppedEvent>(_     => audio.Play(SfxKey.BlockStep)));
         subs.Add(bus.Subscribe<BlockBumpedWallEvent>(_  => audio.Play(SfxKey.WallBump)));
         subs.Add(bus.Subscribe<BlockGroundEvent>(_      => audio.Play(SfxKey.BlockGround)));
+        subs.Add(bus.Subscribe<BlockGrindCompletedEvent>(_ => audio.Stop(SfxKey.BlockGround)));
         subs.Add(bus.Subscribe<BlockRevealedEvent>(_    => audio.Play(SfxKey.IceReveal)));
-        subs.Add(bus.Subscribe<LevelWonEvent>(_         => audio.Play(SfxKey.LevelWon)));
-        subs.Add(bus.Subscribe<LevelLostEvent>(_        => audio.Play(SfxKey.LevelLost)));
+
+        // Win/Lose SFX fire when the outcome popup is visible, not when the
+        // level technically ends — the win path has a 1s celebration delay
+        // and playing the sting before the panel appears feels disconnected.
+        subs.Add(bus.Subscribe<LevelOutcomePopupShownEvent>(e =>
+            audio.Play(e.Won ? SfxKey.LevelWon : SfxKey.LevelLost)));
     }
 
     public void Dispose()
