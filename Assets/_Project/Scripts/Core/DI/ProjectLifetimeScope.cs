@@ -7,5 +7,6 @@ public class ProjectLifetimeScope : LifetimeScope
     {
         builder.Register<ISceneLoader, SceneFlowLoader>(Lifetime.Singleton);
         builder.Register<IPrefabLoader, ResourcesPrefabLoader>(Lifetime.Singleton);
+        builder.Register<ISaveRepository, PlayerPrefsSaveRepository>(Lifetime.Singleton);
     }
 }

@@ -98,15 +98,16 @@ public sealed class GridBuilder
             {
                 var g = grinders[i];
                 if (g == null) continue;
-                bool[] mask;
-                switch (g.Edge)
+                if (!GridEdgeExtensions.TryParse(g.Edge, out var edge)) continue;
+                bool[] mask = edge switch
                 {
-                    case "Top":    mask = topCov;    break;
-                    case "Bottom": mask = bottomCov; break;
-                    case "Left":   mask = leftCov;   break;
-                    case "Right":  mask = rightCov;  break;
-                    default: continue;
-                }
+                    GridEdge.Top    => topCov,
+                    GridEdge.Bottom => bottomCov,
+                    GridEdge.Left   => leftCov,
+                    GridEdge.Right  => rightCov,
+                    _ => null
+                };
+                if (mask == null) continue;
                 for (int c = g.Position; c < g.Position + g.Width && c < mask.Length; c++)
                     mask[c] = true;
             }

@@ -28,22 +28,22 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
     private bool uiReady;
 
     private IEventBus bus;
-    private LevelRunner runner;
     private LevelProgressionService progression;
     private CountdownTimer timer;
     private ISceneLoader sceneLoader;
+    private PopupAnimationConfig animConfig;
     private readonly List<IDisposable> subs = new List<IDisposable>();
 
     [Inject]
-    public void Construct(IEventBus bus, LevelRunner runner,
+    public void Construct(IEventBus bus,
         LevelProgressionService progression, CountdownTimer timer, ISceneLoader sceneLoader,
         PopupAnimationConfig popupAnimation)
     {
         this.bus = bus;
-        this.runner = runner;
         this.progression = progression;
         this.timer = timer;
         this.sceneLoader = sceneLoader;
+        this.animConfig = popupAnimation;
         UIToolkitPopupAnimator.Config = popupAnimation;
 
         subs.Add(bus.Subscribe<LevelWonEvent>(_     => OnWon()));
@@ -124,10 +124,14 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
     private void OnWon()
     {
         if (!uiReady) InitUI();
-        int starCount = CalculateStars();
+        int starCount = timer != null
+            ? StarCalculator.FromTimeRemaining(timer.Remaining, timer.Total)
+            : StarCalculator.MaxStars;
 
-        // Advance progression immediately so Home/Restart also get the new level
-        progression?.AdvanceToNext();
+        // Advance progression immediately so Home/Restart also get the new level.
+        // Progression mutation lives in the flow controller on the Gameplay side;
+        // the view just publishes a request event.
+        bus?.Publish(new LevelAdvanceRequestedEvent());
 
         // 1 second celebration delay
         Tween.Delay(1f, () => ShowWin(starCount));
@@ -180,15 +184,6 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         UIToolkitPopupAnimator.AnimateShow(loseRoot, loseOverlay, losePanel);
     }
 
-    private int CalculateStars()
-    {
-        if (timer == null || timer.Total <= 0f) return 3;
-        float ratio = timer.Remaining / timer.Total;
-        if (ratio > 0.66f) return 3;
-        if (ratio > 0.33f) return 2;
-        return 1;
-    }
-
     private void SetStarStates(int count)
     {
         for (int i = 0; i < 3; i++)
@@ -205,40 +200,49 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
     /// <summary>Big bouncy star animation with overshoot and slight rotation.</summary>
     private void AnimateStarsBouncy(int count)
     {
+        var cfg = animConfig;
+        float initial = cfg != null ? cfg.StarInitialDelay : 0.2f;
+        float stagger = cfg != null ? cfg.StarStagger : 0.25f;
+        float scaleUp = cfg != null ? cfg.StarScaleUpDuration : 0.3f;
+        float settle  = cfg != null ? cfg.StarSettleDuration : 0.2f;
+        float peak    = cfg != null ? cfg.StarBounceScale : 1.35f;
+        float rotDur  = cfg != null ? cfg.StarRotationDuration : 0.4f;
+        float wobble  = cfg != null ? cfg.StarRotationWobble : 12f;
+        float emptyDur = cfg != null ? cfg.EmptyStarScaleDuration : 0.25f;
+        float emptyOpacity = cfg != null ? cfg.EmptyStarOpacity : 0.25f;
+
         for (int i = 0; i < 3; i++)
         {
             if (stars[i] == null) continue;
             bool filled = i < count;
-            float delay = 0.2f + i * 0.25f;
+            float delay = initial + i * stagger;
             int idx = i;
 
             Tween.Delay(delay, () =>
             {
                 if (filled)
                 {
-                    // Big bouncy: overshoot to 1.3 then settle to 1.0
                     stars[idx].style.opacity = 1f;
-                    Tween.Custom(0f, 1.35f, 0.3f, val =>
+                    Tween.Custom(0f, peak, scaleUp, val =>
                         stars[idx].transform.scale = new Vector3(val, val, 1f),
                         ease: Ease.OutQuad);
 
-                    Tween.Delay(0.3f, () =>
+                    Tween.Delay(scaleUp, () =>
                     {
-                        Tween.Custom(1.35f, 1f, 0.2f, val =>
+                        Tween.Custom(peak, 1f, settle, val =>
                             stars[idx].transform.scale = new Vector3(val, val, 1f),
                             ease: Ease.InOutQuad);
                     });
 
-                    // Slight rotation wobble
-                    float startRot = idx == 1 ? 0f : (idx == 0 ? -12f : 12f);
-                    Tween.Custom(startRot, 0f, 0.4f, val =>
+                    float startRot = idx == 1 ? 0f : (idx == 0 ? -wobble : wobble);
+                    Tween.Custom(startRot, 0f, rotDur, val =>
                         stars[idx].transform.rotation = Quaternion.Euler(0, 0, val),
                         ease: Ease.OutBack);
                 }
                 else
                 {
-                    stars[idx].style.opacity = 0.25f;
-                    Tween.Custom(0f, 1f, 0.25f, val =>
+                    stars[idx].style.opacity = emptyOpacity;
+                    Tween.Custom(0f, 1f, emptyDur, val =>
                         stars[idx].transform.scale = new Vector3(val, val, 1f),
                         ease: Ease.OutQuad);
                 }
@@ -259,16 +263,15 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         var activePanel = activeRoot == winRoot ? winPanel : losePanel;
 
         UIToolkitPopupAnimator.AnimateHide(activeRoot, activeOverlay, activePanel, 0.25f,
-            () => runner?.Reload());
+            () => bus?.Publish(new LevelRestartRequestedEvent()));
     }
 
     private void OnNext()
     {
         UIToolkitPopupAnimator.AnimateHide(winRoot, winOverlay, winPanel, 0.25f, () =>
         {
-            // Progression already advanced in OnWon; just load the new current level
-            if (runner != null && progression != null)
-                runner.Load(progression.Current);
+            // Progression already advanced in OnWon; just ask the flow to load current.
+            bus?.Publish(new LevelLoadCurrentRequestedEvent());
         });
     }
 

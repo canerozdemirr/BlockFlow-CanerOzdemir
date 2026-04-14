@@ -2,11 +2,10 @@ using UnityEngine;
 using VContainer;
 
 /// <summary>
-/// Scene-owned kickoff component. On <c>Start</c> it asks the
-/// <see cref="LevelProgressionService"/> for the current level and hands
-/// it to the <see cref="LevelRunner"/>. If no catalog is wired (progression
-/// has nothing to return) it falls back to a hand-picked serialized level
-/// so the scene still boots with something playable.
+/// Scene-owned kickoff component. On <c>Start</c> it asks the injected
+/// <see cref="ILevelStartupStrategy"/> for the level to load and hands it
+/// to the <see cref="LevelRunner"/>. Swapping the strategy (progression,
+/// last-played, specific debug level) requires no changes here.
 ///
 /// Dependencies are pushed in by VContainer via <see cref="Inject"/>; the
 /// LifetimeScope registers this component via <c>RegisterComponentInHierarchy</c>.
@@ -16,17 +15,21 @@ using VContainer;
 /// </summary>
 public sealed class GameplayBootstrapper : MonoBehaviour
 {
-    [SerializeField, Tooltip("Used only if no LevelCatalog is configured. The first boot otherwise resolves through LevelProgressionService.")]
+    [SerializeField, Tooltip("Used by the default ProgressionOrFallbackStartupStrategy when no LevelCatalog is assigned.")]
     private LevelConfig fallbackLevel;
+
+    public LevelConfig FallbackLevel => fallbackLevel;
 
     private LevelRunner runner;
     private LevelProgressionService progression;
+    private ILevelStartupStrategy startupStrategy;
 
     [Inject]
-    public void Construct(LevelRunner runner, LevelProgressionService progression)
+    public void Construct(LevelRunner runner, LevelProgressionService progression, ILevelStartupStrategy startupStrategy)
     {
         this.runner = runner;
         this.progression = progression;
+        this.startupStrategy = startupStrategy;
     }
 
     private void Start()
@@ -37,20 +40,17 @@ public sealed class GameplayBootstrapper : MonoBehaviour
             return;
         }
 
-        var level = ResolveStartingLevel();
+        var level = startupStrategy != null ? startupStrategy.ResolveStartingLevel() : null;
         if (level == null)
         {
-            Debug.LogWarning("[GameplayBootstrapper] No level to load (no progression catalog and no fallback assigned).");
+            Debug.LogWarning("[GameplayBootstrapper] No level to load (strategy returned null).");
             return;
         }
 
         runner.Load(level);
     }
 
-    /// <summary>
-    /// Reloads whichever level the runner currently has active. Used by the
-    /// <c>BlockFlow → Reload Current Level</c> editor menu.
-    /// </summary>
+    /// <summary>Reloads whichever level the runner currently has active. Editor menu hook.</summary>
     public void ReloadCurrent()
     {
         if (runner == null) return;
@@ -65,9 +65,8 @@ public sealed class GameplayBootstrapper : MonoBehaviour
     }
 
     /// <summary>
-    /// Advances the progression pointer and loads the new current level.
-    /// No-op if the catalog is missing or the player is already on the
-    /// last level. Returns whether the advance actually happened.
+    /// Advances progression and loads the new current level. Returns whether
+    /// the advance actually produced a loadable level.
     /// </summary>
     public bool LoadNext()
     {
@@ -77,13 +76,5 @@ public sealed class GameplayBootstrapper : MonoBehaviour
         if (next == null) return false;
         runner.Load(next);
         return true;
-    }
-
-    // ---------- internals ----------
-
-    private LevelConfig ResolveStartingLevel()
-    {
-        var fromProgression = progression != null ? progression.Current : null;
-        return fromProgression != null ? fromProgression : fallbackLevel;
     }
 }

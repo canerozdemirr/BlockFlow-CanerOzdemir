@@ -52,6 +52,13 @@ public static class GridEdgeExtensions
     }
 
     /// <summary>
+    /// Parses an edge name (Top/Bottom/Left/Right, case-sensitive) into its enum.
+    /// Returns false for null/empty/unknown — callers decide how to handle.
+    /// </summary>
+    public static bool TryParse(string edge, out GridEdge result)
+        => System.Enum.TryParse(edge, ignoreCase: false, out result);
+
+    /// <summary>
     /// World-space direction a block slides when consumed by a grinder on this edge.
     /// </summary>
     public static Vector3 ToSlideDirection(this GridEdge edge)

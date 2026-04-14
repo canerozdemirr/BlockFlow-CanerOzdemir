@@ -16,6 +16,7 @@ public sealed class LevelProgressionService
     private const string PrefKey = "blockflow.current_level_index";
 
     private readonly LevelCatalog catalog;
+    private readonly ISaveRepository save;
 
     public LevelCatalog Catalog => catalog;
 
@@ -32,9 +33,10 @@ public sealed class LevelProgressionService
     /// <summary>The current level config (loops the catalog).</summary>
     public LevelConfig Current => catalog != null ? catalog.GetAt(CatalogIndex) : null;
 
-    public LevelProgressionService(LevelCatalog catalog)
+    public LevelProgressionService(LevelCatalog catalog, ISaveRepository save)
     {
         this.catalog = catalog;
+        this.save = save ?? new PlayerPrefsSaveRepository();
 
         if (catalog == null)
         {
@@ -42,17 +44,17 @@ public sealed class LevelProgressionService
             return;
         }
 
-        CurrentIndex = PlayerPrefs.GetInt(PrefKey, 0);
+        CurrentIndex = this.save.GetInt(PrefKey, 0);
         if (CurrentIndex < 0) CurrentIndex = 0;
     }
 
     /// <summary>
-    /// Re-reads the current index from PlayerPrefs. Call this when returning
+    /// Re-reads the current index from storage. Call this when returning
     /// from another scene that may have advanced the progression.
     /// </summary>
     public void ReloadFromDisk()
     {
-        CurrentIndex = PlayerPrefs.GetInt(PrefKey, 0);
+        CurrentIndex = save.GetInt(PrefKey, 0);
         if (CurrentIndex < 0) CurrentIndex = 0;
     }
 
@@ -85,7 +87,7 @@ public sealed class LevelProgressionService
 
     private void Save()
     {
-        PlayerPrefs.SetInt(PrefKey, CurrentIndex);
-        PlayerPrefs.Save();
+        save.SetInt(PrefKey, CurrentIndex);
+        save.Save();
     }
 }

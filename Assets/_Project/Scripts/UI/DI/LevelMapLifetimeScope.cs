@@ -14,7 +14,7 @@ namespace BlockFlow.UI
 
         protected override void Configure(IContainerBuilder builder)
         {
-            builder.Register(_ => new LevelProgressionService(levelCatalog), Lifetime.Singleton);
+            builder.Register(c => new LevelProgressionService(levelCatalog, c.Resolve<ISaveRepository>()), Lifetime.Singleton);
         }
     }
 }

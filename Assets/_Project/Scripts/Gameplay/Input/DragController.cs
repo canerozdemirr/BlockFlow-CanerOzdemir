@@ -20,6 +20,8 @@ public sealed class DragController : ITickable, IStartable, IDisposable
     private readonly GameplayCameraFitter cameraFitter;
     private readonly IEventBus bus;
     private readonly GameStateService state;
+    private readonly BlockInputLock inputLock;
+    private readonly GrinderService grinderService;
 
     private readonly List<IDisposable> subs = new List<IDisposable>();
 
@@ -42,6 +44,16 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         public float MaxPositive;
         public float MaxNegative;
         public bool LimitsComputed;
+
+        // Cached free-movement limits. Re-computed only when the model origin
+        // changes, not every frame. Previously the controller re-scanned the
+        // grid 4× per tick for free blocks.
+        public int FreeRightMax;
+        public int FreeLeftMax;
+        public int FreeUpMax;
+        public int FreeDownMax;
+        public GridCoord FreeLimitsOrigin;
+        public bool FreeLimitsValid;
     }
 
     private Session session;
@@ -57,7 +69,9 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         IMovementStrategy movementStrategy,
         GameplayCameraFitter cameraFitter,
         IEventBus bus,
-        GameStateService state)
+        GameStateService state,
+        BlockInputLock inputLock,
+        GrinderService grinderService)
     {
         this.input = input;
         this.context = context;
@@ -67,6 +81,8 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         this.cameraFitter = cameraFitter;
         this.bus = bus;
         this.state = state;
+        this.inputLock = inputLock;
+        this.grinderService = grinderService;
     }
 
     public void Start()
@@ -75,6 +91,7 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         {
             ClearSession();
             rendererCache.Clear();
+            inputLock?.Clear();
         }));
     }
 
@@ -126,6 +143,7 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         }
 
         if (!blockId.IsValid) return;
+        if (inputLock != null && inputLock.IsLocked(blockId)) return;
         if (!context.Grid.TryGetBlock(blockId, out var block)) return;
         if (!viewRegistry.TryGet(blockId, out var view)) return;
 
@@ -187,28 +205,20 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         // Free blocks (no axis lock) move in both axes simultaneously
         if (session.BlockLock == BlockAxisLock.None)
         {
-            // Recompute limits each frame from current model position
-            var grid = context.Grid;
-
-            int rightMax = grid.SlideUntilBlocked(session.BlockId, GridDirection.Right, 100, out _);
-            if (rightMax > 0) grid.SlideUntilBlocked(session.BlockId, GridDirection.Left, rightMax, out _);
-
-            int leftMax = grid.SlideUntilBlocked(session.BlockId, GridDirection.Left, 100, out _);
-            if (leftMax > 0) grid.SlideUntilBlocked(session.BlockId, GridDirection.Right, leftMax, out _);
-
-            int upMax = grid.SlideUntilBlocked(session.BlockId, GridDirection.Up, 100, out _);
-            if (upMax > 0) grid.SlideUntilBlocked(session.BlockId, GridDirection.Down, upMax, out _);
-
-            int downMax = grid.SlideUntilBlocked(session.BlockId, GridDirection.Down, 100, out _);
-            if (downMax > 0) grid.SlideUntilBlocked(session.BlockId, GridDirection.Up, downMax, out _);
+            // Limits are recomputed only when the block's origin has actually
+            // changed since the last compute — not every frame. The previous
+            // implementation did eight slide/slide-back calls per tick which
+            // dominated the drag cost on larger levels.
+            if (!session.FreeLimitsValid || !session.FreeLimitsOrigin.Equals(block.Origin))
+                RecomputeFreeLimits();
 
             int curOffX = block.Origin.x - session.StartOrigin.x;
             int curOffY = block.Origin.y - session.StartOrigin.y;
 
-            float maxDxPos = (curOffX + rightMax) * cellSpace.CellSize;
-            float maxDxNeg = (curOffX - leftMax) * cellSpace.CellSize;
-            float maxDzPos = (curOffY + upMax) * cellSpace.CellSize;
-            float maxDzNeg = (curOffY - downMax) * cellSpace.CellSize;
+            float maxDxPos = (curOffX + session.FreeRightMax) * cellSpace.CellSize;
+            float maxDxNeg = (curOffX - session.FreeLeftMax) * cellSpace.CellSize;
+            float maxDzPos = (curOffY + session.FreeUpMax) * cellSpace.CellSize;
+            float maxDzNeg = (curOffY - session.FreeDownMax) * cellSpace.CellSize;
 
             float dx = Mathf.Clamp(deltaLocal.x, maxDxNeg, maxDxPos);
             float dz = Mathf.Clamp(deltaLocal.z, maxDzNeg, maxDzPos);
@@ -231,8 +241,94 @@ public sealed class DragController : ITickable, IStartable, IDisposable
             session.View.transform.localPosition = viewPos;
 
             UpdateModelToNearestFree(block, dx, dz);
+            if (TryAutoConsume()) return;
             return;
         }
+
+        UpdateDragAxisLocked(block, deltaLocal);
+        TryAutoConsume();
+    }
+
+    /// <summary>
+    /// Mid-drag hand-off to the grinder. The moment the dragged block's cells
+    /// satisfy a grinder's consumption rule, input is cut, the view is snapped
+    /// to the cell with the same release-snap tween the player already knows,
+    /// and the grinder is triggered when the snap lands.
+    /// </summary>
+    private bool TryAutoConsume()
+    {
+        if (!session.Active) return false;
+        if (grinderService == null) return false;
+        if (!context.Grid.TryGetBlock(session.BlockId, out var block)) return false;
+        if (!grinderService.TryFindConsumingGrinder(block, out _)) return false;
+
+        var blockId = session.BlockId;
+        var view = session.View;
+
+        // Cut input: clear the drag session and lock this block so the next
+        // pointer events can't re-grab it while the snap/consume plays.
+        if (snapTween.isAlive) snapTween.Stop();
+        inputLock?.Lock(blockId);
+        ClearSession();
+        // Intentionally do NOT publish BlockDragEndedEvent here — the grinder
+        // service's subscriber would call Consume/DismissToGrinder immediately,
+        // fighting our snap tween over transform.localPosition. Instead we run
+        // the snap and trigger the consume from its OnComplete.
+
+        if (view == null || view.Model == null)
+        {
+            grinderService.ConsumeNow(blockId);
+            inputLock?.Unlock(blockId);
+            return true;
+        }
+
+        var target = cellSpace.ToWorld(view.Model.Origin);
+        snapTween = Tween.LocalPosition(
+            target: view.transform,
+            endValue: target,
+            duration: SnapDuration,
+            ease: Ease.OutQuad);
+        snapTween.OnComplete(() =>
+        {
+            grinderService.ConsumeNow(blockId);
+            inputLock?.Unlock(blockId);
+        });
+        return true;
+    }
+
+    /// <summary>
+    /// Scans slide distances for free-movement blocks once and caches them.
+    /// Invalidated by <see cref="UpdateDrag"/> when the block's origin changes
+    /// so the next tick recomputes. Each slide is immediately reversed so the
+    /// grid state is preserved.
+    /// </summary>
+    private void RecomputeFreeLimits()
+    {
+        var grid = context.Grid;
+        if (grid == null || !grid.TryGetBlock(session.BlockId, out var block)) return;
+
+        int rightMax = grid.SlideUntilBlocked(session.BlockId, GridDirection.Right, 100, out _);
+        if (rightMax > 0) grid.SlideUntilBlocked(session.BlockId, GridDirection.Left, rightMax, out _);
+
+        int leftMax = grid.SlideUntilBlocked(session.BlockId, GridDirection.Left, 100, out _);
+        if (leftMax > 0) grid.SlideUntilBlocked(session.BlockId, GridDirection.Right, leftMax, out _);
+
+        int upMax = grid.SlideUntilBlocked(session.BlockId, GridDirection.Up, 100, out _);
+        if (upMax > 0) grid.SlideUntilBlocked(session.BlockId, GridDirection.Down, upMax, out _);
+
+        int downMax = grid.SlideUntilBlocked(session.BlockId, GridDirection.Down, 100, out _);
+        if (downMax > 0) grid.SlideUntilBlocked(session.BlockId, GridDirection.Up, downMax, out _);
+
+        session.FreeRightMax = rightMax;
+        session.FreeLeftMax = leftMax;
+        session.FreeUpMax = upMax;
+        session.FreeDownMax = downMax;
+        session.FreeLimitsOrigin = block.Origin;
+        session.FreeLimitsValid = true;
+    }
+
+    private void UpdateDragAxisLocked(BlockModel block, Vector3 deltaLocal)
+    {
 
         // Axis-locked blocks: lock on first significant movement
         if (session.LockedAxis == DragAxis.None)

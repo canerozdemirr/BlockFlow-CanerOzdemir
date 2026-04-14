@@ -148,6 +148,7 @@ public class GameplayLifetimeScope : LifetimeScope
 
         builder.Register<IInputService, UnityPointerInputService>(Lifetime.Singleton);
         builder.RegisterInstance(SingleAxisMovementStrategy.Instance).As<IMovementStrategy>();
+        builder.Register<BlockInputLock>(Lifetime.Singleton);
         builder.RegisterEntryPoint<DragController>();
 
         // ---------- core loop (Phase 6) ----------
@@ -180,10 +181,17 @@ public class GameplayLifetimeScope : LifetimeScope
             viewParent),
             Lifetime.Singleton);
         builder.Register<LevelRunner>(Lifetime.Singleton);
+        builder.RegisterEntryPoint<GameFlowController>();
 
         // ---------- progression (Phase 7) ----------
 
-        builder.Register(_ => new LevelProgressionService(levelCatalog), Lifetime.Singleton);
+        builder.Register(c => new LevelProgressionService(levelCatalog, c.Resolve<ISaveRepository>()), Lifetime.Singleton);
+        builder.Register<ILevelStartupStrategy>(c =>
+        {
+            var bootstrapper = FindFirstObjectByType<GameplayBootstrapper>();
+            var fallback = bootstrapper != null ? bootstrapper.FallbackLevel : null;
+            return new ProgressionOrFallbackStartupStrategy(c.Resolve<LevelProgressionService>(), fallback);
+        }, Lifetime.Singleton);
 
         // ---------- feedback (Phase 7) ----------
 

@@ -209,7 +209,7 @@ public static class LevelValidator
             if (palette == null || !palette.TryGet(g.Color, out _))
                 result.Error($"Grinder[{i}] references unknown color '{g.Color}'.");
 
-            if (!TryParseEdge(g.Edge, out _))
+            if (!GridEdgeExtensions.TryParse(g.Edge, out _))
                 result.Error($"Grinder[{i}] references unknown edge '{g.Edge}'.");
         }
     }
@@ -242,6 +242,4 @@ public static class LevelValidator
         }
     }
 
-    private static bool TryParseEdge(string edge, out GridEdge result)
-        => System.Enum.TryParse(edge, ignoreCase: false, out result);
 }

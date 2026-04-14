@@ -195,7 +195,7 @@ public sealed class LevelBuilder
                 continue;
             }
 
-            var edge = ParseEdge(dto.Edge);
+            var edge = GridEdgeExtensions.TryParse(dto.Edge, out var parsed) ? parsed : GridEdge.Top;
             var model = new GrinderModel(i + 1, edge, dto.Position, dto.Width, dto.Color);
 
             grinderViewFactory.Acquire(model, definition, gridSize);
@@ -204,9 +204,6 @@ public sealed class LevelBuilder
     }
 
     // ---------- parsing ----------
-
-    private static GridEdge ParseEdge(string value)
-        => System.Enum.TryParse<GridEdge>(value, ignoreCase: false, out var e) ? e : GridEdge.Top;
 
     private static BlockAxisLock ParseAxisLock(string value)
         => System.Enum.TryParse<BlockAxisLock>(value, ignoreCase: false, out var a) ? a : BlockAxisLock.None;

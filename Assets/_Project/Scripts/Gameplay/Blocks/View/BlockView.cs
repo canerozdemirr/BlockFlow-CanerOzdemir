@@ -50,6 +50,14 @@ public sealed class BlockView : MonoBehaviour
     public BlockModel Model { get; private set; }
     public Transform VisualRoot => visualRoot;
 
+    private void Awake()
+    {
+        // Pre-cache the clip plane shader so the first grind doesn't pay the
+        // Shader.Find cost. Cached statically so repeated Awakes are free.
+        if (clipPlaneShader == null)
+            clipPlaneShader = Shader.Find("BlockFlow/BlockClipPlane");
+    }
+
     /// <summary>
     /// Binds the view to a model and snaps to its current position and color.
     /// Called by <see cref="BlockViewFactory"/> immediately after acquiring

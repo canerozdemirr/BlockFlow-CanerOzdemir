@@ -106,6 +106,42 @@ public sealed class GrinderService : IStartable, IDisposable
         }
     }
 
+    /// <summary>
+    /// Returns true if the given block is currently in a cell that a grinder
+    /// would consume on drag-release. Used by the drag controller to detect
+    /// eligibility mid-drag so it can cut input and snap-consume immediately.
+    /// </summary>
+    public bool TryFindConsumingGrinder(BlockModel block, out GrinderModel grinder)
+    {
+        grinder = null;
+        if (block == null || block.IsIced) return false;
+        if (context.Grid == null) return false;
+
+        var size = context.Grid.Size;
+        for (int i = 0; i < grinders.Count; i++)
+        {
+            var g = grinders[i];
+            if (g.ColorId != block.ColorId) continue;
+            if (!IsBlockConsumableBy(block, g, size)) continue;
+            grinder = g;
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Consumes the block immediately using the same animation path as a
+    /// drag-release consume. Public so the drag controller can trigger it when
+    /// a mid-drag snap has landed on an eligible cell.
+    /// </summary>
+    public void ConsumeNow(BlockId blockId)
+    {
+        if (context.Grid == null) return;
+        if (!context.Grid.TryGetBlock(blockId, out var block)) return;
+        if (!TryFindConsumingGrinder(block, out var grinder)) return;
+        Consume(block, grinder);
+    }
+
     // ---------- consumption check ----------
 
     private static bool IsBlockConsumableBy(BlockModel block, GrinderModel grinder, GridSize size)
