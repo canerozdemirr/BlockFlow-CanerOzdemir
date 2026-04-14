@@ -206,24 +206,8 @@ public sealed class LevelBuilder
     // ---------- parsing ----------
 
     private static GridEdge ParseEdge(string value)
-    {
-        switch (value)
-        {
-            case "Top":    return GridEdge.Top;
-            case "Bottom": return GridEdge.Bottom;
-            case "Left":   return GridEdge.Left;
-            case "Right":  return GridEdge.Right;
-            default:       return GridEdge.Top;
-        }
-    }
+        => System.Enum.TryParse<GridEdge>(value, ignoreCase: false, out var e) ? e : GridEdge.Top;
 
     private static BlockAxisLock ParseAxisLock(string value)
-    {
-        switch (value)
-        {
-            case "Horizontal": return BlockAxisLock.Horizontal;
-            case "Vertical":   return BlockAxisLock.Vertical;
-            default:           return BlockAxisLock.None;
-        }
-    }
+        => System.Enum.TryParse<BlockAxisLock>(value, ignoreCase: false, out var a) ? a : BlockAxisLock.None;
 }

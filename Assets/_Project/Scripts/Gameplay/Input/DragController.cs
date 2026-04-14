@@ -15,7 +15,7 @@ public sealed class DragController : ITickable, IStartable, IDisposable
     private readonly IInputService input;
     private readonly LevelContext context;
     private readonly CellSpace cellSpace;
-    private readonly BlockViewRegistry viewRegistry;
+    private readonly IBlockViewRegistry viewRegistry;
     private readonly IMovementStrategy movementStrategy;
     private readonly GameplayCameraFitter cameraFitter;
     private readonly IEventBus bus;
@@ -53,7 +53,7 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         IInputService input,
         LevelContext context,
         CellSpace cellSpace,
-        BlockViewRegistry viewRegistry,
+        IBlockViewRegistry viewRegistry,
         IMovementStrategy movementStrategy,
         GameplayCameraFitter cameraFitter,
         IEventBus bus,

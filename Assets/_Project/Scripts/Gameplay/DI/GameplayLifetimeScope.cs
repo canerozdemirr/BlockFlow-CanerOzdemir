@@ -84,7 +84,9 @@ public class GameplayLifetimeScope : LifetimeScope
         // ---------- per-level state ----------
 
         builder.Register<LevelContext>(Lifetime.Singleton);
-        builder.Register<BlockViewRegistry>(Lifetime.Singleton);
+        builder.Register<BlockViewRegistry>(Lifetime.Singleton)
+            .As<IBlockViewRegistry>()
+            .AsSelf();
 
         // ---------- factories ----------
 

@@ -28,10 +28,10 @@ public sealed class BlockJuiceService : IStartable, IDisposable
     private const float ReleaseDuration = 0.15f;
 
     private readonly IEventBus bus;
-    private readonly BlockViewRegistry registry;
+    private readonly IBlockViewRegistry registry;
     private readonly List<IDisposable> subs = new List<IDisposable>();
 
-    public BlockJuiceService(IEventBus bus, BlockViewRegistry registry)
+    public BlockJuiceService(IEventBus bus, IBlockViewRegistry registry)
     {
         this.bus = bus;
         this.registry = registry;

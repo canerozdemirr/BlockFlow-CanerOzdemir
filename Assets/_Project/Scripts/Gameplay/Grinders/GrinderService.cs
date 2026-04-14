@@ -34,7 +34,7 @@ public sealed class GrinderService : IStartable, IDisposable
     private readonly IEventBus bus;
     private readonly LevelContext context;
     private readonly GameStateService state;
-    private readonly BlockViewRegistry viewRegistry;
+    private readonly IBlockViewRegistry viewRegistry;
     private readonly IBlockViewFactory blockViewFactory;
     private readonly CellSpace cellSpace;
 
@@ -49,7 +49,7 @@ public sealed class GrinderService : IStartable, IDisposable
         IEventBus bus,
         LevelContext context,
         GameStateService state,
-        BlockViewRegistry viewRegistry,
+        IBlockViewRegistry viewRegistry,
         IBlockViewFactory blockViewFactory,
         CellSpace cellSpace)
     {
@@ -112,52 +112,27 @@ public sealed class GrinderService : IStartable, IDisposable
         int touchingCells = 0;
         var offsets = block.CellOffsets;
 
+        int start = grinder.Position;
+        int end = start + grinder.Width - 1;
+
         // First pass: ALL cells of the block must fit within the grinder's
-        // coverage range along the edge's parallel axis. This prevents a
-        // block that is wider/taller than the grinder from being consumed.
+        // coverage range along the edge's parallel axis. Prevents a block
+        // that is wider/taller than the grinder from being consumed.
         for (int i = 0; i < offsets.Length; i++)
         {
             var cell = block.Origin + offsets[i];
-            if (!IsInsideGrinderCoverage(cell, grinder)) return false;
+            int along = grinder.Edge.AlongAxis(cell);
+            if (along < start || along > end) return false;
         }
 
         // Second pass: at least one cell must actually touch the grinder's edge.
         for (int i = 0; i < offsets.Length; i++)
         {
             var cell = block.Origin + offsets[i];
-            if (IsOnEdge(cell, grinder.Edge, size))
-                touchingCells++;
+            if (grinder.Edge.ContainsCell(cell, size)) touchingCells++;
         }
 
         return touchingCells > 0;
-    }
-
-    private static bool IsOnEdge(GridCoord cell, GridEdge edge, GridSize size)
-    {
-        switch (edge)
-        {
-            case GridEdge.Top:    return cell.y == size.height - 1;
-            case GridEdge.Bottom: return cell.y == 0;
-            case GridEdge.Left:   return cell.x == 0;
-            case GridEdge.Right:  return cell.x == size.width - 1;
-        }
-        return false;
-    }
-
-    private static bool IsInsideGrinderCoverage(GridCoord cell, GrinderModel grinder)
-    {
-        int start = grinder.Position;
-        int end = grinder.Position + grinder.Width - 1;
-        switch (grinder.Edge)
-        {
-            case GridEdge.Top:
-            case GridEdge.Bottom:
-                return cell.x >= start && cell.x <= end;
-            case GridEdge.Left:
-            case GridEdge.Right:
-                return cell.y >= start && cell.y <= end;
-        }
-        return false;
     }
 
     // ---------- consumption ----------
@@ -173,7 +148,7 @@ public sealed class GrinderService : IStartable, IDisposable
         {
             viewRegistry.Unregister(id);
             var captured = view;
-            var slideDir = EdgeToDirection(grinder.Edge);
+            var slideDir = grinder.Edge.ToSlideDirection();
 
             // Slide distance must be large enough to push the entire block
             // past the clip plane. Compute from block's cell extent along
@@ -247,17 +222,12 @@ public sealed class GrinderService : IStartable, IDisposable
 
         int min = int.MaxValue;
         int max = int.MinValue;
-
         for (int i = 0; i < offsets.Length; i++)
         {
-            // Parallel axis: X for Top/Bottom, Y for Left/Right
-            int val = (edge == GridEdge.Top || edge == GridEdge.Bottom)
-                ? offsets[i].x
-                : offsets[i].y;
+            int val = edge.AlongAxis(offsets[i]);
             if (val < min) min = val;
             if (val > max) max = val;
         }
-
         return max - min + 1;
     }
 
@@ -275,9 +245,7 @@ public sealed class GrinderService : IStartable, IDisposable
         int max = int.MinValue;
         for (int i = 0; i < offsets.Length; i++)
         {
-            int val = (grinder.Edge == GridEdge.Top || grinder.Edge == GridEdge.Bottom)
-                ? (origin.x + offsets[i].x)
-                : (origin.y + offsets[i].y);
+            int val = grinder.Edge.AlongAxis(origin + offsets[i]);
             if (val < min) min = val;
             if (val > max) max = val;
         }
@@ -301,34 +269,15 @@ public sealed class GrinderService : IStartable, IDisposable
         int min = int.MaxValue;
         int max = int.MinValue;
 
+        // Perpendicular axis is the OPPOSITE of the along-axis.
+        bool perpIsX = !edge.IsHorizontal();
         for (int i = 0; i < offsets.Length; i++)
         {
-            int val;
-            if (edge == GridEdge.Left || edge == GridEdge.Right)
-                val = offsets[i].x;
-            else
-                val = offsets[i].y;
-
+            int val = perpIsX ? offsets[i].x : offsets[i].y;
             if (val < min) min = val;
             if (val > max) max = val;
         }
 
         return max - min + 1;
-    }
-
-    /// <summary>
-    /// Returns the world-space direction a block should slide toward
-    /// when being consumed by a grinder on the given edge.
-    /// </summary>
-    private static Vector3 EdgeToDirection(GridEdge edge)
-    {
-        switch (edge)
-        {
-            case GridEdge.Top:    return Vector3.forward;   //  +Z
-            case GridEdge.Bottom: return Vector3.back;      //  -Z
-            case GridEdge.Left:   return Vector3.left;      //  -X
-            case GridEdge.Right:  return Vector3.right;     //  +X
-            default:              return Vector3.forward;
-        }
     }
 }

@@ -18,13 +18,13 @@ public sealed class IceMeltService : IStartable, IDisposable
 {
     private readonly IEventBus bus;
     private readonly LevelContext context;
-    private readonly BlockViewRegistry viewRegistry;
+    private readonly IBlockViewRegistry viewRegistry;
     private readonly List<IDisposable> subs = new List<IDisposable>();
 
     // Scratch list used to avoid mutating the blocks dictionary while iterating.
     private readonly List<BlockModel> scratch = new List<BlockModel>();
 
-    public IceMeltService(IEventBus bus, LevelContext context, BlockViewRegistry viewRegistry)
+    public IceMeltService(IEventBus bus, LevelContext context, IBlockViewRegistry viewRegistry)
     {
         this.bus = bus;
         this.context = context;
