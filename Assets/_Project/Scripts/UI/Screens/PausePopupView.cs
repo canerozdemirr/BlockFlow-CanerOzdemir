@@ -26,16 +26,18 @@ public sealed class PausePopupView : MonoBehaviour
     private IEventBus bus;
     private LevelRunner runner;
     private GameStateService state;
+    private ISceneLoader sceneLoader;
     private readonly List<IDisposable> subs = new List<IDisposable>();
 
     private const float SlideDuration = 0.35f;
 
     [Inject]
-    public void Construct(IEventBus bus, LevelRunner runner, GameStateService state)
+    public void Construct(IEventBus bus, LevelRunner runner, GameStateService state, ISceneLoader sceneLoader)
     {
         this.bus = bus;
         this.runner = runner;
         this.state = state;
+        this.sceneLoader = sceneLoader;
 
         subs.Add(bus.Subscribe<LevelStartedEvent>(_ => HideImmediate()));
         subs.Add(bus.Subscribe<LevelEndedEvent>(_ => HideImmediate()));
@@ -169,7 +171,7 @@ public sealed class PausePopupView : MonoBehaviour
         AnimateHide(() =>
         {
             state?.RequestResume();
-            SceneFlowManager.UnloadGameplay();
+            sceneLoader?.UnloadGameplay();
         });
     }
 }

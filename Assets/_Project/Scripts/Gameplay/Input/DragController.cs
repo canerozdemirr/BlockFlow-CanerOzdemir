@@ -137,7 +137,9 @@ public sealed class DragController : ITickable, IStartable, IDisposable
             BlockId = blockId,
             View = view,
             BlockLock = block.AxisLock,
-            LockedAxis = AxisFromBlockLock(block.AxisLock),
+            LockedAxis = block.AxisLock == BlockAxisLock.Horizontal ? DragAxis.Horizontal
+                       : block.AxisLock == BlockAxisLock.Vertical   ? DragAxis.Vertical
+                       : DragAxis.None,
             StartOrigin = block.Origin,
             StartLocalHit = localHit,
             StartViewLocalPos = view.transform.localPosition,
@@ -407,13 +409,4 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         session = default;
     }
 
-    private static DragAxis AxisFromBlockLock(BlockAxisLock axisLock)
-    {
-        switch (axisLock)
-        {
-            case BlockAxisLock.Horizontal: return DragAxis.Horizontal;
-            case BlockAxisLock.Vertical:   return DragAxis.Vertical;
-            default:                       return DragAxis.None;
-        }
-    }
 }

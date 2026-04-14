@@ -153,14 +153,15 @@ public sealed class GrinderService : IStartable, IDisposable
             // Slide distance must be large enough to push the entire block
             // past the clip plane. Compute from block's cell extent along
             // the slide axis + extra margin.
-            float blockExtent = ComputeBlockExtent(block, grinder.Edge);
+            float blockExtent = GrinderGeometry.BlockPerpendicularExtent(block, grinder.Edge);
             float slideDist = (blockExtent + 1.5f) * cellSpace.CellSize;
 
             // Scale duration proportionally so bigger blocks don't rush through
             float duration = ConsumeTweenDuration + blockExtent * 0.1f;
 
-            int blockParallelExtent = ComputeBlockParallelExtent(block, grinder.Edge);
-            var blockEntryPoint = ComputeBlockEdgeCenter(block, grinder);
+            int blockParallelExtent = GrinderGeometry.BlockParallelExtent(block, grinder.Edge);
+            var blockEntryPoint = GrinderGeometry.BlockEdgeCenterWorld(
+                block, grinder, context.Grid.Size, cellSpace.CellSize, context.GridRoot);
 
             captured.DismissToGrinder(slideDir, slideDist, blockEntryPoint, duration,
                 () => blockViewFactory.Release(captured), blockParallelExtent);
@@ -169,115 +170,4 @@ public sealed class GrinderService : IStartable, IDisposable
         bus.Publish(new BlockGroundEvent(id, grinder.Id, colorId));
     }
 
-    /// <summary>
-    /// Computes the world-space center of the grinder's coverage area,
-    /// raised slightly on Y so particles are visible above the grid.
-    /// </summary>
-    private Vector3 ComputeGrinderWorldCenter(GrinderModel grinder)
-    {
-        float centerAlongEdge = (grinder.Position + (grinder.Width - 1) * 0.5f) * cellSpace.CellSize;
-        return EdgePointToWorld(grinder.Edge, centerAlongEdge);
-    }
-
-    /// <summary>
-    /// Converts a point on the given grinder edge (specified by its distance
-    /// along the edge, in local units) into world space, raised on Y so
-    /// particles render above the grid.
-    /// </summary>
-    private Vector3 EdgePointToWorld(GridEdge edge, float alongEdgeLocal)
-    {
-        var gridSize = context.Grid.Size;
-        float cs = cellSpace.CellSize;
-        Vector3 localPos;
-        switch (edge)
-        {
-            case GridEdge.Right:
-                localPos = new Vector3((gridSize.width - 0.5f) * cs, 0.3f, alongEdgeLocal);
-                break;
-            case GridEdge.Left:
-                localPos = new Vector3(-0.5f * cs, 0.3f, alongEdgeLocal);
-                break;
-            case GridEdge.Top:
-                localPos = new Vector3(alongEdgeLocal, 0.3f, (gridSize.height - 0.5f) * cs);
-                break;
-            case GridEdge.Bottom:
-                localPos = new Vector3(alongEdgeLocal, 0.3f, -0.5f * cs);
-                break;
-            default:
-                localPos = Vector3.zero;
-                break;
-        }
-
-        return context.GridRoot != null ? context.GridRoot.TransformPoint(localPos) : localPos;
-    }
-
-    /// <summary>
-    /// Returns how many cells the block spans along the grinder's parallel axis.
-    /// Used to size the grind particles to match the block, not the grinder.
-    /// </summary>
-    private static int ComputeBlockParallelExtent(BlockModel block, GridEdge edge)
-    {
-        var offsets = block.CellOffsets;
-        if (offsets == null || offsets.Length == 0) return 1;
-
-        int min = int.MaxValue;
-        int max = int.MinValue;
-        for (int i = 0; i < offsets.Length; i++)
-        {
-            int val = edge.AlongAxis(offsets[i]);
-            if (val < min) min = val;
-            if (val > max) max = val;
-        }
-        return max - min + 1;
-    }
-
-    /// <summary>
-    /// Computes the world-space point where the block meets the grinder edge,
-    /// centered along the block's cells on that edge. Particles spawn here
-    /// so they align with the block, not the grinder's full coverage area.
-    /// </summary>
-    private Vector3 ComputeBlockEdgeCenter(BlockModel block, GrinderModel grinder)
-    {
-        var offsets = block.CellOffsets;
-        var origin = block.Origin;
-
-        int min = int.MaxValue;
-        int max = int.MinValue;
-        for (int i = 0; i < offsets.Length; i++)
-        {
-            int val = grinder.Edge.AlongAxis(origin + offsets[i]);
-            if (val < min) min = val;
-            if (val > max) max = val;
-        }
-
-        float centerAlongEdge = (min + max) * 0.5f * cellSpace.CellSize;
-        return EdgePointToWorld(grinder.Edge, centerAlongEdge);
-    }
-
-    /// <summary>
-    /// Returns how many cells the block extends along the axis perpendicular
-    /// to the grinder edge. This determines how far the block must slide
-    /// to fully pass through the clip plane.
-    /// </summary>
-    private static float ComputeBlockExtent(BlockModel block, GridEdge edge)
-    {
-        var offsets = block.CellOffsets;
-        if (offsets == null || offsets.Length == 0) return 1f;
-
-        // For left/right edges, measure extent along X axis
-        // For top/bottom edges, measure extent along Y axis
-        int min = int.MaxValue;
-        int max = int.MinValue;
-
-        // Perpendicular axis is the OPPOSITE of the along-axis.
-        bool perpIsX = !edge.IsHorizontal();
-        for (int i = 0; i < offsets.Length; i++)
-        {
-            int val = perpIsX ? offsets[i].x : offsets[i].y;
-            if (val < min) min = val;
-            if (val > max) max = val;
-        }
-
-        return max - min + 1;
-    }
 }

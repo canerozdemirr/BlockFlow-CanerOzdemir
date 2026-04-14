@@ -19,16 +19,18 @@ public sealed class IceMeltService : IStartable, IDisposable
     private readonly IEventBus bus;
     private readonly LevelContext context;
     private readonly IBlockViewRegistry viewRegistry;
+    private readonly IPrefabLoader prefabLoader;
     private readonly List<IDisposable> subs = new List<IDisposable>();
 
     // Scratch list used to avoid mutating the blocks dictionary while iterating.
     private readonly List<BlockModel> scratch = new List<BlockModel>();
 
-    public IceMeltService(IEventBus bus, LevelContext context, IBlockViewRegistry viewRegistry)
+    public IceMeltService(IEventBus bus, LevelContext context, IBlockViewRegistry viewRegistry, IPrefabLoader prefabLoader)
     {
         this.bus = bus;
         this.context = context;
         this.viewRegistry = viewRegistry;
+        this.prefabLoader = prefabLoader;
     }
 
     public void Start()
@@ -80,26 +82,14 @@ public sealed class IceMeltService : IStartable, IDisposable
         scratch.Clear();
     }
 
-    private static GameObject cachedIcePrefab;
-
     /// <summary>
     /// Spawns the IceShatterEffect prefab at the block's position.
     /// The prefab plays on awake and self-destructs via StopAction.Destroy.
     /// </summary>
-    private static void SpawnIceShatter(Vector3 worldPosition)
+    private void SpawnIceShatter(Vector3 worldPosition)
     {
-        if (cachedIcePrefab == null)
-        {
-            cachedIcePrefab = Resources.Load<GameObject>("IceShatterEffect");
-            #if UNITY_EDITOR
-            if (cachedIcePrefab == null)
-                cachedIcePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/_Project/Prefabs/Gameplay/IceShatterEffect.prefab");
-            #endif
-        }
-
-        if (cachedIcePrefab == null) return;
-
-        Object.Instantiate(cachedIcePrefab, worldPosition + Vector3.up * 1.0f, Quaternion.identity);
+        var prefab = prefabLoader?.Load("IceShatterEffect");
+        if (prefab == null) return;
+        Object.Instantiate(prefab, worldPosition + Vector3.up * 1.0f, Quaternion.identity);
     }
 }

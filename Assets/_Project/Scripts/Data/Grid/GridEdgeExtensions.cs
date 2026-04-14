@@ -35,6 +35,23 @@ public static class GridEdgeExtensions
         => edge.IsHorizontal() ? cell.x : cell.y;
 
     /// <summary>
+    /// Converts a point specified by its along-edge local offset into a
+    /// grid-local Vector3 at the given edge, raised on Y so effects render
+    /// above the tiles. Caller applies the grid root transform for world space.
+    /// </summary>
+    public static Vector3 ToLocalPoint(this GridEdge edge, float alongEdgeLocal, GridSize gridSize, float cellSize, float y = 0.3f)
+    {
+        switch (edge)
+        {
+            case GridEdge.Right:  return new Vector3((gridSize.width - 0.5f) * cellSize, y, alongEdgeLocal);
+            case GridEdge.Left:   return new Vector3(-0.5f * cellSize, y, alongEdgeLocal);
+            case GridEdge.Top:    return new Vector3(alongEdgeLocal, y, (gridSize.height - 0.5f) * cellSize);
+            case GridEdge.Bottom: return new Vector3(alongEdgeLocal, y, -0.5f * cellSize);
+        }
+        return Vector3.zero;
+    }
+
+    /// <summary>
     /// World-space direction a block slides when consumed by a grinder on this edge.
     /// </summary>
     public static Vector3 ToSlideDirection(this GridEdge edge)

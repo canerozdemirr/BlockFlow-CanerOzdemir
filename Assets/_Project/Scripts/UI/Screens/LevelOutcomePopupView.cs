@@ -31,16 +31,18 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
     private LevelRunner runner;
     private LevelProgressionService progression;
     private CountdownTimer timer;
+    private ISceneLoader sceneLoader;
     private readonly List<IDisposable> subs = new List<IDisposable>();
 
     [Inject]
     public void Construct(IEventBus bus, LevelRunner runner,
-        LevelProgressionService progression, CountdownTimer timer)
+        LevelProgressionService progression, CountdownTimer timer, ISceneLoader sceneLoader)
     {
         this.bus = bus;
         this.runner = runner;
         this.progression = progression;
         this.timer = timer;
+        this.sceneLoader = sceneLoader;
 
         subs.Add(bus.Subscribe<LevelWonEvent>(_     => OnWon()));
         subs.Add(bus.Subscribe<LevelLostEvent>(e    => ShowLose(e)));
@@ -276,7 +278,7 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
 
         UIToolkitPopupAnimator.AnimateHide(activeRoot, activeOverlay, activePanel, 0.25f, () =>
         {
-            SceneFlowManager.UnloadGameplay();
+            sceneLoader?.UnloadGameplay();
         });
     }
 }

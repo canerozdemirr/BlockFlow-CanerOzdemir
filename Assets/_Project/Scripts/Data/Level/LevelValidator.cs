@@ -243,14 +243,5 @@ public static class LevelValidator
     }
 
     private static bool TryParseEdge(string edge, out GridEdge result)
-    {
-        switch (edge)
-        {
-            case "Top":    result = GridEdge.Top;    return true;
-            case "Bottom": result = GridEdge.Bottom; return true;
-            case "Left":   result = GridEdge.Left;   return true;
-            case "Right":  result = GridEdge.Right;  return true;
-            default:       result = GridEdge.Top;    return false;
-        }
-    }
+        => System.Enum.TryParse(edge, ignoreCase: false, out result);
 }

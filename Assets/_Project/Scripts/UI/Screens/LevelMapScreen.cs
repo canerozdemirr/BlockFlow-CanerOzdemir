@@ -22,6 +22,7 @@ public sealed class LevelMapScreen : MonoBehaviour
     private bool uiReady;
 
     private LevelProgressionService progression;
+    private ISceneLoader sceneLoader;
 
     private readonly List<VisualElement> nodeElements = new List<VisualElement>();
 
@@ -32,15 +33,16 @@ public sealed class LevelMapScreen : MonoBehaviour
     private const int ExtraLockedLevels = 10;
 
     [Inject]
-    public void Construct(LevelProgressionService progression)
+    public void Construct(LevelProgressionService progression, ISceneLoader sceneLoader)
     {
         this.progression = progression;
+        this.sceneLoader = sceneLoader;
     }
 
     private void Start()
     {
         InitUI();
-        SceneFlowManager.OnGameplayUnloaded += Refresh;
+        if (sceneLoader != null) sceneLoader.OnGameplayUnloaded += Refresh;
     }
 
     private void OnEnable()
@@ -111,7 +113,7 @@ public sealed class LevelMapScreen : MonoBehaviour
     {
         if (playBtn != null)
             playBtn.clicked -= OnPlayClicked;
-        SceneFlowManager.OnGameplayUnloaded -= Refresh;
+        if (sceneLoader != null) sceneLoader.OnGameplayUnloaded -= Refresh;
     }
 
     // ================================================================
@@ -211,9 +213,9 @@ public sealed class LevelMapScreen : MonoBehaviour
 
     private void OnPlayClicked()
     {
-        if (SceneFlowManager.IsLoading) return;
+        if (sceneLoader == null || sceneLoader.IsLoading) return;
         HideMapUI();
-        SceneFlowManager.LoadGameplay();
+        sceneLoader.LoadGameplay();
     }
 
     private void HideMapUI()
