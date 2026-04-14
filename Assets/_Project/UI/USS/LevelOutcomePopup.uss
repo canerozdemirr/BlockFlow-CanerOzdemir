@@ -42,6 +42,7 @@
     -unity-text-align: middle-center;
     -unity-font-style: bold;
     text-shadow: 2px 3px 0 rgba(0, 0, 0, 0.5);
+    margin-top: -120px;
 }
 
 .outcome-title-win {
@@ -58,6 +59,7 @@
     justify-content: center;
     align-items: flex-end;
     height: 160px;
+    margin-top: -60px;
 }
 
 .star {
@@ -85,7 +87,7 @@
 .outcome-btn-row {
     flex-direction: row;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 120px;
     width: 100%;
 }
 

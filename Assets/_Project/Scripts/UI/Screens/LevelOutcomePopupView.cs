@@ -132,6 +132,9 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         if (!uiReady) InitUI();
         int starCount = CalculateStars();
 
+        // Advance progression immediately so Home/Restart also get the new level
+        progression?.AdvanceToNext();
+
         // 1 second celebration delay
         Tween.Delay(1f, () => ShowWin(starCount));
     }
@@ -266,7 +269,7 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
     {
         UIToolkitPopupAnimator.AnimateHide(winRoot, winOverlay, winPanel, 0.25f, () =>
         {
-            progression?.AdvanceToNext();
+            // Progression already advanced in OnWon; just load the new current level
             if (runner != null && progression != null)
                 runner.Load(progression.Current);
         });

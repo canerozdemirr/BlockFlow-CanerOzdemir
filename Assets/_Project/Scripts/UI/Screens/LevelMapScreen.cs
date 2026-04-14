@@ -74,9 +74,9 @@ public sealed class LevelMapScreen : MonoBehaviour
 
         uiReady = root != null && content != null;
 
-        // Deferred build after layout resolves
+        // Build immediately — layout will resolve in the same frame
         if (uiReady)
-            ve.schedule.Execute(BuildMap).ExecuteLater(100);
+            BuildMap();
     }
 
     private void ForceStretchTemplateContainer(VisualElement ve)
@@ -154,12 +154,12 @@ public sealed class LevelMapScreen : MonoBehaviour
         if (levelLabel != null)
             levelLabel.text = $"Level {currentLevelNum}";
 
-        // Auto-scroll to bottom (current level)
+        // Auto-scroll to bottom (current level) — wait one frame for layout
         root.schedule.Execute(() =>
         {
             if (scrollView != null)
                 scrollView.scrollOffset = new Vector2(0, scrollView.contentContainer.layout.height);
-        }).ExecuteLater(200);
+        });
 
         AnimateNodesIn();
     }
@@ -187,16 +187,18 @@ public sealed class LevelMapScreen : MonoBehaviour
 
     private void AnimateNodesIn()
     {
-        // Animate only the nodes closest to the current level
-        for (int i = 0; i < nodeElements.Count; i++)
+        // Staggered pop-in, but bottom (current level) animates first so it's instantly visible
+        int count = nodeElements.Count;
+        for (int i = 0; i < count; i++)
         {
             var capturedNode = nodeElements[i];
-            float delay = i * 0.04f;
+            // Reverse order: bottom-most node (current) starts at 0 delay
+            float delay = (count - 1 - i) * 0.02f;
 
             capturedNode.transform.scale = Vector3.zero;
             Tween.Delay(delay, () =>
             {
-                Tween.Custom(0f, 1f, 0.25f, val =>
+                Tween.Custom(0f, 1f, 0.2f, val =>
                     capturedNode.transform.scale = new Vector3(val, val, 1f),
                     ease: Ease.OutBack);
             });
@@ -235,9 +237,6 @@ public sealed class LevelMapScreen : MonoBehaviour
         if (root != null)
             root.RemoveFromClassList("hidden");
 
-        if (root != null)
-            root.schedule.Execute(BuildMap).ExecuteLater(100);
-        else
-            BuildMap();
+        BuildMap();
     }
 }
