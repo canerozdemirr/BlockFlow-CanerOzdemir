@@ -200,38 +200,40 @@ public sealed class GrinderService : IStartable, IDisposable
     /// </summary>
     private Vector3 ComputeGrinderWorldCenter(GrinderModel grinder)
     {
-        var gridSize = context.Grid.Size;
         float centerAlongEdge = (grinder.Position + (grinder.Width - 1) * 0.5f) * cellSpace.CellSize;
-        float edgeCoord;
+        return EdgePointToWorld(grinder.Edge, centerAlongEdge);
+    }
 
+    /// <summary>
+    /// Converts a point on the given grinder edge (specified by its distance
+    /// along the edge, in local units) into world space, raised on Y so
+    /// particles render above the grid.
+    /// </summary>
+    private Vector3 EdgePointToWorld(GridEdge edge, float alongEdgeLocal)
+    {
+        var gridSize = context.Grid.Size;
+        float cs = cellSpace.CellSize;
         Vector3 localPos;
-        switch (grinder.Edge)
+        switch (edge)
         {
             case GridEdge.Right:
-                edgeCoord = (gridSize.width - 0.5f) * cellSpace.CellSize;
-                localPos = new Vector3(edgeCoord, 0.3f, centerAlongEdge);
+                localPos = new Vector3((gridSize.width - 0.5f) * cs, 0.3f, alongEdgeLocal);
                 break;
             case GridEdge.Left:
-                edgeCoord = -0.5f * cellSpace.CellSize;
-                localPos = new Vector3(edgeCoord, 0.3f, centerAlongEdge);
+                localPos = new Vector3(-0.5f * cs, 0.3f, alongEdgeLocal);
                 break;
             case GridEdge.Top:
-                edgeCoord = (gridSize.height - 0.5f) * cellSpace.CellSize;
-                localPos = new Vector3(centerAlongEdge, 0.3f, edgeCoord);
+                localPos = new Vector3(alongEdgeLocal, 0.3f, (gridSize.height - 0.5f) * cs);
                 break;
             case GridEdge.Bottom:
-                edgeCoord = -0.5f * cellSpace.CellSize;
-                localPos = new Vector3(centerAlongEdge, 0.3f, edgeCoord);
+                localPos = new Vector3(alongEdgeLocal, 0.3f, -0.5f * cs);
                 break;
             default:
                 localPos = Vector3.zero;
                 break;
         }
 
-        // Convert from grid-local to world space
-        if (context.GridRoot != null)
-            return context.GridRoot.TransformPoint(localPos);
-        return localPos;
+        return context.GridRoot != null ? context.GridRoot.TransformPoint(localPos) : localPos;
     }
 
     /// <summary>
@@ -266,11 +268,9 @@ public sealed class GrinderService : IStartable, IDisposable
     /// </summary>
     private Vector3 ComputeBlockEdgeCenter(BlockModel block, GrinderModel grinder)
     {
-        var gridSize = context.Grid.Size;
         var offsets = block.CellOffsets;
         var origin = block.Origin;
 
-        // Find block's min/max along the grinder's parallel axis
         int min = int.MaxValue;
         int max = int.MinValue;
         for (int i = 0; i < offsets.Length; i++)
@@ -283,35 +283,7 @@ public sealed class GrinderService : IStartable, IDisposable
         }
 
         float centerAlongEdge = (min + max) * 0.5f * cellSpace.CellSize;
-        float edgeCoord;
-
-        Vector3 localPos;
-        switch (grinder.Edge)
-        {
-            case GridEdge.Right:
-                edgeCoord = (gridSize.width - 0.5f) * cellSpace.CellSize;
-                localPos = new Vector3(edgeCoord, 0.3f, centerAlongEdge);
-                break;
-            case GridEdge.Left:
-                edgeCoord = -0.5f * cellSpace.CellSize;
-                localPos = new Vector3(edgeCoord, 0.3f, centerAlongEdge);
-                break;
-            case GridEdge.Top:
-                edgeCoord = (gridSize.height - 0.5f) * cellSpace.CellSize;
-                localPos = new Vector3(centerAlongEdge, 0.3f, edgeCoord);
-                break;
-            case GridEdge.Bottom:
-                edgeCoord = -0.5f * cellSpace.CellSize;
-                localPos = new Vector3(centerAlongEdge, 0.3f, edgeCoord);
-                break;
-            default:
-                localPos = Vector3.zero;
-                break;
-        }
-
-        if (context.GridRoot != null)
-            return context.GridRoot.TransformPoint(localPos);
-        return localPos;
+        return EdgePointToWorld(grinder.Edge, centerAlongEdge);
     }
 
     /// <summary>

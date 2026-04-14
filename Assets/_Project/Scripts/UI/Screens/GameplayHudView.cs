@@ -72,8 +72,7 @@ public sealed class GameplayHudView : MonoBehaviour
 
     private void OnPauseClicked()
     {
-        var pausePopup = FindObjectOfType<PausePopupView>(true);
-        if (pausePopup != null) pausePopup.Show();
+        bus?.Publish(new PauseRequestedEvent());
     }
 
     private void OnLevelStarted(LevelStartedEvent evt)

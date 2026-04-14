@@ -39,10 +39,19 @@ public sealed class BlockView : MonoBehaviour
     private static readonly int ClipEnabledId = Shader.PropertyToID("_ClipEnabled");
 
     private static Shader clipPlaneShader;
+    private static Shader alwaysOnTopShader;
     private Material originalMaterial;
     private Material clipMaterial;
 
     private Tween dismissTween;
+
+    private MaterialPropertyBlock iceMpb;
+    private Material iceTextMaterial;
+    private Renderer iceOverlayRenderer;
+    private TextMesh iceTextMesh;
+    private MeshRenderer iceTextRenderer;
+    private bool iceChildrenCached;
+    private static readonly int IceColorId = Shader.PropertyToID("_Color");
 
     public BlockModel Model { get; private set; }
     public Transform VisualRoot => visualRoot;
@@ -100,40 +109,37 @@ public sealed class BlockView : MonoBehaviour
 
         if (!isIced) return;
 
-        // Update ice count text
-        var textMesh = iceOverlay.GetComponentInChildren<TextMesh>();
-        if (textMesh != null)
+        if (!iceChildrenCached)
         {
-            textMesh.text = Model.IceLevel.ToString();
+            iceTextMesh = iceOverlay.GetComponentInChildren<TextMesh>();
+            iceTextRenderer = iceTextMesh != null ? iceTextMesh.GetComponent<MeshRenderer>() : null;
+            iceOverlayRenderer = iceOverlay.GetComponent<Renderer>();
+            iceChildrenCached = true;
+        }
 
-            // Create a runtime material from the font's own material, swapping the
-            // shader to AlwaysOnTop. This keeps the font atlas in sync when TextMesh
-            // regenerates its mesh on text changes.
-            var textRenderer = textMesh.GetComponent<MeshRenderer>();
-            if (textRenderer != null && textMesh.font != null && textMesh.font.material != null)
+        if (iceTextMesh != null)
+        {
+            iceTextMesh.text = Model.IceLevel.ToString();
+
+            if (iceTextMaterial == null && iceTextRenderer != null && iceTextMesh.font != null && iceTextMesh.font.material != null)
             {
-                var alwaysOnTopShader = Shader.Find("BlockFlow/AlwaysOnTop");
-                if (alwaysOnTopShader != null && (textRenderer.material == null || textRenderer.material.shader != alwaysOnTopShader))
+                if (alwaysOnTopShader == null)
+                    alwaysOnTopShader = Shader.Find("BlockFlow/AlwaysOnTop");
+                if (alwaysOnTopShader != null)
                 {
-                    var mat = new Material(textMesh.font.material);
-                    mat.shader = alwaysOnTopShader;
-                    mat.color = Color.white;
-                    textRenderer.material = mat;
+                    iceTextMaterial = new Material(iceTextMesh.font.material) { shader = alwaysOnTopShader, color = Color.white };
+                    iceTextRenderer.material = iceTextMaterial;
                 }
             }
         }
 
-        // Update overlay opacity based on ice level — thicker ice = more opaque
-        var overlayRenderer = iceOverlay.GetComponent<Renderer>();
-        if (overlayRenderer != null)
+        if (iceOverlayRenderer != null)
         {
-            float baseAlpha = 0.4f;
-            float alphaPerLevel = 0.15f;
-            float alpha = Mathf.Clamp01(baseAlpha + Model.IceLevel * alphaPerLevel);
-            var mpbIce = new MaterialPropertyBlock();
-            overlayRenderer.GetPropertyBlock(mpbIce);
-            mpbIce.SetColor("_Color", new Color(0.7f, 0.85f, 1f, alpha));
-            overlayRenderer.SetPropertyBlock(mpbIce);
+            float alpha = Mathf.Clamp01(0.4f + Model.IceLevel * 0.15f);
+            if (iceMpb == null) iceMpb = new MaterialPropertyBlock();
+            iceOverlayRenderer.GetPropertyBlock(iceMpb);
+            iceMpb.SetColor(IceColorId, new Color(0.7f, 0.85f, 1f, alpha));
+            iceOverlayRenderer.SetPropertyBlock(iceMpb);
         }
     }
 

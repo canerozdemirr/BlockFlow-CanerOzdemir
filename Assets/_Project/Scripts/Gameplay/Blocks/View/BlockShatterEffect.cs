@@ -64,12 +64,11 @@ public static class BlockShatterEffect
 
             // Also tint materials
             var renderer = ps.GetComponent<ParticleSystemRenderer>();
-            if (renderer != null && renderer.material != null)
+            var mat = renderer != null ? renderer.material : null;
+            if (mat != null)
             {
-                if (renderer.material.HasProperty("_BaseColor"))
-                    renderer.material.SetColor("_BaseColor", color);
-                if (renderer.material.HasProperty("_Color"))
-                    renderer.material.SetColor("_Color", color);
+                if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
+                if (mat.HasProperty("_Color"))     mat.SetColor("_Color", color);
             }
 
             ps.Play();

@@ -39,6 +39,7 @@ public sealed class PausePopupView : MonoBehaviour
 
         subs.Add(bus.Subscribe<LevelStartedEvent>(_ => HideImmediate()));
         subs.Add(bus.Subscribe<LevelEndedEvent>(_ => HideImmediate()));
+        subs.Add(bus.Subscribe<PauseRequestedEvent>(_ => Show()));
     }
 
     private void OnEnable()

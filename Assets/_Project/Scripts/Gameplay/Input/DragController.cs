@@ -47,6 +47,8 @@ public sealed class DragController : ITickable, IStartable, IDisposable
     private Session session;
     private Tween snapTween;
 
+    private readonly Dictionary<BlockView, Renderer> rendererCache = new Dictionary<BlockView, Renderer>();
+
     public DragController(
         IInputService input,
         LevelContext context,
@@ -69,7 +71,11 @@ public sealed class DragController : ITickable, IStartable, IDisposable
 
     public void Start()
     {
-        subs.Add(bus.Subscribe<LevelEndedEvent>(_ => ClearSession()));
+        subs.Add(bus.Subscribe<LevelEndedEvent>(_ =>
+        {
+            ClearSession();
+            rendererCache.Clear();
+        }));
     }
 
     public void Dispose()
@@ -146,8 +152,12 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         foreach (var pair in context.Grid.Blocks)
         {
             if (!viewRegistry.TryGet(pair.Key, out var view) || view == null) continue;
-            var renderer = view.GetComponentInChildren<Renderer>();
-            if (renderer == null) continue;
+            if (!rendererCache.TryGetValue(view, out var renderer) || renderer == null)
+            {
+                renderer = view.GetComponentInChildren<Renderer>();
+                if (renderer == null) continue;
+                rendererCache[view] = renderer;
+            }
             if (renderer.bounds.Contains(worldPoint))
                 return pair.Key;
         }

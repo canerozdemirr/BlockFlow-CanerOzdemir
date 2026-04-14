@@ -54,18 +54,8 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
 
     private void InitUI()
     {
-        var doc = GetComponent<UIDocument>();
-        if (doc == null) return;
-        var root = doc.rootVisualElement;
+        var root = GetFullscreenRoot();
         if (root == null) return;
-
-        // Force TemplateContainer to fill the entire panel
-        root.style.flexGrow = 1;
-        root.style.position = Position.Absolute;
-        root.style.left = 0;
-        root.style.top = 0;
-        root.style.right = 0;
-        root.style.bottom = 0;
 
         // Win
         winRoot    = root.Q("ui_popup_win_root");
@@ -139,18 +129,21 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         Tween.Delay(1f, () => ShowWin(starCount));
     }
 
-    private void EnsureFullscreen()
+    private void EnsureFullscreen() => GetFullscreenRoot();
+
+    private VisualElement GetFullscreenRoot()
     {
         var doc = GetComponent<UIDocument>();
-        if (doc == null) return;
+        if (doc == null) return null;
         var tc = doc.rootVisualElement;
-        if (tc == null) return;
+        if (tc == null) return null;
         tc.style.flexGrow = 1;
         tc.style.position = Position.Absolute;
         tc.style.left = 0;
         tc.style.top = 0;
         tc.style.right = 0;
         tc.style.bottom = 0;
+        return tc;
     }
 
     private void ShowWin(int starCount)
