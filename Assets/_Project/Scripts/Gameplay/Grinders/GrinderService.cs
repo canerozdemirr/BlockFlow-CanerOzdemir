@@ -37,11 +37,10 @@ public sealed class GrinderService : IStartable, IDisposable
     private readonly IBlockViewRegistry viewRegistry;
     private readonly IBlockViewFactory blockViewFactory;
     private readonly CellSpace cellSpace;
+    private readonly GrinderFeelConfig feel;
 
     private readonly List<GrinderModel> grinders = new List<GrinderModel>();
     private readonly List<IDisposable> subs = new List<IDisposable>();
-
-    private const float ConsumeTweenDuration = 0.5f;
 
     public IReadOnlyList<GrinderModel> Grinders => grinders;
 
@@ -51,7 +50,8 @@ public sealed class GrinderService : IStartable, IDisposable
         GameStateService state,
         IBlockViewRegistry viewRegistry,
         IBlockViewFactory blockViewFactory,
-        CellSpace cellSpace)
+        CellSpace cellSpace,
+        GrinderFeelConfig feel)
     {
         this.bus = bus;
         this.context = context;
@@ -59,6 +59,7 @@ public sealed class GrinderService : IStartable, IDisposable
         this.viewRegistry = viewRegistry;
         this.blockViewFactory = blockViewFactory;
         this.cellSpace = cellSpace;
+        this.feel = feel;
     }
 
     public void Start()
@@ -154,10 +155,10 @@ public sealed class GrinderService : IStartable, IDisposable
             // past the clip plane. Compute from block's cell extent along
             // the slide axis + extra margin.
             float blockExtent = GrinderGeometry.BlockPerpendicularExtent(block, grinder.Edge);
-            float slideDist = (blockExtent + 1.5f) * cellSpace.CellSize;
+            float slideDist = (blockExtent + feel.SlideMargin) * cellSpace.CellSize;
 
             // Scale duration proportionally so bigger blocks don't rush through
-            float duration = ConsumeTweenDuration + blockExtent * 0.1f;
+            float duration = feel.ConsumeTweenDuration + blockExtent * feel.DurationPerCellExtent;
 
             int blockParallelExtent = GrinderGeometry.BlockParallelExtent(block, grinder.Edge);
             var blockEntryPoint = GrinderGeometry.BlockEdgeCenterWorld(

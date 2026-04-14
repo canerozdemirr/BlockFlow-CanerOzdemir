@@ -57,6 +57,19 @@ public class GameplayLifetimeScope : LifetimeScope
     [SerializeField, Tooltip("Decal material for block movement arrows. Uses SP_Arrow_BlockMove_03 texture.")]
     private Material arrowDecalMaterial;
 
+    [Header("Feel configs")]
+    [SerializeField, Tooltip("Grinder consume tween timing and slide distance.")]
+    private GrinderFeelConfig grinderFeel;
+
+    [SerializeField, Tooltip("Ice overlay tint and per-level opacity.")]
+    private IceFeelConfig iceFeel;
+
+    [SerializeField, Tooltip("UI Toolkit popup show/hide tween tuning. Assigned to the static UIToolkitPopupAnimator.Config at bootstrap.")]
+    private PopupAnimationConfig popupAnimation;
+
+    [SerializeField, Tooltip("Grind particle tint tuning. Assigned to the static BlockShatterEffect.Config at bootstrap.")]
+    private ShatterFeelConfig shatterFeel;
+
     [Header("Tuning")]
     [SerializeField, Min(0.1f), Tooltip("World-space size of a single cell. 1 is a sensible default; bump for chunkier layouts.")]
     private float cellSize = 1f;
@@ -81,6 +94,21 @@ public class GameplayLifetimeScope : LifetimeScope
         if (blockCatalog    != null) builder.RegisterInstance(blockCatalog);
         if (grinderCatalog  != null) builder.RegisterInstance(grinderCatalog);
 
+        if (grinderFeel     == null) grinderFeel    = ScriptableObject.CreateInstance<GrinderFeelConfig>();
+        if (iceFeel         == null) iceFeel        = ScriptableObject.CreateInstance<IceFeelConfig>();
+        if (popupAnimation  == null) popupAnimation = ScriptableObject.CreateInstance<PopupAnimationConfig>();
+        if (shatterFeel     == null) shatterFeel    = ScriptableObject.CreateInstance<ShatterFeelConfig>();
+
+        builder.RegisterInstance(grinderFeel);
+        builder.RegisterInstance(iceFeel);
+        builder.RegisterInstance(popupAnimation);
+        builder.RegisterInstance(shatterFeel);
+
+        // BlockShatterEffect is a static utility in the Gameplay assembly; set it here.
+        // UIToolkitPopupAnimator lives in the UI assembly and is wired by the popup views
+        // via their own [Inject] hooks since Gameplay cannot reference UI types.
+        BlockShatterEffect.Config = shatterFeel;
+
         // ---------- per-level state ----------
 
         builder.Register<LevelContext>(Lifetime.Singleton);
@@ -95,7 +123,8 @@ public class GameplayLifetimeScope : LifetimeScope
         builder.Register<IBlockViewFactory>(container => new BlockViewFactory(
             defaultPalette,
             container.Resolve<CellSpace>(),
-            viewParent),
+            viewParent,
+            iceFeel),
             Lifetime.Singleton);
 
         builder.Register<IGrinderViewFactory>(container => new GrinderViewFactory(

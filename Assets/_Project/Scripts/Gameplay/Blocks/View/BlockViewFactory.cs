@@ -13,6 +13,7 @@ public sealed class BlockViewFactory : IBlockViewFactory
     private readonly ColorPalette palette;
     private readonly CellSpace cellSpace;
     private readonly Transform parent;
+    private readonly IceFeelConfig iceFeel;
 
     private readonly Dictionary<GameObject, PrefabPool<BlockView>> poolsByPrefab =
         new Dictionary<GameObject, PrefabPool<BlockView>>();
@@ -20,11 +21,12 @@ public sealed class BlockViewFactory : IBlockViewFactory
     private readonly Dictionary<BlockView, PrefabPool<BlockView>> activeViews =
         new Dictionary<BlockView, PrefabPool<BlockView>>();
 
-    public BlockViewFactory(ColorPalette palette, CellSpace cellSpace, Transform parent)
+    public BlockViewFactory(ColorPalette palette, CellSpace cellSpace, Transform parent, IceFeelConfig iceFeel)
     {
         this.palette = palette;
         this.cellSpace = cellSpace;
         this.parent = parent;
+        this.iceFeel = iceFeel;
     }
 
     public BlockView Acquire(BlockModel model, BlockDefinition definition)
@@ -54,7 +56,7 @@ public sealed class BlockViewFactory : IBlockViewFactory
         activeViews[view] = pool;
 
         Color color = ResolveColor(model.ColorId);
-        view.Bind(model, color, cellSpace);
+        view.Bind(model, color, cellSpace, iceFeel);
         return view;
     }
 

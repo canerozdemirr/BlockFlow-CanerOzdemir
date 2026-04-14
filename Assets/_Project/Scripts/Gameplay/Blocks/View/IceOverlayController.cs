@@ -12,6 +12,7 @@ public sealed class IceOverlayController
     private static Shader alwaysOnTopShader;
 
     private readonly GameObject overlay;
+    private readonly IceFeelConfig feel;
 
     private MaterialPropertyBlock mpb;
     private Material textMaterial;
@@ -20,9 +21,10 @@ public sealed class IceOverlayController
     private MeshRenderer textRenderer;
     private bool cached;
 
-    public IceOverlayController(GameObject overlay)
+    public IceOverlayController(GameObject overlay, IceFeelConfig feel)
     {
         this.overlay = overlay;
+        this.feel = feel;
     }
 
     /// <summary>
@@ -62,10 +64,13 @@ public sealed class IceOverlayController
 
         if (overlayRenderer != null)
         {
-            float alpha = Mathf.Clamp01(0.4f + iceLevel * 0.15f);
+            float baseA = feel != null ? feel.BaseAlpha : 0.4f;
+            float perLevel = feel != null ? feel.AlphaPerLevel : 0.15f;
+            Color tint = feel != null ? feel.TintColor : new Color(0.7f, 0.85f, 1f, 1f);
+            float alpha = Mathf.Clamp01(baseA + iceLevel * perLevel);
             if (mpb == null) mpb = new MaterialPropertyBlock();
             overlayRenderer.GetPropertyBlock(mpb);
-            mpb.SetColor(IceColorId, new Color(0.7f, 0.85f, 1f, alpha));
+            mpb.SetColor(IceColorId, new Color(tint.r, tint.g, tint.b, alpha));
             overlayRenderer.SetPropertyBlock(mpb);
         }
     }

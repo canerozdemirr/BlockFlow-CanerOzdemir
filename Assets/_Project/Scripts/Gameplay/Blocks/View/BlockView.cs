@@ -45,6 +45,7 @@ public sealed class BlockView : MonoBehaviour
     private Tween dismissTween;
 
     private IceOverlayController iceController;
+    private IceFeelConfig iceFeel;
 
     public BlockModel Model { get; private set; }
     public Transform VisualRoot => visualRoot;
@@ -54,9 +55,10 @@ public sealed class BlockView : MonoBehaviour
     /// Called by <see cref="BlockViewFactory"/> immediately after acquiring
     /// an instance from the pool.
     /// </summary>
-    public void Bind(BlockModel model, Color color, CellSpace space)
+    public void Bind(BlockModel model, Color color, CellSpace space, IceFeelConfig iceFeel)
     {
         Model = model;
+        this.iceFeel = iceFeel;
         ApplyColor(color);
         SyncTransform(space);
         RefreshIceOverlay();
@@ -96,7 +98,7 @@ public sealed class BlockView : MonoBehaviour
     public void RefreshIceOverlay()
     {
         if (iceOverlay == null) return;
-        if (iceController == null) iceController = new IceOverlayController(iceOverlay);
+        if (iceController == null) iceController = new IceOverlayController(iceOverlay, iceFeel);
         bool isIced = Model != null && Model.IsIced;
         iceController.Refresh(isIced, Model != null ? Model.IceLevel : 0);
     }

@@ -32,12 +32,14 @@ public sealed class PausePopupView : MonoBehaviour
     private const float SlideDuration = 0.35f;
 
     [Inject]
-    public void Construct(IEventBus bus, LevelRunner runner, GameStateService state, ISceneLoader sceneLoader)
+    public void Construct(IEventBus bus, LevelRunner runner, GameStateService state, ISceneLoader sceneLoader,
+        PopupAnimationConfig popupAnimation)
     {
         this.bus = bus;
         this.runner = runner;
         this.state = state;
         this.sceneLoader = sceneLoader;
+        UIToolkitPopupAnimator.Config = popupAnimation;
 
         subs.Add(bus.Subscribe<LevelStartedEvent>(_ => HideImmediate()));
         subs.Add(bus.Subscribe<LevelEndedEvent>(_ => HideImmediate()));

@@ -7,16 +7,29 @@ using UnityEngine.UIElements;
 /// Animates UI Toolkit popup show/hide using PrimeTween.Custom.
 /// Uses the "hidden" USS class for visibility toggling so elements
 /// remain queryable even when not displayed.
+///
+/// Tuning lives on <see cref="PopupAnimationConfig"/>, assigned once at
+/// gameplay bootstrap via <see cref="Config"/>. The old hard-coded defaults
+/// apply only if bootstrap never ran (e.g., pure-UI test scenes).
 /// </summary>
 public static class UIToolkitPopupAnimator
 {
     private const string HiddenClass = "hidden";
 
+    /// <summary>Assigned at bootstrap. When null, fallback constants are used.</summary>
+    public static PopupAnimationConfig Config { get; set; }
+
     public static void AnimateShow(VisualElement root, VisualElement overlay,
-        VisualElement panel, float duration = 0.4f, Action onComplete = null)
+        VisualElement panel, float? durationOverride = null, Action onComplete = null)
     {
         if (root == null) { onComplete?.Invoke(); return; }
         root.RemoveFromClassList(HiddenClass);
+
+        float duration = durationOverride ?? (Config != null ? Config.ShowDuration : 0.4f);
+        float startScale = Config != null ? Config.StartScale : 0.4f;
+        float dropOffset = Config != null ? Config.DropOffset : 60f;
+        float posFactor = Config != null ? Config.PositionDurationFactor : 0.8f;
+        float opacityFactor = Config != null ? Config.OpacityDurationFactor : 0.5f;
 
         if (overlay != null)
         {
@@ -27,19 +40,19 @@ public static class UIToolkitPopupAnimator
 
         if (panel != null)
         {
-            panel.transform.scale = new Vector3(0.4f, 0.4f, 1f);
-            panel.transform.position = new Vector3(0, 60f, 0);
+            panel.transform.scale = new Vector3(startScale, startScale, 1f);
+            panel.transform.position = new Vector3(0, dropOffset, 0);
             panel.style.opacity = 0f;
 
-            Tween.Custom(0.4f, 1f, duration, val =>
+            Tween.Custom(startScale, 1f, duration, val =>
                 panel.transform.scale = new Vector3(val, val, 1f),
                 ease: Ease.OutBack);
 
-            Tween.Custom(60f, 0f, duration * 0.8f, val =>
+            Tween.Custom(dropOffset, 0f, duration * posFactor, val =>
                 panel.transform.position = new Vector3(0, val, 0),
                 ease: Ease.OutCubic);
 
-            Tween.Custom(0f, 1f, duration * 0.5f, val =>
+            Tween.Custom(0f, 1f, duration * opacityFactor, val =>
                 panel.style.opacity = val,
                 ease: Ease.OutQuad);
         }
@@ -49,9 +62,12 @@ public static class UIToolkitPopupAnimator
     }
 
     public static void AnimateHide(VisualElement root, VisualElement overlay,
-        VisualElement panel, float duration = 0.25f, Action onComplete = null)
+        VisualElement panel, float? durationOverride = null, Action onComplete = null)
     {
         if (root == null) { onComplete?.Invoke(); return; }
+
+        float duration = durationOverride ?? (Config != null ? Config.HideDuration : 0.25f);
+        float hideScale = Config != null ? Config.HideScale : 0.85f;
 
         if (overlay != null)
         {
@@ -61,7 +77,7 @@ public static class UIToolkitPopupAnimator
 
         if (panel != null)
         {
-            Tween.Custom(1f, 0.85f, duration, val =>
+            Tween.Custom(1f, hideScale, duration, val =>
                 panel.transform.scale = new Vector3(val, val, 1f),
                 ease: Ease.InBack);
 

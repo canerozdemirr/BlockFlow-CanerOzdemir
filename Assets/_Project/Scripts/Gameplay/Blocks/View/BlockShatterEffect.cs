@@ -9,6 +9,9 @@ public static class BlockShatterEffect
 {
     private static GameObject cachedPrefab;
 
+    /// <summary>Assigned at bootstrap. When null, fallback constants are used.</summary>
+    public static ShatterFeelConfig Config { get; set; }
+
     /// <summary>
     /// Instantiates the grind particle prefab at the given position,
     /// tints all particle systems to the block color, and starts playing.
@@ -57,7 +60,9 @@ public static class BlockShatterEffect
             else if (ps.gameObject.name == "Sparks")
             {
                 // Sparks: blend block color with warm highlight
-                var sparkColor = Color.Lerp(color, new Color(1f, 0.9f, 0.6f), 0.3f);
+                Color highlight = Config != null ? Config.SparkHighlightColor : new Color(1f, 0.9f, 0.6f);
+                float blend = Config != null ? Config.SparkBlendRatio : 0.3f;
+                var sparkColor = Color.Lerp(color, highlight, blend);
                 main.startColor = sparkColor;
             }
             // DustCloud keeps its subtle white/transparent look
