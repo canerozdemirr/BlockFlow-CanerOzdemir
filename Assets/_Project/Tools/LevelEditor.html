@@ -5,707 +5,2007 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BlockFlow Level Editor</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+/* ==================== THEME ==================== */
 :root{
-  --bg:#1a1a2e;--surface:#16213e;--surface2:#0f3460;--border:#1a4080;
-  --text:#e0e0e0;--text-dim:#888;--accent:#3e8cff;--danger:#f24a4a;
-  --red:#F24A4A;--blue:#3E8CFF;--green:#4AD06B;--yellow:#FFD23F;
-  --purple:#B94AE0;--orange:#FF8A3D;
-  --cell:56px;--gap:2px;
+  --bg:#1a1a2e;
+  --surface:#16213e;
+  --surface2:#0f3460;
+  --border:#1a4080;
+  --border-soft:#233a66;
+  --text:#e0e0e0;
+  --text-dim:#8a96b5;
+  --accent:#3e8cff;
+  --accent-hot:#5a9fff;
+  --danger:#f24a4a;
+  --warn:#ffb347;
+  --ok:#4ad06b;
+  --red:#F24A4A; --blue:#3E8CFF; --green:#4AD06B;
+  --yellow:#FFD23F; --purple:#B94AE0; --orange:#FF8A3D;
+  --cell:58px;
+  --gap:3px;
+  --edge:22px;
 }
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  display:flex;
+  height:100vh;
+  overflow:hidden;
+  font-size:13px;
+}
+button{font-family:inherit}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent)}
 
-/* ---- SIDEBAR LEFT ---- */
-.sidebar{width:260px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
-.sidebar h2{padding:16px;font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);border-bottom:1px solid var(--border)}
-.sidebar section{padding:12px 16px;border-bottom:1px solid var(--border)}
-.sidebar label{display:block;font-size:11px;color:var(--text-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
-.sidebar select,.sidebar input[type=text],.sidebar input[type=number]{width:100%;padding:6px 8px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:13px;margin-bottom:8px}
-.sidebar input[type=range]{width:100%;margin-bottom:4px}
-.color-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
-.color-swatch{width:28px;height:28px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:border-color .15s}
-.color-swatch.active{border-color:#fff}
-.color-swatch:hover{border-color:#aaa}
-.shape-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px}
-.shape-btn{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:6px;cursor:pointer;text-align:center;font-size:10px;color:var(--text);transition:all .15s}
+/* ==================== LAYOUT ==================== */
+.app{display:flex;flex-direction:column;flex:1;height:100vh;min-width:0}
+.topbar{
+  display:flex;align-items:center;gap:12px;
+  padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.topbar .title{font-weight:700;color:var(--accent);letter-spacing:.5px;font-size:14px}
+.topbar .spacer{flex:1}
+.topbar .tool-indicator{
+  padding:4px 10px;background:var(--surface2);border:1px solid var(--border);
+  border-radius:4px;font-size:12px;
+}
+.topbar .tool-indicator b{color:var(--accent)}
+.content{display:flex;flex:1;min-height:0}
+.sidebar{
+  width:260px;background:var(--surface);display:flex;flex-direction:column;
+  overflow-y:auto;flex-shrink:0;
+}
+.sidebar.left{border-right:1px solid var(--border)}
+.sidebar.right{border-left:1px solid var(--border);width:290px}
+.section{padding:12px 14px;border-bottom:1px solid var(--border-soft)}
+.section h3{
+  font-size:11px;text-transform:uppercase;letter-spacing:1px;
+  color:var(--accent);margin-bottom:8px;
+}
+.section label{
+  display:block;font-size:10px;color:var(--text-dim);
+  margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;
+}
+.section input[type=text],
+.section input[type=number],
+.section select{
+  width:100%;padding:6px 8px;background:var(--bg);
+  border:1px solid var(--border);color:var(--text);border-radius:4px;
+  font-size:13px;margin-bottom:8px;
+}
+.section input[type=range]{width:100%;margin-bottom:4px}
+.center{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:20px;overflow:auto;position:relative;
+}
+.statusbar{
+  display:flex;align-items:center;gap:16px;padding:6px 14px;
+  background:var(--surface);border-top:1px solid var(--border);font-size:11px;color:var(--text-dim);
+  flex-shrink:0;
+}
+.statusbar .sep{color:var(--border)}
+.statusbar .error{color:var(--danger);font-weight:600}
+.statusbar .warn{color:var(--warn);font-weight:600}
+
+/* ==================== BUTTONS ==================== */
+.btn{
+  padding:8px 12px;border:1px solid var(--border);background:var(--bg);
+  color:var(--text);border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;
+  transition:all .12s;display:inline-flex;align-items:center;gap:6px;
+  min-height:34px;
+}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-hot);color:#fff}
+.btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn.danger:hover{background:#ff6b6b;color:#fff}
+.btn.sm{padding:4px 8px;font-size:11px;min-height:26px}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn[disabled]:hover{border-color:var(--border);color:var(--text)}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap}
+.tool-btn{
+  flex:1;min-width:44px;min-height:44px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;font-size:10px;
+}
+.tool-btn b{font-size:14px;color:var(--accent)}
+.tool-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.tool-btn.active b{color:#fff}
+
+/* ==================== COLORS / SHAPES ==================== */
+.color-row{display:flex;gap:6px;flex-wrap:wrap}
+.color-swatch{
+  width:44px;height:44px;border-radius:6px;cursor:pointer;
+  border:2px solid transparent;transition:all .12s;
+  display:flex;align-items:flex-end;justify-content:center;padding-bottom:2px;
+  font-size:9px;color:rgba(0,0,0,.55);font-weight:700;
+}
+.color-swatch:hover{transform:scale(1.06)}
+.color-swatch.active{border-color:#fff;box-shadow:0 0 8px rgba(255,255,255,.3)}
+.shape-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.shape-btn{
+  background:var(--bg);border:1px solid var(--border);border-radius:4px;
+  padding:6px 4px;cursor:pointer;text-align:center;font-size:10px;
+  color:var(--text);transition:all .12s;min-height:60px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+}
 .shape-btn:hover{border-color:var(--accent)}
 .shape-btn.active{border-color:var(--accent);background:var(--surface2)}
-.shape-preview{display:grid;gap:1px;margin:0 auto 4px;width:fit-content}
+.shape-preview{display:grid;gap:1px}
 .shape-preview-cell{width:8px;height:8px;border-radius:1px}
 
-/* ---- CENTER ---- */
-.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow:auto}
-.grid-wrapper{position:relative;display:inline-block}
-.grid-area{display:grid;gap:var(--gap);position:relative}
-.cell{width:var(--cell);height:var(--cell);background:#2a2a4a;border-radius:3px;cursor:pointer;position:relative;transition:background .1s}
-.cell:hover{background:#3a3a5a}
-.cell.wall{background:#555568;background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(0,0,0,.15) 4px,rgba(0,0,0,.15) 8px)}
-.cell .coord{position:absolute;bottom:1px;right:3px;font-size:8px;color:rgba(255,255,255,.2);pointer-events:none}
+/* ==================== GRID ==================== */
+.grid-wrapper{
+  position:relative;display:inline-block;
+  padding:calc(var(--edge) + 6px);
+}
+.grid-area{
+  display:grid;gap:var(--gap);position:relative;
+  background:#0a0f1f;padding:var(--gap);border-radius:4px;
+}
+.cell{
+  width:var(--cell);height:var(--cell);background:#2a2a4a;border-radius:3px;
+  cursor:pointer;position:relative;transition:background .1s;
+  user-select:none;
+}
+.cell:hover{background:#35355a}
+.cell.wall{
+  background:#555568;
+  background-image:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(0,0,0,.2) 4px,rgba(0,0,0,.2) 8px);
+}
+.cell .coord{
+  position:absolute;bottom:1px;right:3px;font-size:8px;
+  color:rgba(255,255,255,.18);pointer-events:none;
+}
 .cell.block-cell{border-radius:4px}
-.cell.block-cell.selected{box-shadow:0 0 0 2px #fff}
-.cell.overlap{box-shadow:inset 0 0 0 2px var(--danger)}
-.cell.preview{outline:2px dashed rgba(255,255,255,.4);outline-offset:-2px}
-.cell .axis-arrow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:16px;color:rgba(255,255,255,.7);pointer-events:none}
-.cell .ice-badge{position:absolute;top:2px;left:2px;font-size:9px;background:rgba(0,200,255,.7);color:#fff;border-radius:2px;padding:0 3px;pointer-events:none}
+.cell.block-cell.selected{box-shadow:0 0 0 2px #fff,0 0 10px rgba(255,255,255,.5)}
+.cell.overlap{box-shadow:inset 0 0 0 3px var(--danger) !important}
+.cell.preview{outline:2px dashed rgba(255,255,255,.6);outline-offset:-2px;opacity:.7}
+.cell.preview-ok{outline-color:var(--ok)}
+.cell.preview-bad{outline-color:var(--danger)}
+.cell.highlight{animation:pulse 1s ease-out 3}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(255,180,71,.8)}
+  100%{box-shadow:0 0 0 10px rgba(255,180,71,0)}
+}
+.axis-arrow{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:18px;color:rgba(0,0,0,.6);pointer-events:none;
+  text-shadow:0 0 2px rgba(255,255,255,.6);
+}
+.ice-badge{
+  position:absolute;top:2px;left:2px;font-size:10px;
+  background:rgba(120,200,255,.95);color:#0a1228;
+  border-radius:3px;padding:0 4px;font-weight:700;
+  pointer-events:none;
+}
 
-/* edge strips */
+/* ==================== EDGE STRIPS / GRINDERS ==================== */
 .edge-strip{position:absolute;display:flex;gap:var(--gap)}
 .edge-strip.top,.edge-strip.bottom{flex-direction:row}
 .edge-strip.left,.edge-strip.right{flex-direction:column}
-.edge-cell{background:rgba(255,255,255,.05);border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-dim);transition:background .1s}
-.edge-cell:hover{background:rgba(255,255,255,.12)}
-.edge-cell.has-grinder{border:2px solid;font-weight:bold;font-size:11px;color:#fff}
+.edge-cell{
+  background:rgba(255,255,255,.04);border-radius:3px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:var(--text-dim);transition:background .1s;
+}
+.edge-cell:hover{background:rgba(255,255,255,.14)}
+.grinder{
+  position:absolute;border-radius:4px;display:flex;
+  align-items:center;justify-content:center;color:#fff;font-weight:700;
+  font-size:11px;text-shadow:0 1px 2px rgba(0,0,0,.7);cursor:pointer;
+  box-shadow:0 0 0 2px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.3);
+  transition:transform .1s;
+  background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.15),rgba(0,0,0,.15) 4px,transparent 4px,transparent 8px);
+}
+.grinder:hover{transform:scale(1.04)}
+.grinder.selected{box-shadow:0 0 0 2px #fff,inset 0 0 0 1px rgba(255,255,255,.5)}
 
-/* ---- SIDEBAR RIGHT ---- */
-.properties{width:260px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
-.properties section{padding:12px 16px;border-bottom:1px solid var(--border)}
-.properties label{display:block;font-size:11px;color:var(--text-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
-.properties select,.properties input{width:100%;padding:6px 8px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:13px;margin-bottom:8px}
+/* ==================== POPOVER ==================== */
+.popover{
+  position:absolute;background:var(--surface);
+  border:1px solid var(--accent);border-radius:6px;
+  padding:10px;box-shadow:0 8px 28px rgba(0,0,0,.6);
+  z-index:60;min-width:200px;
+}
+.popover h4{font-size:11px;color:var(--accent);text-transform:uppercase;
+  letter-spacing:1px;margin-bottom:8px}
+.popover label{display:block;font-size:10px;color:var(--text-dim);
+  text-transform:uppercase;margin-bottom:3px;letter-spacing:.5px}
+.popover select,.popover input{
+  width:100%;padding:5px 8px;background:var(--bg);border:1px solid var(--border);
+  color:var(--text);border-radius:4px;font-size:12px;margin-bottom:8px;
+}
 
-/* buttons */
-.btn{padding:8px 14px;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:#5a9fff}
-.btn-danger{background:var(--danger);color:#fff}
-.btn-danger:hover{background:#ff6b6b}
-.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
-.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
-.btn-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.btn-sm{padding:5px 10px;font-size:11px}
+/* ==================== VALIDATION PANEL ==================== */
+.issues{padding:10px 14px;font-size:12px;max-height:300px;overflow-y:auto}
+.issues .empty{color:var(--ok);font-size:11px}
+.issue{
+  padding:6px 8px;margin-bottom:4px;border-radius:4px;cursor:pointer;
+  display:flex;align-items:flex-start;gap:6px;line-height:1.35;
+  border-left:3px solid transparent;
+}
+.issue.error{background:rgba(242,74,74,.12);border-left-color:var(--danger);color:#ffb0b0}
+.issue.warn{background:rgba(255,179,71,.12);border-left-color:var(--warn);color:#ffd8a0}
+.issue .tag{
+  font-size:9px;font-weight:700;padding:1px 4px;border-radius:2px;flex-shrink:0;
+}
+.issue.error .tag{background:var(--danger);color:#fff}
+.issue.warn .tag{background:var(--warn);color:#201000}
 
-/* validation */
-.warnings{padding:12px 16px;font-size:11px}
-.warn-item{padding:4px 0;color:var(--danger);display:flex;align-items:start;gap:6px}
-.warn-item::before{content:"!";display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;background:var(--danger);color:#fff;border-radius:50%;font-size:9px;font-weight:bold;flex-shrink:0}
+/* ==================== HELP OVERLAY ==================== */
+.help-overlay{
+  position:fixed;inset:0;background:rgba(5,8,20,.85);
+  display:flex;align-items:center;justify-content:center;z-index:200;
+}
+.help-overlay[hidden]{display:none}
+.help-panel{
+  background:var(--surface);border:1px solid var(--accent);border-radius:8px;
+  padding:24px;min-width:420px;max-width:600px;
+  box-shadow:0 12px 40px rgba(0,0,0,.8);
+}
+.help-panel h2{color:var(--accent);margin-bottom:14px;font-size:16px}
+.help-panel table{width:100%;border-collapse:collapse;font-size:12px}
+.help-panel td{padding:4px 6px;vertical-align:top}
+.help-panel td.key{
+  width:140px;font-family:'Consolas',monospace;color:var(--accent);
+  font-weight:700;
+}
+.help-panel .close{float:right;cursor:pointer;color:var(--text-dim)}
+.help-panel .close:hover{color:var(--danger)}
 
-/* tool mode indicator */
-.tool-indicator{padding:10px 16px;background:var(--surface2);font-size:12px;text-align:center;border-bottom:1px solid var(--border)}
-.tool-indicator .mode{color:var(--accent);font-weight:600}
+/* ==================== PREVIEW ==================== */
+.preview-panel{
+  padding:10px 14px;font-size:11px;font-family:'Consolas',monospace;
+  background:#0a0f1f;color:#a0b0d0;max-height:260px;overflow:auto;
+  white-space:pre;border-top:1px solid var(--border-soft);
+}
+details summary{
+  cursor:pointer;padding:8px 14px;font-size:11px;
+  text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);
+  user-select:none;
+}
+details[open] summary{color:var(--accent)}
+details summary:hover{color:var(--accent)}
 
-/* grinder dialog */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100;display:none}
-.modal-overlay.show{display:flex}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:24px;min-width:280px}
-.modal h3{margin-bottom:16px;color:var(--accent)}
-.modal .btn-row{justify-content:flex-end}
+/* ==================== DND / TOAST ==================== */
+.drop-hint{
+  position:fixed;inset:0;background:rgba(62,140,255,.18);
+  border:4px dashed var(--accent);z-index:300;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--accent);font-size:26px;font-weight:700;pointer-events:none;
+}
+.drop-hint[hidden]{display:none}
+.toast{
+  position:fixed;bottom:40px;left:50%;transform:translateX(-50%);
+  background:var(--surface);border:1px solid var(--accent);border-radius:6px;
+  padding:10px 18px;color:var(--text);font-size:12px;
+  box-shadow:0 6px 20px rgba(0,0,0,.6);z-index:250;
+  opacity:0;transition:opacity .2s;pointer-events:none;
+}
+.toast.show{opacity:1}
+.toast.error{border-color:var(--danger);color:#ffb0b0}
+
+/* ==================== PROPERTIES ==================== */
+.prop-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.prop-row label{margin-bottom:0;flex:1}
+.prop-info{
+  font-size:11px;color:var(--text-dim);margin-bottom:10px;line-height:1.5;
+}
+.prop-info b{color:var(--text)}
 </style>
 </head>
 <body>
 
-<!-- LEFT SIDEBAR -->
-<div class="sidebar">
-  <h2>BlockFlow Editor</h2>
-
-  <section>
+<!-- ==================== LEFT SIDEBAR ==================== -->
+<aside class="sidebar left">
+  <div class="section">
+    <h3>Level</h3>
     <label>Level ID</label>
-    <input type="text" id="levelId" value="level_01">
+    <input type="text" id="levelId" value="level_01" spellcheck="false">
     <label>Grid Size</label>
     <select id="gridSize">
       <option value="4">4 x 4</option>
-      <option value="5">5 x 5</option>
+      <option value="5" selected>5 x 5</option>
       <option value="6">6 x 6</option>
     </select>
     <label>Time Limit: <span id="timeLimitVal">60</span>s</label>
     <input type="range" id="timeLimit" min="10" max="300" value="60" step="5">
-  </section>
+  </div>
 
-  <section>
-    <label>Tool Mode</label>
-    <div class="btn-row" style="margin-bottom:8px">
-      <button class="btn btn-sm btn-primary" onclick="setTool('block')" id="toolBlock">Block</button>
-      <button class="btn btn-sm btn-outline" onclick="setTool('wall')" id="toolWall">Wall</button>
-      <button class="btn btn-sm btn-outline" onclick="setTool('eraser')" id="toolEraser">Eraser</button>
+  <div class="section">
+    <h3>Tools</h3>
+    <div class="btn-row">
+      <button class="btn tool-btn" data-tool="block"><b>B</b>Block</button>
+      <button class="btn tool-btn" data-tool="grinder"><b>G</b>Grind</button>
     </div>
-  </section>
+    <div class="btn-row" style="margin-top:6px">
+      <button class="btn tool-btn" data-tool="eraser"><b>E</b>Erase</button>
+      <button class="btn tool-btn" data-tool="select"><b>S</b>Select</button>
+    </div>
+  </div>
 
-  <section id="blockTools">
-    <label>Color</label>
+  <div class="section" id="blockToolsSection">
+    <h3>Color</h3>
     <div class="color-row" id="colorPicker"></div>
-    <label>Shape</label>
+  </div>
+
+  <div class="section" id="shapeSection">
+    <h3>Shape</h3>
     <div class="shape-grid" id="shapePicker"></div>
-    <label style="margin-top:8px">Rotation</label>
-    <select id="rotation">
-      <option value="0">0</option>
-      <option value="90">90</option>
-      <option value="180">180</option>
-      <option value="270">270</option>
-    </select>
-  </section>
+  </div>
 
-  <section>
-    <label>Actions</label>
+  <div class="section" id="grinderToolsSection">
+    <h3>Grinder Width</h3>
     <div class="btn-row">
-      <button class="btn btn-primary" onclick="exportJSON()">Export JSON</button>
-      <button class="btn btn-outline" onclick="copyJSON()">Copy</button>
+      <button class="btn sm grinder-width-btn" data-width="1">1</button>
+      <button class="btn sm grinder-width-btn" data-width="2">2</button>
+      <button class="btn sm grinder-width-btn" data-width="3">3</button>
     </div>
+  </div>
+
+  <div class="section">
+    <h3>File</h3>
     <div class="btn-row">
-      <button class="btn btn-outline" onclick="document.getElementById('importFile').click()">Import JSON</button>
-      <button class="btn btn-danger btn-sm" onclick="clearAll()">Clear All</button>
-      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+      <button class="btn primary" id="btnExport">Export</button>
+      <button class="btn" id="btnCopy">Copy</button>
     </div>
-  </section>
-</div>
+    <div class="btn-row" style="margin-top:6px">
+      <button class="btn" id="btnImport">Import</button>
+      <button class="btn danger sm" id="btnClear">Clear</button>
+    </div>
+    <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+  </div>
 
-<!-- CENTER -->
-<div class="center">
-  <div class="tool-indicator">Mode: <span class="mode" id="toolLabel">Block</span> &mdash; <span id="toolHint">Click cell to place block</span></div>
-  <div class="grid-wrapper" id="gridWrapper"></div>
-</div>
-
-<!-- RIGHT SIDEBAR -->
-<div class="properties">
-  <h2>Properties</h2>
-  <section id="propNone"><p style="color:var(--text-dim);font-size:12px;padding:8px 0">Click a block or grinder to inspect it.</p></section>
-  <section id="propBlock" style="display:none">
-    <label>Selected Block</label>
-    <p id="propBlockInfo" style="font-size:12px;margin-bottom:8px"></p>
-    <label>Ice Level</label>
-    <input type="number" id="propIce" min="0" max="10" value="0" onchange="updateBlockProp()">
-    <label>Axis Lock</label>
-    <select id="propAxis" onchange="updateBlockProp()">
-      <option value="None">None</option>
-      <option value="Horizontal">Horizontal</option>
-      <option value="Vertical">Vertical</option>
-    </select>
-    <label>Color</label>
-    <select id="propColor" onchange="updateBlockProp()"></select>
-    <div class="btn-row"><button class="btn btn-danger btn-sm" onclick="deleteSelected()">Delete Block</button></div>
-  </section>
-  <section id="propGrinder" style="display:none">
-    <label>Selected Grinder</label>
-    <p id="propGrinderInfo" style="font-size:12px;margin-bottom:8px"></p>
-    <label>Color</label>
-    <select id="propGrinderColor" onchange="updateGrinderProp()"></select>
-    <label>Width</label>
-    <select id="propGrinderWidth" onchange="updateGrinderProp()">
-      <option value="1">1</option>
-      <option value="2">2</option>
-      <option value="3">3</option>
-    </select>
-    <div class="btn-row"><button class="btn btn-danger btn-sm" onclick="deleteSelectedGrinder()">Delete Grinder</button></div>
-  </section>
-
-  <div class="warnings" id="warnings"></div>
-</div>
-
-<!-- GRINDER MODAL -->
-<div class="modal-overlay" id="grinderModal">
-  <div class="modal">
-    <h3>Place Grinder</h3>
-    <label>Color</label>
-    <select id="grinderColor"></select>
-    <label>Width</label>
-    <select id="grinderWidth">
-      <option value="1">1</option>
-      <option value="2">2</option>
-      <option value="3">3</option>
-    </select>
+  <div class="section">
+    <h3>History</h3>
     <div class="btn-row">
-      <button class="btn btn-outline" onclick="closeGrinderModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="confirmGrinder()">Place</button>
+      <button class="btn" id="btnUndo" title="Ctrl+Z">Undo</button>
+      <button class="btn" id="btnRedo" title="Ctrl+Y">Redo</button>
+      <button class="btn sm" id="btnHelp" title="?">Help</button>
     </div>
+  </div>
+</aside>
+
+<!-- ==================== APP / CENTER ==================== -->
+<div class="app">
+  <div class="topbar">
+    <div class="title">BlockFlow Level Editor</div>
+    <div class="tool-indicator">Tool: <b id="toolLabel">Block</b> &mdash; <span id="toolHint">click a cell to place</span></div>
+    <div class="spacer"></div>
+    <button class="btn sm" id="btnHelp2">? Shortcuts</button>
+  </div>
+
+  <div class="content">
+    <aside class="sidebar left" style="display:none"></aside>
+
+    <main class="center" id="center">
+      <div class="grid-wrapper" id="gridWrapper"></div>
+    </main>
+
+    <!-- ==================== RIGHT SIDEBAR ==================== -->
+    <aside class="sidebar right">
+      <div class="section">
+        <h3>Properties</h3>
+        <div id="propEmpty" class="prop-info">Click a block or grinder in Select mode to edit its properties.</div>
+        <div id="propBlock" hidden>
+          <div class="prop-info">Block <b id="propBlockName">-</b> at <b id="propBlockPos">-</b></div>
+          <div class="prop-row"><label>Color</label></div>
+          <select id="propBlockColor"></select>
+          <div class="prop-row"><label>Axis Lock</label></div>
+          <select id="propBlockAxis">
+            <option value="None">None</option>
+            <option value="Horizontal">Horizontal</option>
+            <option value="Vertical">Vertical</option>
+          </select>
+          <div class="prop-row"><label>Ice (0-5)</label></div>
+          <input type="number" id="propBlockIce" min="0" max="5" value="0">
+          <input type="hidden" id="propBlockRot" value="0">
+          <div class="btn-row"><button class="btn danger sm" id="propBlockDel">Delete</button></div>
+        </div>
+        <div id="propGrinder" hidden>
+          <div class="prop-info">Grinder on <b id="propGrName">-</b></div>
+          <div class="prop-row"><label>Color</label></div>
+          <select id="propGrColor"></select>
+          <div class="prop-row"><label>Width</label></div>
+          <select id="propGrWidth">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+          </select>
+          <div class="btn-row"><button class="btn danger sm" id="propGrDel">Delete</button></div>
+        </div>
+      </div>
+
+      <details open>
+        <summary>Issues (<span id="issueCount">0</span>)</summary>
+        <div class="issues" id="issues"></div>
+      </details>
+
+      <details>
+        <summary>JSON Preview</summary>
+        <div class="preview-panel" id="preview"></div>
+      </details>
+    </aside>
+  </div>
+
+  <div class="statusbar">
+    <span><b id="sbBlocks">0</b> blocks</span>
+    <span class="sep">|</span>
+    <span><b id="sbGrinders">0</b> grinders</span>
+    <span class="sep">|</span>
+    <span class="error"><b id="sbErrors">0</b> errors</span>
+    <span class="sep">|</span>
+    <span class="warn"><b id="sbWarnings">0</b> warnings</span>
+    <span class="sep">|</span>
+    <span id="sbSaved">unsaved</span>
+    <span class="spacer" style="flex:1"></span>
+    <span id="sbHint" style="color:var(--text-dim)">ready</span>
   </div>
 </div>
 
+<!-- ==================== HELP OVERLAY ==================== -->
+<div class="help-overlay" id="helpOverlay" hidden>
+  <div class="help-panel">
+    <span class="close" id="helpClose">&times;</span>
+    <h2>Keyboard Shortcuts</h2>
+    <table>
+      <tr><td class="key">B / G / E / S</td><td>Block / Grinder / Eraser / Select</td></tr>
+      <tr><td class="key">1 &hellip; 6</td><td>Pick color Red/Blue/Green/Yellow/Purple/Orange</td></tr>
+      <tr><td class="key">Ctrl+Z</td><td>Undo</td></tr>
+      <tr><td class="key">Ctrl+Shift+Z / Ctrl+Y</td><td>Redo</td></tr>
+      <tr><td class="key">Ctrl+S</td><td>Export JSON</td></tr>
+      <tr><td class="key">Ctrl+O</td><td>Import JSON</td></tr>
+      <tr><td class="key">Esc</td><td>Deselect / close popovers</td></tr>
+      <tr><td class="key">Del / Backspace</td><td>Delete selected block or grinder</td></tr>
+      <tr><td class="key">?</td><td>Toggle this panel</td></tr>
+      <tr><td class="key">Drop .json</td><td>Open level file</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="drop-hint" id="dropHint" hidden>Drop .json to open</div>
+<div class="toast" id="toast"></div>
+
 <script>
-// ============ DATA ============
+/* =====================================================================
+   BlockFlow Level Editor — single-file vanilla JS
+   Architecture: state (pure model) -> commands -> history -> renderer
+   Every mutation goes through a Command with apply/undo.
+   ===================================================================== */
+
+// Surface any uncaught error at the top of the screen so silent failures
+// (e.g. boot-time ReferenceError leaving listeners unattached) are visible.
+window.addEventListener('error', e => {
+  const bar = document.getElementById('__err') || (() => {
+    const d = document.createElement('div');
+    d.id = '__err';
+    d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#f24a4a;color:#fff;padding:8px 14px;font:12px monospace;white-space:pre-wrap';
+    document.body && document.body.appendChild(d);
+    return d;
+  })();
+  bar.textContent = 'JS ERROR: ' + (e.message || e.error) + '\n' + ((e.error && e.error.stack) || '');
+});
+
+/* ==================== DATA CONSTANTS ==================== */
 const COLORS = {
-  Red:    '#F24A4A', Blue:   '#3E8CFF', Green:  '#4AD06B',
-  Yellow: '#FFD23F', Purple: '#B94AE0', Orange: '#FF8A3D'
+  Red:'#F24A4A', Blue:'#3E8CFF', Green:'#4AD06B',
+  Yellow:'#FFD23F', Purple:'#B94AE0', Orange:'#FF8A3D'
 };
 const COLOR_NAMES = Object.keys(COLORS);
 
+// Cell offsets mirror BlockDefinition assets (see BlockFlowDefinitionCreator.cs)
 const SHAPES = {
-  Cube_S:     { offsets: [[0,0]], label: 'Cube S' },
-  Cube_SL:    { offsets: [[0,0],[1,0],[0,1],[1,1]], label: 'Cube SL' },
-  Line_S:     { offsets: [[0,0],[1,0]], label: 'Line S' },
-  Line_L:     { offsets: [[0,0],[1,0],[2,0]], label: 'Line L' },
-  L_S:        { offsets: [[0,0],[1,0],[0,1]], label: 'L Small' },
-  L_L:        { offsets: [[0,0],[1,0],[0,1],[0,2]], label: 'L Large' },
-  L_L_Mirror: { offsets: [[0,0],[1,0],[1,1],[1,2]], label: 'L Mirror' },
-  T_L:        { offsets: [[0,0],[1,0],[2,0],[1,1]], label: 'T Large' },
-  Z_L:        { offsets: [[1,0],[0,1],[1,1],[0,2]], label: 'Z Large' },
-  Plus_L:     { offsets: [[1,0],[0,1],[1,1],[2,1],[1,2]], label: 'Plus L' }
+  Cube_S:     { label:'Cube S',    offsets:[[0,0]] },
+  Cube_SL:    { label:'Cube 2x2',  offsets:[[0,0],[1,0],[0,1],[1,1]] },
+  Line_S:     { label:'Line 2',    offsets:[[0,0],[1,0]] },
+  Line_L:     { label:'Line 3',    offsets:[[0,0],[1,0],[2,0]] },
+  L_S:        { label:'L Small',   offsets:[[0,0],[1,0],[0,1]] },
+  L_L:        { label:'L Large',   offsets:[[0,0],[1,0],[0,1],[0,2]] },
+  L_L_Mirror: { label:'L Mirror',  offsets:[[0,0],[1,0],[1,1],[1,2]] },
+  T_L:        { label:'T Large',   offsets:[[0,0],[1,0],[2,0],[1,1]] },
+  Z_L:        { label:'Z Large',   offsets:[[1,0],[0,1],[1,1],[0,2]] },
+  Plus_L:     { label:'Plus',      offsets:[[1,0],[0,1],[1,1],[2,1],[1,2]] }
 };
+const SHAPE_IDS = Object.keys(SHAPES);
+const EDGES = ['Top','Bottom','Left','Right'];
+const AXIS_LOCKS = ['None','Horizontal','Vertical'];
 
-// ============ STATE ============
-let gridSize = 4;
-let tool = 'block';
-let selectedColor = 'Red';
-let selectedShape = 'Cube_S';
-let selectedRotation = 0;
-let blocks = [];   // { id, shape, origin:{x,y}, rotation, color, modifiers:{iced,axisLock} }
-let walls = [];    // { x, y }
-let grinders = []; // { id, edge, position, width, color }
-let selectedBlockId = null;
-let selectedGrinderId = null;
-let pendingGrinderEdge = null;
-let pendingGrinderPos = null;
-let nextBlockId = 1;
-let nextGrinderId = 1;
+const AUTOSAVE_KEY = 'blockflow.editor.autosave';
+const AUTOSAVE_INTERVAL_MS = 2000;
+const HISTORY_LIMIT = 100;
 
-// ============ ROTATION ============
-function rotateOffset(ox, oy, quarterTurns) {
-  let t = ((quarterTurns % 4) + 4) % 4;
-  for (let i = 0; i < t; i++) { let tmp = ox; ox = -oy; oy = tmp; }
-  return [ox, oy];
-}
-function getRotatedOffsets(shapeId, rotation) {
-  const base = SHAPES[shapeId].offsets;
-  const q = Math.round(rotation / 90);
-  return base.map(([x,y]) => rotateOffset(x, y, q));
-}
-function getWorldCells(block) {
-  return getRotatedOffsets(block.shape, block.rotation).map(([ox,oy]) => ({
-    x: block.origin.x + ox, y: block.origin.y + oy
-  }));
-}
+/* ==================== STATE ==================== */
+const State = (() => {
+  // Canonical level model. Never mutated from event handlers directly.
+  const model = {
+    levelId: 'level_01',
+    gridSize: { x:5, y:5 },
+    timeLimitSeconds: 60,
+    blocks: [],   // {id, shape, origin:{x,y}, rotation, color, modifiers:{iced, axisLock}}
+    grinders: [], // {id, edge, position, width, color}
+    walls: [],    // {x,y}
+    unknownFields: {} // preserved from import
+  };
+  let blockIdSeq = 1;
+  let grinderIdSeq = 1;
 
-// ============ INIT ============
-function init() {
-  buildColorPicker();
-  buildShapePicker();
-  buildColorSelects();
-  document.getElementById('gridSize').addEventListener('change', e => { gridSize = +e.target.value; blocks=[]; walls=[]; grinders=[]; selectedBlockId=null; selectedGrinderId=null; rebuildGrid(); });
-  document.getElementById('timeLimit').addEventListener('input', e => document.getElementById('timeLimitVal').textContent = e.target.value);
-  document.getElementById('rotation').addEventListener('change', () => { selectedRotation = +document.getElementById('rotation').value; rebuildGrid(); });
-  document.addEventListener('keydown', e => { if(e.key==='Delete'||e.key==='Backspace'){if(selectedBlockId!==null)deleteSelected();if(selectedGrinderId!==null)deleteSelectedGrinder();}if(e.key==='Escape'){selectedBlockId=null;selectedGrinderId=null;showProps();rebuildGrid();}});
-  rebuildGrid();
-}
+  function nextBlockId(){ return blockIdSeq++; }
+  function nextGrinderId(){ return grinderIdSeq++; }
 
-function buildColorPicker() {
-  const el = document.getElementById('colorPicker');
-  el.innerHTML = '';
-  for (const [name, hex] of Object.entries(COLORS)) {
-    const s = document.createElement('div');
-    s.className = 'color-swatch' + (name===selectedColor?' active':'');
-    s.style.background = hex;
-    s.title = name;
-    s.onclick = () => { selectedColor = name; buildColorPicker(); };
-    el.appendChild(s);
+  function replaceAll(next){
+    model.levelId = next.levelId;
+    model.gridSize = { x: next.gridSize.x, y: next.gridSize.y };
+    model.timeLimitSeconds = next.timeLimitSeconds;
+    model.blocks = next.blocks.map(b => ({ ...b, origin:{...b.origin}, modifiers:{...b.modifiers} }));
+    model.grinders = next.grinders.map(g => ({ ...g }));
+    model.walls = next.walls.map(w => ({ ...w }));
+    model.unknownFields = next.unknownFields ? JSON.parse(JSON.stringify(next.unknownFields)) : {};
+    // Refresh id sequences from max loaded id.
+    blockIdSeq = model.blocks.reduce((m,b)=>Math.max(m,b.id||0), 0) + 1;
+    grinderIdSeq = model.grinders.reduce((m,g)=>Math.max(m,g.id||0), 0) + 1;
   }
+
+  function snapshot(){
+    return JSON.parse(JSON.stringify(model));
+  }
+
+  return { model, nextBlockId, nextGrinderId, replaceAll, snapshot };
+})();
+
+/* ==================== GEOMETRY HELPERS ==================== */
+function rotateOffset(ox, oy, quarterTurns){
+  // 90 deg CCW: (x,y) -> (-y,x)
+  let q = ((quarterTurns % 4) + 4) % 4;
+  let x = ox, y = oy;
+  for (let i = 0; i < q; i++) { const t = x; x = -y; y = t; }
+  return [x, y];
+}
+function normalizeOffsets(offs){
+  let minX = Infinity, minY = Infinity;
+  for (const [x,y] of offs){ if (x<minX) minX=x; if (y<minY) minY=y; }
+  return offs.map(([x,y]) => [x-minX, y-minY]);
+}
+function shapeCells(shape, rotation){
+  const base = SHAPES[shape]?.offsets || [[0,0]];
+  const q = Math.round((rotation||0)/90);
+  return normalizeOffsets(base.map(([x,y]) => rotateOffset(x,y,q)));
+}
+function blockWorldCells(b){
+  return shapeCells(b.shape, b.rotation).map(([ox,oy]) => ({ x: b.origin.x+ox, y: b.origin.y+oy }));
+}
+function cellsEq(a,b){ return a.x===b.x && a.y===b.y; }
+function inBounds(x,y,gs){ return x>=0 && y>=0 && x<gs.x && y<gs.y; }
+
+/* ==================== COMMANDS ==================== */
+// A Command holds apply() / undo(). Every state mutation uses these.
+const Commands = (() => {
+  function AddBlock(block){
+    return {
+      label:'add block',
+      apply(){ State.model.blocks.push(block); },
+      undo(){ State.model.blocks = State.model.blocks.filter(b => b.id !== block.id); }
+    };
+  }
+  function RemoveBlock(blockId){
+    let removed = null;
+    return {
+      label:'remove block',
+      apply(){
+        const i = State.model.blocks.findIndex(b => b.id === blockId);
+        if (i >= 0) { removed = State.model.blocks[i]; State.model.blocks.splice(i,1); }
+      },
+      undo(){ if (removed) State.model.blocks.push(removed); }
+    };
+  }
+  function UpdateBlock(blockId, patch){
+    let before = null;
+    return {
+      label:'update block',
+      apply(){
+        const b = State.model.blocks.find(x => x.id === blockId);
+        if (!b) return;
+        before = JSON.parse(JSON.stringify(b));
+        Object.assign(b, patch);
+        if (patch.origin) b.origin = { ...patch.origin };
+        if (patch.modifiers) b.modifiers = { ...b.modifiers, ...patch.modifiers };
+      },
+      undo(){
+        const b = State.model.blocks.find(x => x.id === blockId);
+        if (!b || !before) return;
+        Object.assign(b, before);
+        b.origin = { ...before.origin };
+        b.modifiers = { ...before.modifiers };
+      }
+    };
+  }
+  function AddWall(x,y){
+    return {
+      label:'add wall',
+      apply(){ if (!State.model.walls.some(w => w.x===x && w.y===y)) State.model.walls.push({x,y}); },
+      undo(){ State.model.walls = State.model.walls.filter(w => !(w.x===x && w.y===y)); }
+    };
+  }
+  function RemoveWall(x,y){
+    let existed = false;
+    return {
+      label:'remove wall',
+      apply(){ const n=State.model.walls.length; State.model.walls = State.model.walls.filter(w => !(w.x===x && w.y===y)); existed = State.model.walls.length!==n; },
+      undo(){ if (existed) State.model.walls.push({x,y}); }
+    };
+  }
+  function BulkWalls(addCells, removeCells){
+    return {
+      label:'paint walls',
+      apply(){
+        for (const c of addCells) if (!State.model.walls.some(w => w.x===c.x && w.y===c.y)) State.model.walls.push({x:c.x,y:c.y});
+        for (const c of removeCells) State.model.walls = State.model.walls.filter(w => !(w.x===c.x && w.y===c.y));
+      },
+      undo(){
+        for (const c of addCells) State.model.walls = State.model.walls.filter(w => !(w.x===c.x && w.y===c.y));
+        for (const c of removeCells) if (!State.model.walls.some(w => w.x===c.x && w.y===c.y)) State.model.walls.push({x:c.x,y:c.y});
+      }
+    };
+  }
+  function AddGrinder(g){
+    return {
+      label:'add grinder',
+      apply(){ State.model.grinders.push(g); },
+      undo(){ State.model.grinders = State.model.grinders.filter(x => x.id !== g.id); }
+    };
+  }
+  function RemoveGrinder(id){
+    let removed = null;
+    return {
+      label:'remove grinder',
+      apply(){
+        const i = State.model.grinders.findIndex(g => g.id === id);
+        if (i >= 0) { removed = State.model.grinders[i]; State.model.grinders.splice(i,1); }
+      },
+      undo(){ if (removed) State.model.grinders.push(removed); }
+    };
+  }
+  function UpdateGrinder(id, patch){
+    let before = null;
+    return {
+      label:'update grinder',
+      apply(){
+        const g = State.model.grinders.find(x => x.id === id);
+        if (!g) return;
+        before = { ...g };
+        Object.assign(g, patch);
+      },
+      undo(){
+        const g = State.model.grinders.find(x => x.id === id);
+        if (!g || !before) return;
+        Object.assign(g, before);
+      }
+    };
+  }
+  function SetLevelMeta(patch){
+    let before = null;
+    return {
+      label:'level meta',
+      apply(){
+        before = {
+          levelId: State.model.levelId,
+          gridSize: { ...State.model.gridSize },
+          timeLimitSeconds: State.model.timeLimitSeconds
+        };
+        if (patch.levelId !== undefined) State.model.levelId = patch.levelId;
+        if (patch.gridSize) State.model.gridSize = { ...patch.gridSize };
+        if (patch.timeLimitSeconds !== undefined) State.model.timeLimitSeconds = patch.timeLimitSeconds;
+      },
+      undo(){
+        if (!before) return;
+        State.model.levelId = before.levelId;
+        State.model.gridSize = before.gridSize;
+        State.model.timeLimitSeconds = before.timeLimitSeconds;
+      }
+    };
+  }
+  function ReplaceAll(next){
+    let before = null;
+    return {
+      label:'replace state',
+      apply(){ before = State.snapshot(); State.replaceAll(next); },
+      undo(){ if (before) State.replaceAll(before); }
+    };
+  }
+  function Composite(children, label){
+    return {
+      label: label || 'composite',
+      apply(){ for (const c of children) c.apply(); },
+      undo(){ for (let i=children.length-1;i>=0;i--) children[i].undo(); }
+    };
+  }
+  return {
+    AddBlock, RemoveBlock, UpdateBlock,
+    AddWall, RemoveWall, BulkWalls,
+    AddGrinder, RemoveGrinder, UpdateGrinder,
+    SetLevelMeta, ReplaceAll, Composite
+  };
+})();
+
+/* ==================== HISTORY ==================== */
+const History = (() => {
+  const undoStack = [];
+  const redoStack = [];
+
+  function exec(cmd){
+    cmd.apply();
+    undoStack.push(cmd);
+    if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+    redoStack.length = 0;
+    afterMutation();
+  }
+  function undo(){
+    const cmd = undoStack.pop();
+    if (!cmd) return;
+    cmd.undo();
+    redoStack.push(cmd);
+    afterMutation();
+  }
+  function redo(){
+    const cmd = redoStack.pop();
+    if (!cmd) return;
+    cmd.apply();
+    undoStack.push(cmd);
+    afterMutation();
+  }
+  function canUndo(){ return undoStack.length > 0; }
+  function canRedo(){ return redoStack.length > 0; }
+  function reset(){ undoStack.length = 0; redoStack.length = 0; }
+  return { exec, undo, redo, canUndo, canRedo, reset };
+})();
+
+function afterMutation(){
+  Selection.reconcile();
+  Renderer.render();
+  IO.scheduleAutosave();
 }
 
-function buildShapePicker() {
-  const el = document.getElementById('shapePicker');
-  el.innerHTML = '';
-  for (const [id, shape] of Object.entries(SHAPES)) {
-    const btn = document.createElement('div');
-    btn.className = 'shape-btn' + (id===selectedShape?' active':'');
-    // mini preview
-    const offsets = shape.offsets;
-    let maxX=0,maxY=0; offsets.forEach(([x,y])=>{if(x>maxX)maxX=x;if(y>maxY)maxY=y;});
-    const prev = document.createElement('div');
-    prev.className = 'shape-preview';
-    prev.style.gridTemplateColumns = `repeat(${maxX+1}, 8px)`;
-    const set = new Set(offsets.map(([x,y])=>x+','+y));
-    for (let y=maxY;y>=0;y--) for (let x=0;x<=maxX;x++) {
-      const c = document.createElement('div');
-      c.className = 'shape-preview-cell';
-      c.style.background = set.has(x+','+y) ? COLORS[selectedColor] : 'transparent';
-      prev.appendChild(c);
+/* ==================== SELECTION / UI STATE ==================== */
+const Selection = (() => {
+  let tool = 'block';
+  let color = 'Red';
+  let shape = 'Cube_S';
+  let rotation = 0;
+  let grinderWidth = 1;
+  let selectedBlockId = null;
+  let selectedGrinderId = null;
+  let hoveredCell = null; // {x,y}
+  let dragging = null;    // { blockId, ox, oy }
+  let wallPaint = null;   // legacy — kept so render/tools code paths don't NPE
+  let popover = null;
+
+  function setTool(t){ tool = t; closePopover(); UI.syncToolButtons(); Renderer.render(); }
+  function getTool(){ return tool; }
+  function setColor(c){ color = c; UI.syncColorPicker(); Renderer.render(); }
+  function getColor(){ return color; }
+  function setShape(s){ shape = s; UI.syncShapePicker(); Renderer.render(); }
+  function getShape(){ return shape; }
+  function setRotation(r){ rotation = ((r%360)+360)%360; Renderer.render(); }
+  function getRotation(){ return rotation; }
+  function setGrinderWidth(w){ grinderWidth = Math.max(1, Math.min(3, w|0)); UI.syncGrinderWidth(); }
+  function getGrinderWidth(){ return grinderWidth; }
+
+  function selectBlock(id){ selectedBlockId = id; selectedGrinderId = null; UI.syncProperties(); Renderer.render(); }
+  function selectGrinder(id){ selectedGrinderId = id; selectedBlockId = null; UI.syncProperties(); Renderer.render(); }
+  function clear(){ selectedBlockId = null; selectedGrinderId = null; UI.syncProperties(); Renderer.render(); }
+  function getBlockId(){ return selectedBlockId; }
+  function getGrinderId(){ return selectedGrinderId; }
+
+  function reconcile(){
+    if (selectedBlockId != null && !State.model.blocks.some(b => b.id === selectedBlockId)) selectedBlockId = null;
+    if (selectedGrinderId != null && !State.model.grinders.some(g => g.id === selectedGrinderId)) selectedGrinderId = null;
+    UI.syncProperties();
+  }
+
+  function setHovered(c){ hoveredCell = c; }
+  function getHovered(){ return hoveredCell; }
+  function setDragging(d){ dragging = d; }
+  function getDragging(){ return dragging; }
+  function setWallPaint(p){ wallPaint = p; }
+  function getWallPaint(){ return wallPaint; }
+  function setPopover(p){ popover = p; }
+  function getPopover(){ return popover; }
+  function closePopover(){ popover = null; const el = document.querySelector('.popover'); if (el) el.remove(); }
+
+  return {
+    setTool, getTool, setColor, getColor, setShape, getShape,
+    setRotation, getRotation, setGrinderWidth, getGrinderWidth,
+    selectBlock, selectGrinder, clear, getBlockId, getGrinderId, reconcile,
+    setHovered, getHovered, setDragging, getDragging,
+    setWallPaint, getWallPaint, setPopover, getPopover, closePopover
+  };
+})();
+
+/* ==================== VALIDATOR ==================== */
+// Mirrors LevelValidator.cs rule-for-rule.
+const Validator = (() => {
+  function validate(){
+    const issues = [];
+    const m = State.model;
+    const err = msg => issues.push({ severity:'error', msg });
+    const warn = msg => issues.push({ severity:'warn', msg });
+
+    // Grid size
+    if (!m.gridSize || m.gridSize.x <= 0 || m.gridSize.y <= 0) {
+      err('Invalid grid size.');
+    } else if (m.gridSize.x < 4 || m.gridSize.y < 4 || m.gridSize.x > 6 || m.gridSize.y > 6) {
+      warn(`Grid size ${m.gridSize.x}x${m.gridSize.y} is outside the expected 4x4..6x6 range.`);
     }
-    btn.appendChild(prev);
-    btn.appendChild(document.createTextNode(shape.label));
-    btn.onclick = () => { selectedShape = id; buildShapePicker(); rebuildGrid(); };
-    el.appendChild(btn);
-  }
-}
 
-function buildColorSelects() {
-  ['propColor','propGrinderColor','grinderColor'].forEach(id => {
-    const sel = document.getElementById(id);
-    sel.innerHTML = '';
-    COLOR_NAMES.forEach(c => { const o = document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o); });
-  });
-}
+    // Timer
+    if (m.timeLimitSeconds <= 0) err('Time limit must be greater than 0.');
 
-// ============ TOOL ============
-function setTool(t) {
-  tool = t;
-  selectedBlockId = null; selectedGrinderId = null; showProps();
-  document.getElementById('toolBlock').className = 'btn btn-sm ' + (t==='block'?'btn-primary':'btn-outline');
-  document.getElementById('toolWall').className = 'btn btn-sm ' + (t==='wall'?'btn-primary':'btn-outline');
-  document.getElementById('toolEraser').className = 'btn btn-sm ' + (t==='eraser'?'btn-primary':'btn-outline');
-  document.getElementById('blockTools').style.display = t==='block'?'block':'none';
-  const labels = {block:'Block',wall:'Wall',eraser:'Eraser'};
-  const hints = {block:'Click cell to place block',wall:'Click cell to toggle wall',eraser:'Click cell to erase block/wall'};
-  document.getElementById('toolLabel').textContent = labels[t];
-  document.getElementById('toolHint').textContent = hints[t];
-  rebuildGrid();
-}
+    const occupancy = new Map(); // "x,y" -> blockId
 
-// ============ GRID ============
-function rebuildGrid() {
-  const wrapper = document.getElementById('gridWrapper');
-  wrapper.innerHTML = '';
-  const edgeSize = 28;
-  const totalCellPx = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell'));
-  const gapPx = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap'));
+    // Blocks
+    for (let i = 0; i < m.blocks.length; i++) {
+      const b = m.blocks[i];
+      if (!b) { err(`Block[${i}] is null.`); continue; }
+      if (!b.shape || !SHAPES[b.shape]) {
+        err(`Block[${i}] references unknown shape '${b.shape}'.`);
+        continue;
+      }
+      if (!b.color || !COLORS[b.color]) {
+        err(`Block[${i}] references unknown color '${b.color}'.`);
+      }
+      if (!b.origin) { err(`Block[${i}] origin is null.`); continue; }
 
-  // occupancy map
-  const occ = {}; // "x,y" -> blockId
-  const overlapSet = new Set();
-  blocks.forEach(b => {
-    getWorldCells(b).forEach(c => {
-      const k = c.x+','+c.y;
-      if (occ[k] !== undefined) { overlapSet.add(k); }
-      occ[k] = b.id;
-    });
-  });
-  const wallSet = new Set(walls.map(w=>w.x+','+w.y));
+      const cells = shapeCells(b.shape, b.rotation).map(([ox,oy]) => ({ x: b.origin.x+ox, y: b.origin.y+oy }));
+      if (cells.length === 0) { err(`Block[${i}] shape '${b.shape}' has no cells defined.`); continue; }
 
-  // preview cells for current tool
-  const previewCells = new Set();
-  // (will be set via mouseover)
+      for (const cell of cells) {
+        if (!inBounds(cell.x, cell.y, m.gridSize)) {
+          err(`Block[${i}] cell (${cell.x},${cell.y}) is outside the grid.`);
+        }
+        const key = cell.x + ',' + cell.y;
+        if (occupancy.has(key)) {
+          err(`Block[${i}] overlaps another block at (${cell.x},${cell.y}).`);
+        } else {
+          occupancy.set(key, b.id);
+        }
+      }
+    }
 
-  // grid
-  const grid = document.createElement('div');
-  grid.className = 'grid-area';
-  grid.style.gridTemplateColumns = `repeat(${gridSize}, var(--cell))`;
-  grid.style.margin = `${edgeSize+8}px`;
+    // Walls
+    for (let i = 0; i < m.walls.length; i++) {
+      const w = m.walls[i];
+      if (!w) continue;
+      if (occupancy.has(w.x + ',' + w.y)) {
+        err(`Wall[${i}] at (${w.x},${w.y}) overlaps a block.`);
+      }
+    }
 
-  for (let y = gridSize-1; y >= 0; y--) {
-    for (let x = 0; x < gridSize; x++) {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.dataset.x = x; cell.dataset.y = y;
-
-      const coord = document.createElement('span');
-      coord.className = 'coord';
-      coord.textContent = `${x},${y}`;
-      cell.appendChild(coord);
-
-      // wall
-      if (wallSet.has(x+','+y)) cell.classList.add('wall');
-
-      // block color
-      const bId = occ[x+','+y];
-      if (bId !== undefined) {
-        const b = blocks.find(bl=>bl.id===bId);
-        if (b) {
-          cell.classList.add('block-cell');
-          cell.style.background = COLORS[b.color] || '#888';
-          if (b.id === selectedBlockId) cell.classList.add('selected');
-          // ice badge
-          if (b.modifiers.iced > 0) {
-            const badge = document.createElement('span');
-            badge.className = 'ice-badge';
-            badge.textContent = b.modifiers.iced;
-            cell.appendChild(badge);
-          }
-          // axis arrow
-          if (b.modifiers.axisLock !== 'None') {
-            const arrow = document.createElement('span');
-            arrow.className = 'axis-arrow';
-            arrow.textContent = b.modifiers.axisLock === 'Horizontal' ? '\u2194' : '\u2195';
-            cell.appendChild(arrow);
+    // Grinders
+    for (let i = 0; i < m.grinders.length; i++) {
+      const g = m.grinders[i];
+      if (!g) { err(`Grinder[${i}] is null.`); continue; }
+      if (g.width < 1 || g.width > 3) {
+        err(`Grinder[${i}] width ${g.width} is out of the supported 1..3 range.`);
+      }
+      if (!g.color || !COLORS[g.color]) {
+        err(`Grinder[${i}] references unknown color '${g.color}'.`);
+      }
+      if (!EDGES.includes(g.edge)) {
+        err(`Grinder[${i}] references unknown edge '${g.edge}'.`);
+      } else {
+        const edgeLen = (g.edge === 'Top' || g.edge === 'Bottom') ? m.gridSize.x : m.gridSize.y;
+        if (g.width > edgeLen) {
+          err(`Grinder[${i}] width ${g.width} exceeds its edge length (${edgeLen}).`);
+        }
+        if (g.position < 0 || g.position + g.width > edgeLen) {
+          err(`Grinder[${i}] span exceeds edge at position ${g.position}.`);
+        }
+        // Grinder cell blocked by wall: the first inner cell along the edge
+        const cells = grinderEntryCells(g, m.gridSize);
+        for (const c of cells) {
+          if (m.walls.some(w => w.x===c.x && w.y===c.y)) {
+            err(`Grinder[${i}] mouth at (${c.x},${c.y}) is blocked by a wall.`);
           }
         }
       }
+    }
 
-      // overlap
-      if (overlapSet.has(x+','+y)) cell.classList.add('overlap');
-
-      // hover preview for block placement
-      if (tool === 'block') {
-        cell.addEventListener('mouseenter', () => showPreview(x, y));
-        cell.addEventListener('mouseleave', clearPreview);
+    // Color coverage — every block color needs a matching grinder.
+    if (m.blocks.length > 0) {
+      const grinderColors = new Set(m.grinders.filter(g=>g&&g.color).map(g=>g.color));
+      const seen = new Set();
+      for (const b of m.blocks) {
+        if (!b || !b.color) continue;
+        if (seen.has(b.color)) continue;
+        seen.add(b.color);
+        if (!grinderColors.has(b.color)) {
+          err(`Color '${b.color}' has blocks but no matching grinder.`);
+        }
       }
-
-      // click
-      cell.addEventListener('click', () => onCellClick(x, y));
-      cell.addEventListener('contextmenu', e => { e.preventDefault(); onCellRightClick(x, y); });
-
-      grid.appendChild(cell);
-    }
-  }
-  wrapper.appendChild(grid);
-
-  // Edge strips
-  const gridPxW = gridSize * (totalCellPx + gapPx) - gapPx;
-  const gridPxH = gridPxW;
-
-  createEdgeStrip(wrapper, 'top', gridSize, edgeSize, totalCellPx, gapPx, gridPxW);
-  createEdgeStrip(wrapper, 'bottom', gridSize, edgeSize, totalCellPx, gapPx, gridPxW);
-  createEdgeStrip(wrapper, 'left', gridSize, edgeSize, totalCellPx, gapPx, gridPxH);
-  createEdgeStrip(wrapper, 'right', gridSize, edgeSize, totalCellPx, gapPx, gridPxH);
-
-  validate();
-}
-
-function createEdgeStrip(wrapper, edge, size, edgeH, cellPx, gapPx, gridPx) {
-  const strip = document.createElement('div');
-  strip.className = `edge-strip ${edge}`;
-  const margin = edgeH + 8;
-  const isHoriz = edge==='top'||edge==='bottom';
-
-  if (isHoriz) {
-    strip.style.left = `${margin}px`;
-    strip.style.width = `${gridPx}px`;
-    strip.style.height = `${edgeH}px`;
-    if (edge==='top') strip.style.top = '0px'; else strip.style.bottom = '0px';
-  } else {
-    strip.style.top = `${margin}px`;
-    strip.style.height = `${gridPx}px`;
-    strip.style.width = `${edgeH}px`;
-    if (edge==='left') strip.style.left = '0px'; else strip.style.right = '0px';
-  }
-
-  for (let i = 0; i < size; i++) {
-    const ec = document.createElement('div');
-    ec.className = 'edge-cell';
-    if (isHoriz) {
-      ec.style.width = `${cellPx}px`;
-      ec.style.height = `${edgeH}px`;
-      ec.style.marginRight = i<size-1?`${gapPx}px`:'0';
-    } else {
-      ec.style.height = `${cellPx}px`;
-      ec.style.width = `${edgeH}px`;
-      ec.style.marginBottom = i<size-1?`${gapPx}px`:'0';
     }
 
-    // reverse Y for left/right strips so visual bottom = index 0
-    const pos = (!isHoriz) ? (size - 1 - i) : i;
+    return issues;
+  }
 
-    // check for grinder at this position
-    const g = grinders.find(gr => gr.edge === capitalize(edge) && pos >= gr.position && pos < gr.position + gr.width);
-    if (g) {
-      ec.classList.add('has-grinder');
-      ec.style.background = COLORS[g.color] || '#888';
-      ec.style.borderColor = COLORS[g.color] || '#888';
-      if (pos === g.position) ec.textContent = g.width + 'X';
-      if (g.id === selectedGrinderId) ec.style.boxShadow = '0 0 0 2px #fff';
-      ec.onclick = () => { selectedBlockId=null; selectedGrinderId=g.id; showProps(); rebuildGrid(); };
-    } else {
-      ec.textContent = pos;
-      ec.onclick = () => openGrinderModal(capitalize(edge), pos);
+  function grinderEntryCells(g, gs){
+    const out = [];
+    for (let i = 0; i < g.width; i++) {
+      const p = g.position + i;
+      if (g.edge === 'Top')    out.push({ x:p, y:gs.y-1 });
+      if (g.edge === 'Bottom') out.push({ x:p, y:0 });
+      if (g.edge === 'Left')   out.push({ x:0, y:p });
+      if (g.edge === 'Right')  out.push({ x:gs.x-1, y:p });
+    }
+    return out;
+  }
+
+  return { validate };
+})();
+
+/* ==================== RENDERER ==================== */
+const Renderer = (() => {
+  let lastIssues = [];
+
+  function render(){
+    renderGrid();
+    renderIssues();
+    UI.syncStatus();
+    UI.syncPreview();
+    UI.syncHistoryButtons();
+  }
+
+  function renderGrid(){
+    const wrapper = document.getElementById('gridWrapper');
+    wrapper.innerHTML = '';
+    const m = State.model;
+    const gs = m.gridSize;
+
+    const cellPx = 58, gap = 3, edge = 22;
+    wrapper.style.setProperty('--cell', cellPx + 'px');
+    wrapper.style.setProperty('--gap', gap + 'px');
+    wrapper.style.setProperty('--edge', edge + 'px');
+
+    const gridSizePx = gs.x * cellPx + (gs.x - 1) * gap;
+    const gridSizePxY = gs.y * cellPx + (gs.y - 1) * gap;
+
+    // Grid area
+    const grid = document.createElement('div');
+    grid.className = 'grid-area';
+    grid.style.gridTemplateColumns = `repeat(${gs.x}, ${cellPx}px)`;
+    grid.style.gridTemplateRows = `repeat(${gs.y}, ${cellPx}px)`;
+    grid.style.width = gridSizePx + 'px';
+    grid.style.height = gridSizePxY + 'px';
+
+    // Cells: visually y goes up (row 0 at bottom). We lay out rows top=y-high.
+    const cellMap = new Map(); // "x,y" -> cell DOM
+    for (let row = 0; row < gs.y; row++) {
+      const y = gs.y - 1 - row;
+      for (let x = 0; x < gs.x; x++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.x = x;
+        cell.dataset.y = y;
+        const co = document.createElement('span');
+        co.className = 'coord';
+        co.textContent = `${x},${y}`;
+        cell.appendChild(co);
+        grid.appendChild(cell);
+        cellMap.set(x + ',' + y, cell);
+      }
     }
 
-    strip.appendChild(ec);
+    // Walls
+    for (const w of m.walls) {
+      const c = cellMap.get(w.x + ',' + w.y);
+      if (c) c.classList.add('wall');
+    }
+
+    // Blocks
+    for (const b of m.blocks) {
+      const cells = blockWorldCells(b);
+      const selected = b.id === Selection.getBlockId();
+      for (const c of cells) {
+        const el = cellMap.get(c.x + ',' + c.y);
+        if (!el) continue;
+        el.classList.add('block-cell');
+        el.style.background = COLORS[b.color] || '#888';
+        el.dataset.blockId = b.id;
+        if (selected) el.classList.add('selected');
+      }
+      // axis arrow + ice on first cell
+      const first = cells.find(c => inBounds(c.x,c.y,gs));
+      if (first) {
+        const el = cellMap.get(first.x + ',' + first.y);
+        if (el) {
+          if (b.modifiers && b.modifiers.axisLock && b.modifiers.axisLock !== 'None') {
+            const a = document.createElement('span');
+            a.className = 'axis-arrow';
+            a.textContent = b.modifiers.axisLock === 'Horizontal' ? '\u25C0\u25B6' : '\u25B2\u25BC';
+            el.appendChild(a);
+          }
+          if (b.modifiers && b.modifiers.iced > 0) {
+            const ice = document.createElement('span');
+            ice.className = 'ice-badge';
+            ice.textContent = b.modifiers.iced;
+            el.appendChild(ice);
+          }
+        }
+      }
+    }
+
+    // Preview ghost when Block tool with hover
+    const hov = Selection.getHovered();
+    if (Selection.getTool() === 'block' && hov) {
+      const cells = shapeCells(Selection.getShape(), Selection.getRotation())
+        .map(([ox,oy]) => ({ x: hov.x+ox, y: hov.y+oy }));
+      const overlap = previewCollision(cells, null);
+      for (const c of cells) {
+        const el = cellMap.get(c.x + ',' + c.y);
+        if (!el) continue;
+        el.classList.add('preview', overlap ? 'preview-bad' : 'preview-ok');
+      }
+    }
+
+    // Drag preview
+    const drag = Selection.getDragging();
+    if (drag && hov) {
+      const b = State.model.blocks.find(x => x.id === drag.blockId);
+      if (b) {
+        const newOrigin = { x: hov.x - drag.ox, y: hov.y - drag.oy };
+        const cells = shapeCells(b.shape, b.rotation).map(([ox,oy]) => ({ x: newOrigin.x+ox, y: newOrigin.y+oy }));
+        const bad = previewCollision(cells, b.id);
+        for (const c of cells) {
+          const el = cellMap.get(c.x + ',' + c.y);
+          if (!el) continue;
+          el.classList.add('preview', bad ? 'preview-bad' : 'preview-ok');
+        }
+      }
+    }
+
+    wrapper.appendChild(grid);
+
+    // Edge strips
+    renderEdges(wrapper, gs, cellPx, gap, edge);
+
+    // Overlap highlight post-validate
+    for (const issue of lastIssues) {
+      const m2 = issue.msg.match(/\((\d+),(\d+)\)/);
+      if (!m2) continue;
+      const el = cellMap.get(m2[1] + ',' + m2[2]);
+      if (el && issue.severity === 'error') el.classList.add('overlap');
+    }
+
+    // Attach cell event handlers
+    attachGridHandlers(wrapper);
   }
 
-  wrapper.appendChild(strip);
-}
-
-function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
-
-// ============ PREVIEW ============
-function showPreview(cx, cy) {
-  if (tool !== 'block') return;
-  const offsets = getRotatedOffsets(selectedShape, selectedRotation);
-  const cells = document.querySelectorAll('.cell');
-  cells.forEach(c => {
-    const x = +c.dataset.x, y = +c.dataset.y;
-    if (offsets.some(([ox,oy]) => cx+ox===x && cy+oy===y)) c.classList.add('preview');
-  });
-}
-function clearPreview() {
-  document.querySelectorAll('.cell.preview').forEach(c => c.classList.remove('preview'));
-}
-
-// ============ CELL ACTIONS ============
-function onCellClick(x, y) {
-  if (tool === 'wall') {
-    const idx = walls.findIndex(w => w.x===x && w.y===y);
-    if (idx >= 0) walls.splice(idx, 1); else walls.push({x,y});
-    rebuildGrid();
-  } else if (tool === 'block') {
-    const b = { id: nextBlockId++, shape: selectedShape, origin: {x,y}, rotation: selectedRotation, color: selectedColor, modifiers: {iced:0, axisLock:'None'} };
-    blocks.push(b);
-    selectedBlockId = b.id; selectedGrinderId = null;
-    showProps();
-    rebuildGrid();
-  } else if (tool === 'eraser') {
-    // erase block at cell
-    const occ = {};
-    blocks.forEach(b => getWorldCells(b).forEach(c => { occ[c.x+','+c.y] = b.id; }));
-    const bId = occ[x+','+y];
-    if (bId !== undefined) { blocks = blocks.filter(b=>b.id!==bId); if(selectedBlockId===bId) selectedBlockId=null; }
-    // erase wall
-    walls = walls.filter(w => !(w.x===x && w.y===y));
-    showProps(); rebuildGrid();
+  function previewCollision(cells, ignoreBlockId){
+    const gs = State.model.gridSize;
+    for (const c of cells) {
+      if (!inBounds(c.x, c.y, gs)) return true;
+      for (const b of State.model.blocks) {
+        if (b.id === ignoreBlockId) continue;
+        if (blockWorldCells(b).some(bc => bc.x===c.x && bc.y===c.y)) return true;
+      }
+      if (State.model.walls.some(w => w.x===c.x && w.y===c.y)) return true;
+    }
+    return false;
   }
-}
 
-function onCellRightClick(x, y) {
-  const occ = {};
-  blocks.forEach(b => getWorldCells(b).forEach(c => { occ[c.x+','+c.y] = b.id; }));
-  const bId = occ[x+','+y];
-  if (bId !== undefined) {
-    selectedBlockId = bId; selectedGrinderId = null;
-    showProps(); rebuildGrid();
+  function renderEdges(wrapper, gs, cellPx, gap, edge){
+    const pad = edge + 6;
+    const gridW = gs.x * cellPx + (gs.x-1) * gap;
+    const gridH = gs.y * cellPx + (gs.y-1) * gap;
+
+    makeStrip('top',    pad, pad - edge - 2, gridW, edge, gs.x, gap, cellPx, (i)=>({x:i,y:gs.y}));
+    makeStrip('bottom', pad, pad + gridH + 2, gridW, edge, gs.x, gap, cellPx, (i)=>({x:i,y:-1}));
+    makeStrip('left',   pad - edge - 2, pad, edge, gridH, gs.y, gap, cellPx, (i)=>({x:-1,y:gs.y-1-i}), true);
+    makeStrip('right',  pad + gridW + 2, pad, edge, gridH, gs.y, gap, cellPx, (i)=>({x:gs.x,y:gs.y-1-i}), true);
+
+    function makeStrip(edgeName, left, top, w, h, count, gap, cellPx, coord, vertical){
+      const strip = document.createElement('div');
+      strip.className = 'edge-strip ' + edgeName;
+      strip.style.left = left + 'px';
+      strip.style.top = top + 'px';
+      strip.style.width = w + 'px';
+      strip.style.height = h + 'px';
+      for (let i = 0; i < count; i++) {
+        const slot = document.createElement('div');
+        slot.className = 'edge-cell';
+        slot.style[vertical ? 'height' : 'width'] = cellPx + 'px';
+        slot.style[vertical ? 'width' : 'height'] = '100%';
+        // position by index: display index 0 corresponds to semantic position
+        // For top/bottom: position is x. For left/right: we flip so position 0 at bottom.
+        let labelPos;
+        if (edgeName === 'top' || edgeName === 'bottom') labelPos = i;
+        else labelPos = count - 1 - i;
+        slot.dataset.edge = edgeName[0].toUpperCase() + edgeName.slice(1);
+        slot.dataset.position = labelPos;
+        slot.textContent = labelPos;
+        strip.appendChild(slot);
+      }
+      wrapper.appendChild(strip);
+    }
+
+    // Grinders (overlay)
+    const m = State.model;
+    for (const g of m.grinders) {
+      const gr = document.createElement('div');
+      gr.className = 'grinder';
+      if (g.id === Selection.getGrinderId()) gr.classList.add('selected');
+      gr.dataset.grinderId = g.id;
+      gr.style.background = COLORS[g.color] || '#888';
+      gr.textContent = (g.color||'?')[0];
+      gr.title = `${g.color} ${g.edge} @${g.position} w${g.width}`;
+
+      const pad2 = edge + 6;
+      const slotSize = cellPx;
+      if (g.edge === 'Top') {
+        gr.style.left = (pad2 + g.position * (cellPx + gap)) + 'px';
+        gr.style.top = (pad2 - edge - 2) + 'px';
+        gr.style.width = (g.width * cellPx + (g.width-1) * gap) + 'px';
+        gr.style.height = edge + 'px';
+      } else if (g.edge === 'Bottom') {
+        gr.style.left = (pad2 + g.position * (cellPx + gap)) + 'px';
+        gr.style.top = (pad2 + gridH + 2) + 'px';
+        gr.style.width = (g.width * cellPx + (g.width-1) * gap) + 'px';
+        gr.style.height = edge + 'px';
+      } else if (g.edge === 'Left') {
+        // position 0 at bottom => top offset from bottom
+        const rowFromTop = gs.y - 1 - g.position - (g.width-1);
+        gr.style.left = (pad2 - edge - 2) + 'px';
+        gr.style.top = (pad2 + rowFromTop * (cellPx + gap)) + 'px';
+        gr.style.width = edge + 'px';
+        gr.style.height = (g.width * cellPx + (g.width-1) * gap) + 'px';
+      } else if (g.edge === 'Right') {
+        const rowFromTop = gs.y - 1 - g.position - (g.width-1);
+        gr.style.left = (pad2 + gridW + 2) + 'px';
+        gr.style.top = (pad2 + rowFromTop * (cellPx + gap)) + 'px';
+        gr.style.width = edge + 'px';
+        gr.style.height = (g.width * cellPx + (g.width-1) * gap) + 'px';
+      }
+      wrapper.appendChild(gr);
+      gr.addEventListener('mousedown', e => { e.stopPropagation(); Tools.onGrinderClick(g, e); });
+    }
   }
-}
 
-// ============ PROPERTIES ============
-function showProps() {
-  document.getElementById('propNone').style.display = 'none';
-  document.getElementById('propBlock').style.display = 'none';
-  document.getElementById('propGrinder').style.display = 'none';
-  if (selectedBlockId !== null) {
-    const b = blocks.find(bl=>bl.id===selectedBlockId);
-    if (!b) { selectedBlockId=null; showProps(); return; }
-    document.getElementById('propBlock').style.display = 'block';
-    document.getElementById('propBlockInfo').textContent = `${b.shape} at (${b.origin.x},${b.origin.y}) rot ${b.rotation}`;
-    document.getElementById('propIce').value = b.modifiers.iced;
-    document.getElementById('propAxis').value = b.modifiers.axisLock;
-    document.getElementById('propColor').value = b.color;
-  } else if (selectedGrinderId !== null) {
-    const g = grinders.find(gr=>gr.id===selectedGrinderId);
-    if (!g) { selectedGrinderId=null; showProps(); return; }
-    document.getElementById('propGrinder').style.display = 'block';
-    document.getElementById('propGrinderInfo').textContent = `${g.edge} edge, pos ${g.position}, ${g.width}X`;
-    document.getElementById('propGrinderColor').value = g.color;
-    document.getElementById('propGrinderWidth').value = g.width;
-  } else {
-    document.getElementById('propNone').style.display = 'block';
-  }
-}
+  // Delegated handlers — bound once to the wrapper (which is never replaced)
+  // and survive every re-render. Cells/edges are identified by data attributes.
+  let handlersInstalled = false;
+  function attachGridHandlers(wrapper){
+    if (handlersInstalled) return;
+    handlersInstalled = true;
 
-function updateBlockProp() {
-  const b = blocks.find(bl=>bl.id===selectedBlockId);
-  if (!b) return;
-  b.modifiers.iced = +document.getElementById('propIce').value;
-  b.modifiers.axisLock = document.getElementById('propAxis').value;
-  b.color = document.getElementById('propColor').value;
-  rebuildGrid();
-}
+    const cellFromEvent = (e) => {
+      const el = e.target.closest('.cell');
+      if (!el || !wrapper.contains(el)) return null;
+      const x = +el.dataset.x, y = +el.dataset.y;
+      if (Number.isNaN(x) || Number.isNaN(y)) return null;
+      return { el, x, y };
+    };
+    const edgeFromEvent = (e) => {
+      const el = e.target.closest('.edge-cell');
+      if (!el || !wrapper.contains(el)) return null;
+      return { el, edge: el.dataset.edge, pos: +el.dataset.position };
+    };
+    const grinderFromEvent = (e) => {
+      const el = e.target.closest('.grinder');
+      if (!el || !wrapper.contains(el)) return null;
+      const id = +el.dataset.grinderId;
+      return State.model.grinders.find(g => g.id === id) || null;
+    };
 
-function updateGrinderProp() {
-  const g = grinders.find(gr=>gr.id===selectedGrinderId);
-  if (!g) return;
-  g.color = document.getElementById('propGrinderColor').value;
-  g.width = +document.getElementById('propGrinderWidth').value;
-  rebuildGrid();
-}
-
-function deleteSelected() {
-  blocks = blocks.filter(b=>b.id!==selectedBlockId);
-  selectedBlockId = null; showProps(); rebuildGrid();
-}
-
-function deleteSelectedGrinder() {
-  grinders = grinders.filter(g=>g.id!==selectedGrinderId);
-  selectedGrinderId = null; showProps(); rebuildGrid();
-}
-
-// ============ GRINDER MODAL ============
-function openGrinderModal(edge, pos) {
-  pendingGrinderEdge = edge; pendingGrinderPos = pos;
-  document.getElementById('grinderColor').value = selectedColor;
-  document.getElementById('grinderWidth').value = '1';
-  document.getElementById('grinderModal').classList.add('show');
-}
-function closeGrinderModal() { document.getElementById('grinderModal').classList.remove('show'); }
-function confirmGrinder() {
-  const color = document.getElementById('grinderColor').value;
-  const width = +document.getElementById('grinderWidth').value;
-  grinders.push({ id: nextGrinderId++, edge: pendingGrinderEdge, position: pendingGrinderPos, width, color });
-  closeGrinderModal();
-  rebuildGrid();
-}
-
-// ============ VALIDATION ============
-function validate() {
-  const warns = [];
-  // overlaps
-  const occ = {};
-  blocks.forEach((b,bi) => {
-    getWorldCells(b).forEach(c => {
-      const k = c.x+','+c.y;
-      if (occ[k] !== undefined) warns.push(`Block "${b.shape}" at (${b.origin.x},${b.origin.y}) overlaps another block at (${c.x},${c.y})`);
-      occ[k] = bi;
+    wrapper.addEventListener('mousedown', e => {
+      console.log('[editor] wrapper mousedown', { target: e.target, cls: e.target.className, tool: Selection.getTool() });
+      const g = grinderFromEvent(e);
+      if (g) { e.stopPropagation(); Tools.onGrinderClick(g, e); return; }
+      const ed = edgeFromEvent(e);
+      if (ed) { console.log('[editor] edge hit', ed); Tools.onEdgeClick(ed.edge, ed.pos, ed.el, e); return; }
+      const c = cellFromEvent(e);
+      if (c) Tools.onCellDown(c.x, c.y, c.el, e);
     });
-  });
-  // out of bounds
-  blocks.forEach(b => {
-    getWorldCells(b).forEach(c => {
-      if (c.x<0||c.y<0||c.x>=gridSize||c.y>=gridSize) warns.push(`Block "${b.shape}" at (${b.origin.x},${b.origin.y}) has cell (${c.x},${c.y}) outside grid`);
+
+    wrapper.addEventListener('mouseover', e => {
+      const c = cellFromEvent(e);
+      if (!c) return;
+      const hov = Selection.getHovered();
+      if (hov && hov.x === c.x && hov.y === c.y) return;
+      Selection.setHovered({ x: c.x, y: c.y });
+      Tools.onCellEnter(c.x, c.y);
     });
-  });
-  // color coverage
-  const blockColors = new Set(blocks.map(b=>b.color));
-  const grinderColors = new Set(grinders.map(g=>g.color));
-  blockColors.forEach(c => { if(!grinderColors.has(c)) warns.push(`Color "${c}" has blocks but no matching grinder`); });
-  // time
-  if (+document.getElementById('timeLimit').value <= 0) warns.push('Time limit must be > 0');
 
-  const el = document.getElementById('warnings');
-  if (warns.length === 0) { el.innerHTML = '<p style="color:var(--green);font-size:11px">No issues found.</p>'; return; }
-  el.innerHTML = warns.map(w => `<div class="warn-item">${w}</div>`).join('');
+    wrapper.addEventListener('mouseleave', () => {
+      if (Selection.getHovered()) { Selection.setHovered(null); Renderer.render(); }
+    });
+
+    document.addEventListener('mouseup', e => Tools.onGlobalUp(e));
+  }
+
+  function renderIssues(){
+    const issues = Validator.validate();
+    lastIssues = issues;
+    const container = document.getElementById('issues');
+    container.innerHTML = '';
+    if (issues.length === 0) {
+      container.innerHTML = '<div class="empty">OK — no issues.</div>';
+    }
+    issues.forEach(iss => {
+      const row = document.createElement('div');
+      row.className = 'issue ' + iss.severity;
+      row.innerHTML = `<span class="tag">${iss.severity === 'error' ? 'ERR' : 'WARN'}</span><span>${escapeHtml(iss.msg)}</span>`;
+      row.addEventListener('click', () => highlightIssue(iss));
+      container.appendChild(row);
+    });
+    document.getElementById('issueCount').textContent = issues.length;
+  }
+
+  function highlightIssue(iss){
+    const m = iss.msg.match(/\((\d+),(\d+)\)/);
+    if (!m) return;
+    const el = document.querySelector(`.cell[data-x="${m[1]}"][data-y="${m[2]}"]`);
+    if (el) { el.classList.remove('highlight'); void el.offsetWidth; el.classList.add('highlight'); }
+  }
+
+  return { render, lastIssues: () => lastIssues };
+})();
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// ============ EXPORT / IMPORT ============
-function buildJSON() {
-  return {
-    id: document.getElementById('levelId').value,
-    gridSize: { x: gridSize, y: gridSize },
-    timeLimit: +document.getElementById('timeLimit').value,
-    walls: walls.map(w => ({x:w.x, y:w.y})),
-    grinders: grinders.map(g => ({ edge:g.edge, position:g.position, width:g.width, color:g.color })),
-    blocks: blocks.map(b => ({
-      shape: b.shape,
-      origin: { x:b.origin.x, y:b.origin.y },
-      rotation: b.rotation,
-      color: b.color,
-      modifiers: { iced: b.modifiers.iced, axisLock: b.modifiers.axisLock }
-    }))
-  };
-}
+/* ==================== TOOLS ==================== */
+const Tools = (() => {
+  let paintingId = 0;
 
-function exportJSON() {
-  const json = JSON.stringify(buildJSON(), null, 2);
-  const blob = new Blob([json], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = document.getElementById('levelId').value + '.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
+  function onCellDown(x, y, el, e){
+    console.log('[editor] onCellDown', { x, y, tool: Selection.getTool(), shape: Selection.getShape(), color: Selection.getColor() });
+    e.preventDefault();
+    Selection.closePopover();
+    const tool = Selection.getTool();
 
-function copyJSON() {
-  navigator.clipboard.writeText(JSON.stringify(buildJSON(), null, 2)).then(() => {
-    const btn = document.querySelector('[onclick="copyJSON()"]');
-    const orig = btn.textContent; btn.textContent = 'Copied!';
-    setTimeout(()=>btn.textContent=orig, 1200);
-  });
-}
+    if (tool === 'block') {
+      placeBlockAt(x, y);
+    } else if (tool === 'wall') {
+      startWallPaint(x, y);
+    } else if (tool === 'eraser') {
+      eraseAt(x, y);
+    } else if (tool === 'select') {
+      const b = blockAt(x, y);
+      if (b) {
+        Selection.selectBlock(b.id);
+        Selection.setDragging({ blockId: b.id, ox: x - b.origin.x, oy: y - b.origin.y });
+      } else {
+        Selection.clear();
+      }
+    } else if (tool === 'grinder') {
+      // Click inside the grid on grinder tool: do nothing (require edge)
+    }
+  }
 
-function importJSON(e) {
-  const file = e.target.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try {
-      const data = JSON.parse(ev.target.result);
-      document.getElementById('levelId').value = data.id || 'level_01';
-      gridSize = data.gridSize ? (data.gridSize.x || 4) : 4;
-      document.getElementById('gridSize').value = gridSize;
-      document.getElementById('timeLimit').value = data.timeLimit || 60;
-      document.getElementById('timeLimitVal').textContent = data.timeLimit || 60;
-      walls = (data.walls || []).map(w => ({x:w.x, y:w.y}));
-      grinders = (data.grinders || []).map((g,i) => ({id:++nextGrinderId, edge:g.edge, position:g.position, width:g.width, color:g.color}));
-      blocks = (data.blocks || []).map((b,i) => ({
-        id: ++nextBlockId, shape:b.shape, origin:{x:b.origin.x, y:b.origin.y},
-        rotation: b.rotation||0, color:b.color,
-        modifiers: { iced: b.modifiers?.iced||0, axisLock: b.modifiers?.axisLock||'None' }
+  function onCellEnter(x, y){
+    const tool = Selection.getTool();
+    const wp = Selection.getWallPaint();
+    if (tool === 'wall' && wp) {
+      const key = x + ',' + y;
+      if (!wp.cells.has(key)) {
+        wp.cells.add(key);
+      }
+      Renderer.render();
+    } else if (Selection.getDragging()) {
+      Renderer.render();
+    } else if (tool === 'block') {
+      Renderer.render();
+    }
+  }
+
+  function onGlobalUp(e){
+    const wp = Selection.getWallPaint();
+    if (wp) {
+      // Apply all collected cells as a bulk command
+      const add = [], remove = [];
+      for (const key of wp.cells) {
+        const [x,y] = key.split(',').map(Number);
+        if (wp.mode === 'add') {
+          if (!State.model.walls.some(w => w.x===x && w.y===y)) add.push({x,y});
+        } else {
+          if (State.model.walls.some(w => w.x===x && w.y===y)) remove.push({x,y});
+        }
+      }
+      if (add.length || remove.length) {
+        History.exec(Commands.BulkWalls(add, remove));
+      }
+      Selection.setWallPaint(null);
+    }
+    const drag = Selection.getDragging();
+    if (drag) {
+      const hov = Selection.getHovered();
+      const b = State.model.blocks.find(x => x.id === drag.blockId);
+      if (b && hov) {
+        const newOrigin = { x: hov.x - drag.ox, y: hov.y - drag.oy };
+        if (newOrigin.x !== b.origin.x || newOrigin.y !== b.origin.y) {
+          History.exec(Commands.UpdateBlock(b.id, { origin: newOrigin }));
+        }
+      }
+      Selection.setDragging(null);
+    }
+    Renderer.render();
+  }
+
+  function placeBlockAt(x, y){
+    const shape = Selection.getShape();
+    const rotation = Selection.getRotation();
+    const cells = shapeCells(shape, rotation).map(([ox,oy]) => ({ x: x+ox, y: y+oy }));
+    console.log('[editor] placeBlockAt', { x, y, shape, rotation, cells, gs: State.model.gridSize });
+    // Must all be in bounds and not overlap
+    for (const c of cells) if (!inBounds(c.x, c.y, State.model.gridSize)) { console.warn('[editor] OOB', c); Toast.show('Shape out of bounds', 'error'); return; }
+    for (const b of State.model.blocks) {
+      const bcells = blockWorldCells(b);
+      for (const c of cells) if (bcells.some(bc => bc.x===c.x && bc.y===c.y)) { Toast.show('Overlaps existing block'); return; }
+    }
+    const block = {
+      id: State.nextBlockId(),
+      shape, origin: {x,y}, rotation,
+      color: Selection.getColor(),
+      modifiers: { iced:0, axisLock:'None' }
+    };
+    History.exec(Commands.AddBlock(block));
+  }
+
+  function startWallPaint(x, y){
+    const existing = State.model.walls.some(w => w.x===x && w.y===y);
+    const mode = existing ? 'remove' : 'add';
+    Selection.setWallPaint({ mode, cells: new Set([x + ',' + y]) });
+    Renderer.render();
+  }
+
+  function eraseAt(x, y){
+    // Priority: block at cell, then wall
+    const b = blockAt(x, y);
+    if (b) { History.exec(Commands.RemoveBlock(b.id)); return; }
+    if (State.model.walls.some(w => w.x===x && w.y===y)) {
+      History.exec(Commands.RemoveWall(x, y));
+    }
+  }
+
+  function blockAt(x, y){
+    for (const b of State.model.blocks) {
+      if (blockWorldCells(b).some(c => c.x===x && c.y===y)) return b;
+    }
+    return null;
+  }
+
+  function onEdgeClick(edge, position, el, e){
+    const tool = Selection.getTool();
+    if (tool === 'grinder') {
+      placeGrinderAt(edge, position);
+    } else if (tool === 'eraser') {
+      const g = findGrinder(edge, position);
+      if (g) History.exec(Commands.RemoveGrinder(g.id));
+    }
+  }
+
+  function onGrinderClick(g, e){
+    const tool = Selection.getTool();
+    if (tool === 'grinder' || tool === 'eraser') {
+      History.exec(Commands.RemoveGrinder(g.id));
+    } else {
+      Selection.selectGrinder(g.id);
+    }
+  }
+
+  function placeGrinderAt(edge, position){
+    const gs = State.model.gridSize;
+    const width = Selection.getGrinderWidth();
+    const edgeLen = (edge === 'Top' || edge === 'Bottom') ? gs.x : gs.y;
+    let pos = position;
+    if (pos + width > edgeLen) pos = Math.max(0, edgeLen - width);
+    // Replace any existing grinder overlapping this span.
+    const overlap = State.model.grinders.find(g => g.edge === edge &&
+      !(g.position + g.width <= pos || pos + width <= g.position));
+    const color = Selection.getColor();
+    if (overlap) {
+      History.exec(Commands.UpdateGrinder(overlap.id, { color, width, position: pos }));
+    } else {
+      History.exec(Commands.AddGrinder({
+        id: State.nextGrinderId(), edge, position: pos, width, color
       }));
-      selectedBlockId = null; selectedGrinderId = null;
-      showProps(); rebuildGrid();
-    } catch(err) { alert('Invalid JSON: ' + err.message); }
+    }
+  }
+
+  function findGrinder(edge, position){
+    return State.model.grinders.find(g => g.edge === edge && g.position <= position && position < g.position + g.width);
+  }
+
+  function openGrinderPopover(edge, position, anchorEl, existing){
+    const rect = anchorEl.getBoundingClientRect();
+    const pop = document.createElement('div');
+    pop.className = 'popover';
+    pop.innerHTML = `
+      <h4>${existing ? 'Edit' : 'Place'} Grinder</h4>
+      <label>Color</label>
+      <select class="pop-color"></select>
+      <label>Width</label>
+      <select class="pop-width">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+      </select>
+      <div class="btn-row">
+        <button class="btn sm primary pop-ok">${existing ? 'Update' : 'Place'}</button>
+        <button class="btn sm pop-cancel">Cancel</button>
+        ${existing ? '<button class="btn sm danger pop-del">Delete</button>' : ''}
+      </div>
+    `;
+    document.body.appendChild(pop);
+    // Position near anchor
+    pop.style.left = Math.min(window.innerWidth - 220, rect.left + rect.width/2 - 100) + 'px';
+    pop.style.top  = Math.min(window.innerHeight - 180, rect.bottom + 6) + 'px';
+
+    const colorSel = pop.querySelector('.pop-color');
+    COLOR_NAMES.forEach(c => {
+      const o = document.createElement('option'); o.value=c; o.textContent=c; colorSel.appendChild(o);
+    });
+    colorSel.value = existing ? existing.color : Selection.getColor();
+    pop.querySelector('.pop-width').value = existing ? existing.width : '1';
+
+    pop.querySelector('.pop-cancel').onclick = () => Selection.closePopover();
+    if (existing) pop.querySelector('.pop-del').onclick = () => {
+      History.exec(Commands.RemoveGrinder(existing.id));
+      Selection.closePopover();
+    };
+    pop.querySelector('.pop-ok').onclick = () => {
+      const color = colorSel.value;
+      const width = +pop.querySelector('.pop-width').value;
+      const gs = State.model.gridSize;
+      const edgeLen = (edge === 'Top' || edge === 'Bottom') ? gs.x : gs.y;
+      let pos = position;
+      if (pos + width > edgeLen) pos = Math.max(0, edgeLen - width);
+      if (existing) {
+        History.exec(Commands.UpdateGrinder(existing.id, { color, width, position: pos }));
+      } else {
+        // Overlap check — if an existing grinder spans this slot, update it instead.
+        const overlap = State.model.grinders.find(g => g.edge === edge &&
+          !(g.position + g.width <= pos || pos + width <= g.position));
+        if (overlap) {
+          History.exec(Commands.UpdateGrinder(overlap.id, { color, width, position: pos }));
+        } else {
+          History.exec(Commands.AddGrinder({
+            id: State.nextGrinderId(), edge, position: pos, width, color
+          }));
+        }
+      }
+      Selection.closePopover();
+    };
+
+    Selection.setPopover({ type:'grinder', el: pop });
+  }
+
+  return { onCellDown, onCellEnter, onGlobalUp, onEdgeClick, onGrinderClick };
+})();
+
+/* ==================== IO ==================== */
+const IO = (() => {
+  let autosaveTimer = null;
+  let lastSavedTs = null;
+
+  function toPayload(){
+    const m = State.model;
+    return {
+      ...m.unknownFields,
+      id: m.levelId,
+      gridSize: { x: m.gridSize.x, y: m.gridSize.y },
+      timeLimit: m.timeLimitSeconds,
+      walls: m.walls.map(w => ({ x:w.x, y:w.y })),
+      grinders: m.grinders.map(g => ({ edge:g.edge, position:g.position, width:g.width, color:g.color })),
+      blocks: m.blocks.map(b => ({
+        shape: b.shape,
+        origin: { x:b.origin.x, y:b.origin.y },
+        rotation: b.rotation || 0,
+        color: b.color,
+        modifiers: { iced: b.modifiers?.iced || 0, axisLock: b.modifiers?.axisLock || 'None' }
+      }))
+    };
+  }
+
+  function fromPayload(p){
+    const known = new Set(['id','gridSize','timeLimit','walls','grinders','blocks']);
+    const unknown = {};
+    for (const k of Object.keys(p)) if (!known.has(k)) unknown[k] = p[k];
+    return {
+      levelId: p.id || 'level_01',
+      gridSize: { x: p.gridSize?.x || 5, y: p.gridSize?.y || 5 },
+      timeLimitSeconds: typeof p.timeLimit === 'number' ? p.timeLimit : 60,
+      walls: (p.walls || []).map(w => ({ x:w.x, y:w.y })),
+      grinders: (p.grinders || []).map((g,i) => ({
+        id: i+1, edge: g.edge, position: g.position|0, width: g.width|0, color: g.color
+      })),
+      blocks: (p.blocks || []).map((b,i) => ({
+        id: i+1, shape: b.shape,
+        origin: { x: b.origin?.x||0, y: b.origin?.y||0 },
+        rotation: b.rotation|0,
+        color: b.color,
+        modifiers: {
+          iced: b.modifiers?.iced|0,
+          axisLock: b.modifiers?.axisLock || 'None'
+        }
+      })),
+      unknownFields: unknown
+    };
+  }
+
+  function exportJSON(){
+    const issues = Validator.validate();
+    if (issues.some(i => i.severity === 'error')) {
+      Toast.show('Fix errors before exporting', 'error');
+      return;
+    }
+    const payload = toPayload();
+    const text = JSON.stringify(payload, null, 2);
+    const blob = new Blob([text], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (State.model.levelId || 'level') + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    Toast.show('Exported ' + a.download);
+  }
+
+  async function copyJSON(){
+    const payload = toPayload();
+    const text = JSON.stringify(payload, null, 2);
+    try {
+      await navigator.clipboard.writeText(text);
+      Toast.show('JSON copied to clipboard');
+    } catch (e) {
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); Toast.show('JSON copied'); } catch (_) { Toast.show('Copy failed', 'error'); }
+      document.body.removeChild(ta);
+    }
+  }
+
+  function importJSON(text){
+    let p;
+    try { p = JSON.parse(text); } catch (e) { Toast.show('Invalid JSON', 'error'); return; }
+    try {
+      const next = fromPayload(p);
+      History.exec(Commands.ReplaceAll(next));
+      UI.syncAllInputs();
+      Toast.show('Imported ' + (next.levelId || 'level'));
+    } catch (e) {
+      Toast.show('Import failed: ' + e.message, 'error');
+    }
+  }
+
+  function importFromFile(file){
+    const reader = new FileReader();
+    reader.onload = () => importJSON(reader.result);
+    reader.readAsText(file);
+  }
+
+  function scheduleAutosave(){
+    if (autosaveTimer) return;
+    autosaveTimer = setTimeout(() => {
+      autosaveTimer = null;
+      try {
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(toPayload()));
+        lastSavedTs = Date.now();
+        UI.syncStatus();
+      } catch (e) { /* quota ignored */ }
+    }, AUTOSAVE_INTERVAL_MS);
+  }
+
+  function getAutosave(){
+    try {
+      const s = localStorage.getItem(AUTOSAVE_KEY);
+      return s ? JSON.parse(s) : null;
+    } catch (e) { return null; }
+  }
+
+  function clearAutosave(){ try { localStorage.removeItem(AUTOSAVE_KEY); } catch (_) {} }
+  function getLastSaved(){ return lastSavedTs; }
+
+  return { toPayload, fromPayload, exportJSON, copyJSON, importJSON, importFromFile,
+           scheduleAutosave, getAutosave, clearAutosave, getLastSaved };
+})();
+
+/* ==================== TOAST ==================== */
+const Toast = (() => {
+  let timer = null;
+  function show(msg, kind){
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.toggle('error', kind === 'error');
+    el.classList.add('show');
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => el.classList.remove('show'), 2400);
+  }
+  return { show };
+})();
+
+/* ==================== UI BINDINGS ==================== */
+const UI = (() => {
+
+  function syncToolButtons(){
+    document.querySelectorAll('.tool-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tool === Selection.getTool());
+    });
+    const labels = { block:'Block', grinder:'Grinder', eraser:'Eraser', select:'Select' };
+    const hints = {
+      block:'click a cell to place the selected shape',
+      grinder:'click an edge slot to place a grinder',
+      eraser:'click to remove block or grinder',
+      select:'click to select; drag to move'
+    };
+    document.getElementById('toolLabel').textContent = labels[Selection.getTool()] || '?';
+    document.getElementById('toolHint').textContent = hints[Selection.getTool()] || '';
+    // Show the shape picker only for the Block tool; show width picker only for Grinder.
+    const isBlock = Selection.getTool() === 'block';
+    const isGrinder = Selection.getTool() === 'grinder';
+    const shapeSec = document.getElementById('shapeSection');
+    const grSec = document.getElementById('grinderToolsSection');
+    if (shapeSec) shapeSec.style.display = isBlock ? '' : 'none';
+    if (grSec) grSec.style.display = isGrinder ? '' : 'none';
+  }
+
+  function syncGrinderWidth(){
+    document.querySelectorAll('.grinder-width-btn').forEach(b => {
+      b.classList.toggle('active', +b.dataset.width === Selection.getGrinderWidth());
+    });
+  }
+
+  function syncColorPicker(){
+    const el = document.getElementById('colorPicker');
+    el.innerHTML = '';
+    COLOR_NAMES.forEach((c, idx) => {
+      const sw = document.createElement('div');
+      sw.className = 'color-swatch' + (c === Selection.getColor() ? ' active' : '');
+      sw.style.background = COLORS[c];
+      sw.title = `${c} (${idx+1})`;
+      sw.textContent = (idx+1);
+      sw.addEventListener('click', () => Selection.setColor(c));
+      el.appendChild(sw);
+    });
+  }
+
+  function syncShapePicker(){
+    const el = document.getElementById('shapePicker');
+    el.innerHTML = '';
+    SHAPE_IDS.forEach(id => {
+      const shape = SHAPES[id];
+      const btn = document.createElement('div');
+      btn.className = 'shape-btn' + (id === Selection.getShape() ? ' active' : '');
+      const offs = shape.offsets;
+      let maxX=0,maxY=0; offs.forEach(([x,y])=>{if(x>maxX)maxX=x;if(y>maxY)maxY=y;});
+      const prev = document.createElement('div');
+      prev.className = 'shape-preview';
+      prev.style.gridTemplateColumns = `repeat(${maxX+1}, 8px)`;
+      const set = new Set(offs.map(([x,y]) => x+','+y));
+      for (let y = maxY; y >= 0; y--) {
+        for (let x = 0; x <= maxX; x++) {
+          const c = document.createElement('div');
+          c.className = 'shape-preview-cell';
+          c.style.background = set.has(x+','+y) ? COLORS[Selection.getColor()] : 'transparent';
+          prev.appendChild(c);
+        }
+      }
+      btn.appendChild(prev);
+      btn.appendChild(document.createTextNode(shape.label));
+      btn.addEventListener('click', () => Selection.setShape(id));
+      el.appendChild(btn);
+    });
+  }
+
+  function syncRotation(){ /* rotation UI removed */ }
+
+  function syncProperties(){
+    const bId = Selection.getBlockId();
+    const gId = Selection.getGrinderId();
+    const pe = document.getElementById('propEmpty');
+    const pb = document.getElementById('propBlock');
+    const pg = document.getElementById('propGrinder');
+    pe.hidden = (bId != null || gId != null);
+    pb.hidden = bId == null;
+    pg.hidden = gId == null;
+
+    if (bId != null) {
+      const b = State.model.blocks.find(x => x.id === bId);
+      if (b) {
+        document.getElementById('propBlockName').textContent = b.shape;
+        document.getElementById('propBlockPos').textContent = `(${b.origin.x},${b.origin.y})`;
+        const col = document.getElementById('propBlockColor'); col.innerHTML = '';
+        COLOR_NAMES.forEach(c => { const o = document.createElement('option'); o.value=c; o.textContent=c; col.appendChild(o); });
+        col.value = b.color;
+        document.getElementById('propBlockAxis').value = b.modifiers?.axisLock || 'None';
+        document.getElementById('propBlockIce').value = b.modifiers?.iced || 0;
+        document.getElementById('propBlockRot').value = b.rotation || 0;
+      }
+    }
+    if (gId != null) {
+      const g = State.model.grinders.find(x => x.id === gId);
+      if (g) {
+        document.getElementById('propGrName').textContent = `${g.edge} @${g.position}`;
+        const col = document.getElementById('propGrColor'); col.innerHTML = '';
+        COLOR_NAMES.forEach(c => { const o = document.createElement('option'); o.value=c; o.textContent=c; col.appendChild(o); });
+        col.value = g.color;
+        document.getElementById('propGrWidth').value = g.width;
+      }
+    }
+  }
+
+  function syncStatus(){
+    const issues = Renderer.lastIssues();
+    const errs = issues.filter(i => i.severity === 'error').length;
+    const warns = issues.filter(i => i.severity === 'warn').length;
+    document.getElementById('sbBlocks').textContent = State.model.blocks.length;
+    document.getElementById('sbGrinders').textContent = State.model.grinders.length;
+    document.getElementById('sbErrors').textContent = errs;
+    document.getElementById('sbWarnings').textContent = warns;
+    const ts = IO.getLastSaved();
+    if (ts) {
+      const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+      document.getElementById('sbSaved').textContent = `saved ${s}s ago`;
+    } else {
+      document.getElementById('sbSaved').textContent = 'unsaved';
+    }
+    document.getElementById('btnExport').disabled = errs > 0;
+  }
+
+  function syncHistoryButtons(){
+    document.getElementById('btnUndo').disabled = !History.canUndo();
+    document.getElementById('btnRedo').disabled = !History.canRedo();
+  }
+
+  function syncPreview(){
+    const el = document.getElementById('preview');
+    try { el.textContent = JSON.stringify(IO.toPayload(), null, 2); }
+    catch (e) { el.textContent = '(error)'; }
+  }
+
+  function syncAllInputs(){
+    document.getElementById('levelId').value = State.model.levelId;
+    document.getElementById('gridSize').value = State.model.gridSize.x; // assume square for select
+    document.getElementById('timeLimit').value = State.model.timeLimitSeconds;
+    document.getElementById('timeLimitVal').textContent = State.model.timeLimitSeconds;
+    syncColorPicker();
+    syncShapePicker();
+    syncGrinderWidth();
+    syncToolButtons();
+    syncProperties();
+  }
+
+  return { syncToolButtons, syncColorPicker, syncShapePicker, syncRotation,
+           syncGrinderWidth, syncProperties, syncStatus, syncHistoryButtons,
+           syncPreview, syncAllInputs };
+})();
+
+/* ==================== GRID-RESIZE SAFETY ==================== */
+function changeGridSize(newSize){
+  const gs = { x: newSize, y: newSize };
+  const m = State.model;
+  // Detect items outside new bounds.
+  const offendingBlocks = m.blocks.filter(b =>
+    blockWorldCells(b).some(c => !inBounds(c.x, c.y, gs)));
+  const offendingWalls = m.walls.filter(w => !inBounds(w.x, w.y, gs));
+  const offendingGrinders = m.grinders.filter(g => {
+    const edgeLen = (g.edge === 'Top' || g.edge === 'Bottom') ? gs.x : gs.y;
+    return g.position < 0 || g.position + g.width > edgeLen;
+  });
+  const affected = offendingBlocks.length + offendingWalls.length + offendingGrinders.length;
+  if (affected > 0) {
+    const ok = confirm(`Shrinking to ${newSize}x${newSize} will remove ${offendingBlocks.length} block(s), ${offendingWalls.length} wall(s), and ${offendingGrinders.length} grinder(s). Continue?`);
+    if (!ok) {
+      document.getElementById('gridSize').value = m.gridSize.x;
+      return;
+    }
+  }
+  const cmds = [];
+  for (const b of offendingBlocks) cmds.push(Commands.RemoveBlock(b.id));
+  for (const w of offendingWalls)  cmds.push(Commands.RemoveWall(w.x, w.y));
+  for (const g of offendingGrinders) cmds.push(Commands.RemoveGrinder(g.id));
+  cmds.push(Commands.SetLevelMeta({ gridSize: gs }));
+  History.exec(Commands.Composite(cmds, 'resize grid'));
+}
+
+/* ==================== KEYBOARD / SHORTCUTS ==================== */
+function installShortcuts(){
+  document.addEventListener('keydown', e => {
+    // Don't steal shortcuts when typing in inputs.
+    const tag = (e.target && e.target.tagName) || '';
+    const typing = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+
+    if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+      toggleHelp(); e.preventDefault(); return;
+    }
+    if (e.key === 'Escape') {
+      if (!document.getElementById('helpOverlay').hidden) { toggleHelp(false); return; }
+      Selection.closePopover();
+      Selection.clear();
+      return;
+    }
+
+    if (e.ctrlKey || e.metaKey) {
+      const k = e.key.toLowerCase();
+      if (k === 'z' && !e.shiftKey) { History.undo(); e.preventDefault(); return; }
+      if ((k === 'z' && e.shiftKey) || k === 'y') { History.redo(); e.preventDefault(); return; }
+      if (k === 's') { IO.exportJSON(); e.preventDefault(); return; }
+      if (k === 'o') { document.getElementById('importFile').click(); e.preventDefault(); return; }
+    }
+
+    if (typing) return;
+
+    const map = { b:'block', g:'grinder', e:'eraser', s:'select' };
+    if (map[e.key.toLowerCase()]) { Selection.setTool(map[e.key.toLowerCase()]); return; }
+    if (/^[1-6]$/.test(e.key)) {
+      const c = COLOR_NAMES[+e.key - 1];
+      if (c) Selection.setColor(c);
+      return;
+    }
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      const bId = Selection.getBlockId();
+      const gId = Selection.getGrinderId();
+      if (bId != null) History.exec(Commands.RemoveBlock(bId));
+      else if (gId != null) History.exec(Commands.RemoveGrinder(gId));
+    }
+  });
+}
+
+function handleRotate(){
+  const bId = Selection.getBlockId();
+  if (bId != null) {
+    const b = State.model.blocks.find(x => x.id === bId);
+    if (b) {
+      const nextRot = (b.rotation + 90) % 360;
+      History.exec(Commands.UpdateBlock(bId, { rotation: nextRot }));
+    }
+  } else {
+    Selection.setRotation(Selection.getRotation() + 90);
+  }
+}
+
+function toggleHelp(force){
+  const el = document.getElementById('helpOverlay');
+  const show = force === undefined ? el.hidden : force;
+  el.hidden = !show;
+}
+
+/* ==================== BOOT ==================== */
+function installTopControls(){
+  document.getElementById('levelId').addEventListener('change', e => {
+    History.exec(Commands.SetLevelMeta({ levelId: e.target.value }));
+  });
+  document.getElementById('gridSize').addEventListener('change', e => changeGridSize(+e.target.value));
+  document.getElementById('timeLimit').addEventListener('input', e => {
+    document.getElementById('timeLimitVal').textContent = e.target.value;
+  });
+  document.getElementById('timeLimit').addEventListener('change', e => {
+    History.exec(Commands.SetLevelMeta({ timeLimitSeconds: +e.target.value }));
+  });
+
+  // Tool buttons
+  document.querySelectorAll('.tool-btn').forEach(b => {
+    b.addEventListener('click', () => Selection.setTool(b.dataset.tool));
+  });
+
+  // Grinder width picker
+  document.querySelectorAll('.grinder-width-btn').forEach(b => {
+    b.addEventListener('click', () => Selection.setGrinderWidth(+b.dataset.width));
+  });
+
+  // File buttons
+  document.getElementById('btnExport').addEventListener('click', IO.exportJSON);
+  document.getElementById('btnCopy').addEventListener('click', IO.copyJSON);
+  document.getElementById('btnImport').addEventListener('click', () => document.getElementById('importFile').click());
+  document.getElementById('importFile').addEventListener('change', e => {
+    if (e.target.files[0]) IO.importFromFile(e.target.files[0]);
+    e.target.value = '';
+  });
+  document.getElementById('btnClear').addEventListener('click', () => {
+    if (confirm('Clear the entire level?')) {
+      History.exec(Commands.ReplaceAll({
+        levelId: State.model.levelId, gridSize: State.model.gridSize,
+        timeLimitSeconds: State.model.timeLimitSeconds,
+        blocks: [], grinders: [], walls: [], unknownFields:{}
+      }));
+    }
+  });
+  document.getElementById('btnUndo').addEventListener('click', History.undo);
+  document.getElementById('btnRedo').addEventListener('click', History.redo);
+  document.getElementById('btnHelp').addEventListener('click', () => toggleHelp(true));
+  document.getElementById('btnHelp2').addEventListener('click', () => toggleHelp(true));
+  document.getElementById('helpClose').addEventListener('click', () => toggleHelp(false));
+  document.getElementById('helpOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'helpOverlay') toggleHelp(false);
+  });
+
+  // Right panel property editors
+  const pb = (patch) => {
+    const id = Selection.getBlockId(); if (id == null) return;
+    History.exec(Commands.UpdateBlock(id, patch));
   };
-  reader.readAsText(file);
-  e.target.value = '';
+  document.getElementById('propBlockColor').addEventListener('change', e => pb({ color: e.target.value }));
+  document.getElementById('propBlockAxis').addEventListener('change', e => pb({ modifiers: { axisLock: e.target.value } }));
+  document.getElementById('propBlockIce').addEventListener('change', e => pb({ modifiers: { iced: Math.max(0, Math.min(5, +e.target.value)) } }));
+  document.getElementById('propBlockRot').addEventListener('change', e => pb({ rotation: +e.target.value }));
+  document.getElementById('propBlockDel').addEventListener('click', () => {
+    const id = Selection.getBlockId(); if (id == null) return;
+    History.exec(Commands.RemoveBlock(id));
+  });
+  const pg = (patch) => {
+    const id = Selection.getGrinderId(); if (id == null) return;
+    History.exec(Commands.UpdateGrinder(id, patch));
+  };
+  document.getElementById('propGrColor').addEventListener('change', e => pg({ color: e.target.value }));
+  document.getElementById('propGrWidth').addEventListener('change', e => pg({ width: +e.target.value }));
+  document.getElementById('propGrDel').addEventListener('click', () => {
+    const id = Selection.getGrinderId(); if (id == null) return;
+    History.exec(Commands.RemoveGrinder(id));
+  });
+
+  // Drag-and-drop JSON anywhere
+  const drop = document.getElementById('dropHint');
+  let dragDepth = 0;
+  window.addEventListener('dragenter', e => {
+    if (!e.dataTransfer || !Array.from(e.dataTransfer.types).includes('Files')) return;
+    dragDepth++; drop.hidden = false;
+  });
+  window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth-1); if (dragDepth === 0) drop.hidden = true; });
+  window.addEventListener('dragover', e => { e.preventDefault(); });
+  window.addEventListener('drop', e => {
+    e.preventDefault(); dragDepth = 0; drop.hidden = true;
+    const f = e.dataTransfer.files[0];
+    if (f) IO.importFromFile(f);
+  });
+
+  // Center click on empty cell with select tool deselects — handled in Tools.onCellDown.
+  document.getElementById('center').addEventListener('mousedown', e => {
+    if (e.target.id === 'center') Selection.clear();
+  });
 }
 
-function clearAll() {
-  if (!confirm('Clear everything?')) return;
-  blocks=[]; walls=[]; grinders=[]; selectedBlockId=null; selectedGrinderId=null;
-  showProps(); rebuildGrid();
+function boot(){
+  // Defaults
+  State.replaceAll({
+    levelId: 'level_01',
+    gridSize: { x:5, y:5 },
+    timeLimitSeconds: 60,
+    blocks: [], grinders: [], walls: [],
+    unknownFields: {}
+  });
+
+  installTopControls();
+  installShortcuts();
+  UI.syncAllInputs();
+  Renderer.render();
+
+  // Restore prompt
+  const saved = IO.getAutosave();
+  if (saved && ((saved.blocks && saved.blocks.length) || (saved.grinders && saved.grinders.length) || (saved.walls && saved.walls.length))) {
+    if (confirm('Restore last autosaved session?')) {
+      try {
+        State.replaceAll(IO.fromPayload(saved));
+        History.reset();
+        UI.syncAllInputs();
+        Renderer.render();
+      } catch (e) { /* ignore */ }
+    } else {
+      IO.clearAutosave();
+    }
+  }
+
+  // Status tick
+  setInterval(() => UI.syncStatus(), 1000);
 }
 
-// ============ BOOT ============
-init();
+document.addEventListener('DOMContentLoaded', boot);
 </script>
 </body>
 </html>
