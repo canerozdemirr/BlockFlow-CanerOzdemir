@@ -74,6 +74,33 @@ public sealed class LevelMapScreen : MonoBehaviour
         if (playBtn != null)
             playBtn.clicked += OnPlayClicked;
 
+        // Lock the scroll — player cannot pan the map. The bottom (current)
+        // node is snapped into view by ScrollToBottomWhenReady and stays there.
+        // Hide the scrollbar chrome and block the viewport from receiving the
+        // drag/wheel events that would otherwise move scrollOffset.
+        if (scrollView != null)
+        {
+            scrollView.verticalScrollerVisibility = ScrollerVisibility.Hidden;
+            scrollView.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+
+            // ScrollView's internal drag/wheel handlers register on the scrollView
+            // itself at TrickleDown. Swallow the raw input events before they
+            // reach those handlers so the user cannot pan the map. We keep the
+            // programmatic scrollOffset assignment (ScrollToBottomWhenReady) —
+            // that doesn't go through the event pipeline.
+            EventCallback<PointerDownEvent>  downCb  = evt => evt.StopImmediatePropagation();
+            EventCallback<PointerMoveEvent>  moveCb  = evt => evt.StopImmediatePropagation();
+            EventCallback<PointerUpEvent>    upCb    = evt => evt.StopImmediatePropagation();
+            EventCallback<PointerCancelEvent> cancCb = evt => evt.StopImmediatePropagation();
+            EventCallback<WheelEvent>        wheelCb = evt => evt.StopImmediatePropagation();
+
+            scrollView.RegisterCallback(downCb,  TrickleDown.TrickleDown);
+            scrollView.RegisterCallback(moveCb,  TrickleDown.TrickleDown);
+            scrollView.RegisterCallback(upCb,    TrickleDown.TrickleDown);
+            scrollView.RegisterCallback(cancCb,  TrickleDown.TrickleDown);
+            scrollView.RegisterCallback(wheelCb, TrickleDown.TrickleDown);
+        }
+
         uiReady = root != null && content != null;
 
         // Build immediately — layout will resolve in the same frame
@@ -158,14 +185,40 @@ public sealed class LevelMapScreen : MonoBehaviour
         if (levelLabel != null)
             levelLabel.text = $"Level {currentLevelNum}";
 
-        // Auto-scroll to bottom (current level) — wait one frame for layout
-        root.schedule.Execute(() =>
-        {
-            if (scrollView != null)
-                scrollView.scrollOffset = new Vector2(0, scrollView.contentContainer.layout.height);
-        });
+        // Auto-scroll to bottom (current level). A single-frame schedule fires
+        // before USS/layout has resolved child heights — contentContainer.layout.height
+        // reads 0 and the scroll snaps to the top. Hook GeometryChangedEvent on
+        // the content so we jump the moment real heights are known, then detach.
+        ScrollToBottomWhenReady();
 
         AnimateNodesIn();
+    }
+
+    /// <summary>
+    /// Snaps the ScrollView to the bottom as soon as the content container's
+    /// layout resolves. Uses GeometryChangedEvent because schedule.Execute fires
+    /// the same frame — before USS flex math has produced real child heights.
+    /// </summary>
+    private void ScrollToBottomWhenReady()
+    {
+        if (scrollView == null) return;
+        var container = scrollView.contentContainer;
+        if (container == null) return;
+
+        void OnGeometry(GeometryChangedEvent evt)
+        {
+            if (container.layout.height <= 0f) return; // still resolving
+            // Jump past the bottom; ScrollView clamps to the valid range.
+            scrollView.scrollOffset = new Vector2(0, container.layout.height);
+            container.UnregisterCallback<GeometryChangedEvent>(OnGeometry);
+        }
+
+        container.RegisterCallback<GeometryChangedEvent>(OnGeometry);
+
+        // If layout is already resolved (rebuilds on an already-shown map),
+        // the callback above won't fire — do an immediate attempt too.
+        if (container.layout.height > 0f)
+            scrollView.scrollOffset = new Vector2(0, container.layout.height);
     }
 
     private VisualElement CreateNode(int levelNumber, bool isCurrent)

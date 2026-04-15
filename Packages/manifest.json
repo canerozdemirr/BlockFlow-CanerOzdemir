@@ -1,5 +1,9 @@
 {
   "dependencies": {
+    "com.ivanmurzak.unity.mcp": "0.63.4",
+    "com.ivanmurzak.unity.mcp.animation": "1.1.23",
+    "com.ivanmurzak.unity.mcp.particlesystem": "1.0.50",
+    "com.ivanmurzak.unity.mcp.probuilder": "1.0.62",
     "com.kyrylokuzyk.primetween": "file:../Assets/Plugins/PrimeTween/internal/com.kyrylokuzyk.primetween.tgz",
     "com.unity.collab-proxy": "2.12.4",
     "com.unity.device-simulator.devices": "1.0.1",
@@ -8,6 +12,7 @@
     "com.unity.ide.vscode": "1.2.5",
     "com.unity.inputsystem": "1.14.2",
     "com.unity.nuget.newtonsoft-json": "3.2.1",
+    "com.unity.recorder": "4.0.3",
     "com.unity.render-pipelines.universal": "14.0.12",
     "com.unity.test-framework": "1.1.33",
     "com.unity.textmeshpro": "3.0.7",
@@ -15,6 +20,7 @@
     "com.unity.ugui": "1.0.0",
     "com.unity.visualscripting": "1.9.4",
     "jp.hadashikick.vcontainer": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer#1.17.0",
+    "xyz.candycoded.hapticfeedback": "https://github.com/CandyCoded/HapticFeedback.git#v1.0.3",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
     "com.unity.modules.animation": "1.0.0",
@@ -45,12 +51,7 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0",
-    "xyz.candycoded.hapticfeedback": "https://github.com/CandyCoded/HapticFeedback.git#v1.0.3",
-    "com.ivanmurzak.unity.mcp": "0.63.4",
-    "com.ivanmurzak.unity.mcp.animation": "1.1.23",
-    "com.ivanmurzak.unity.mcp.particlesystem": "1.0.50",
-    "com.ivanmurzak.unity.mcp.probuilder": "1.0.62"
+    "com.unity.modules.xr": "1.0.0"
   },
   "scopedRegistries": [
     {
