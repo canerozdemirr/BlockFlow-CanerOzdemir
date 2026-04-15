@@ -330,6 +330,103 @@ Assets/_Project/
 | `BlockFlow → Audio → Optimize Import Settings` | Walks `Assets/_Project` audio clips and applies mobile-friendly import settings. |
 | `Assets/_Project/Tools/LevelEditor.html` | Standalone drag-and-drop level authoring tool that exports compatible level JSON. |
 
+### Level Editor (`Assets/_Project/Tools/LevelEditor.html`)
+
+A single-file, zero-dependency level authoring tool. Open it in any modern browser — no server, no build step, no installs. It produces JSON files that drop straight into `Assets/_Project/Levels/`.
+
+**Architecture**
+
+Internally the editor mirrors the game's runtime model so what you see in the editor is what the game loads:
+
+```
+State (pure model) ─► Commands (apply/undo) ─► History (undo/redo stack) ─► Renderer (DOM)
+                                                                                   ▲
+                                                                           Tools / Selection
+```
+
+Every mutation is a Command with matching `apply()` / `undo()` — so Ctrl+Z reverses any action. The same `SHAPES` offsets, `COLORS` set, and `EDGES` enum that the Unity side uses are duplicated here, and the validator runs the same rules as `LevelValidator.cs` so invalid levels are caught before export.
+
+**Workflow**
+
+1. Open `Assets/_Project/Tools/LevelEditor.html` in a browser.
+2. Set **Level ID** (e.g. `level_06`), **Grid Size** (4×4 / 5×5 / 6×6), and **Time Limit**.
+3. Pick a **Tool**, **Color**, and (for Block tool) a **Shape**.
+4. Click cells to place blocks; click edge slots to place grinders.
+5. Watch the **Issues** panel on the right — export is disabled while any **ERR** is present.
+6. Click **Export** to download `<levelId>.json`, or **Copy** to put it on the clipboard.
+7. Drop the `.json` file into `Assets/_Project/Levels/` and add it to `LevelCatalog`.
+
+**Tools**
+
+| Tool | Shortcut | Action |
+|---|---|---|
+| Block | **B** | Click a cell to place the selected shape at that origin. |
+| Grinder | **G** | Click an edge slot to place a grinder with the selected color and width. Clicking an existing grinder removes it. |
+| Eraser | **E** | Click a block cell to remove the block; click a grinder or edge slot to remove the grinder. |
+| Select | **S** | Click to select a block or grinder; drag a block to a new cell; edit properties in the right sidebar. |
+
+**Color Palette** — 6 colors matching the game's palette (Red, Blue, Green, Yellow, Purple, Orange). Keys **1**–**6** pick colors directly.
+
+**Block Shapes** — all 10 shapes the game supports (Cube S, Cube 2×2, Line 2, Line 3, L Small, L Large, L Mirror, T, Z, Plus), rendered as mini-previews in the shape picker.
+
+**Grinder Width** — 1, 2, or 3 cells, picked in the Grinder sidebar.
+
+**Block Properties** (Select tool → click a block) — change color, toggle **Axis Lock** (None / Horizontal / Vertical), set **Ice count** (0–5). Visual indicators: an axis arrow appears on axis-locked blocks; an ice badge shows the remaining-grind count.
+
+**Other shortcuts**
+
+| Key | Action |
+|---|---|
+| Ctrl+Z | Undo |
+| Ctrl+Shift+Z / Ctrl+Y | Redo |
+| Ctrl+S | Export JSON |
+| Ctrl+O | Import JSON |
+| Esc | Clear selection / close popover |
+| Del / Backspace | Delete selected block or grinder |
+| ? | Toggle keyboard-shortcut help panel |
+| Drop `.json` anywhere | Open that level file |
+
+**Validation rules (mirrors `LevelValidator.cs`)**
+
+- Grid size must be 4×4 – 6×6.
+- Time limit must be > 0.
+- Every block must fit entirely within the grid.
+- Blocks cannot overlap each other.
+- Every color with blocks on the board must have at least one matching grinder.
+- Grinder width must be 1–3 and must not exceed its edge length.
+- Grinder position + width must stay within the edge.
+
+Errors block export; warnings don't. Click any issue row to jump to the cell it references.
+
+**Safety nets**
+
+- **Autosave** — state serializes to `localStorage` every 2s. On reload, you're prompted to restore the last session.
+- **Import round-trips** — drop any existing `level_XX.json` back in and the editor reproduces it exactly, preserving unknown fields so future schema additions survive a round trip.
+- **Grid-resize guard** — shrinking the grid detects items that would fall outside the new bounds and asks before dropping them.
+
+**Exported JSON** matches the shape `LevelLoader` consumes:
+
+```json
+{
+  "id": "level_06",
+  "gridSize": { "x": 5, "y": 5 },
+  "timeLimit": 60,
+  "walls": [],
+  "grinders": [
+    { "edge": "Right", "position": 2, "width": 1, "color": "Red" }
+  ],
+  "blocks": [
+    {
+      "shape": "L_S",
+      "origin": { "x": 1, "y": 2 },
+      "rotation": 0,
+      "color": "Red",
+      "modifiers": { "iced": 0, "axisLock": "None" }
+    }
+  ]
+}
+```
+
 ---
 
 ## Testing
