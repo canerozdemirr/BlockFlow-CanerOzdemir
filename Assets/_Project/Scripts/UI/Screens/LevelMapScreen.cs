@@ -4,13 +4,6 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using VContainer;
 
-/// <summary>
-/// Level Map screen for the dedicated Level Map scene.
-/// Vertical scrolling list of level nodes connected by path lines.
-/// Current = green, completed = blue, locked = dark with lock icon.
-/// Shows extra locked levels beyond the catalog to fill the map.
-/// Auto-scrolls to current level on show.
-/// </summary>
 [RequireComponent(typeof(UIDocument))]
 public sealed class LevelMapScreen : MonoBehaviour
 {
@@ -26,10 +19,6 @@ public sealed class LevelMapScreen : MonoBehaviour
 
     private readonly List<VisualElement> nodeElements = new List<VisualElement>();
 
-    /// <summary>
-    /// Total levels to display on the map. Shows extra locked levels
-    /// beyond the catalog so the map feels full.
-    /// </summary>
     private const int ExtraLockedLevels = 10;
 
     [Inject]
@@ -47,7 +36,6 @@ public sealed class LevelMapScreen : MonoBehaviour
 
     private void OnEnable()
     {
-        // When returning from gameplay, re-build the map
         if (progression != null && uiReady)
             BuildMap();
     }
@@ -59,10 +47,7 @@ public sealed class LevelMapScreen : MonoBehaviour
         var ve = doc.rootVisualElement;
         if (ve == null) return;
 
-        // Use GeometryChangedEvent to apply stretch AFTER layout resolves
         ve.RegisterCallback<GeometryChangedEvent>(OnTemplateContainerGeometryChanged);
-
-        // Also apply immediately in case it already resolved
         ForceStretchTemplateContainer(ve);
 
         root       = ve.Q("ui_map_root");
@@ -74,25 +59,21 @@ public sealed class LevelMapScreen : MonoBehaviour
         if (playBtn != null)
             playBtn.clicked += OnPlayClicked;
 
-        // Lock the scroll — player cannot pan the map. The bottom (current)
-        // node is snapped into view by ScrollToBottomWhenReady and stays there.
-        // Hide the scrollbar chrome and block the viewport from receiving the
-        // drag/wheel events that would otherwise move scrollOffset.
         if (scrollView != null)
         {
             scrollView.verticalScrollerVisibility = ScrollerVisibility.Hidden;
             scrollView.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
 
             // ScrollView's internal drag/wheel handlers register on the scrollView
-            // itself at TrickleDown. Swallow the raw input events before they
-            // reach those handlers so the user cannot pan the map. We keep the
-            // programmatic scrollOffset assignment (ScrollToBottomWhenReady) —
-            // that doesn't go through the event pipeline.
-            EventCallback<PointerDownEvent>  downCb  = evt => evt.StopImmediatePropagation();
-            EventCallback<PointerMoveEvent>  moveCb  = evt => evt.StopImmediatePropagation();
-            EventCallback<PointerUpEvent>    upCb    = evt => evt.StopImmediatePropagation();
-            EventCallback<PointerCancelEvent> cancCb = evt => evt.StopImmediatePropagation();
-            EventCallback<WheelEvent>        wheelCb = evt => evt.StopImmediatePropagation();
+            // itself at TrickleDown, so pickingMode on children doesn't stop them.
+            // Swallow the raw input events before they reach those handlers.
+            // Programmatic scrollOffset (ScrollToBottomWhenReady) still works —
+            // it doesn't go through the event pipeline.
+            EventCallback<PointerDownEvent>   downCb  = evt => evt.StopImmediatePropagation();
+            EventCallback<PointerMoveEvent>   moveCb  = evt => evt.StopImmediatePropagation();
+            EventCallback<PointerUpEvent>     upCb    = evt => evt.StopImmediatePropagation();
+            EventCallback<PointerCancelEvent> cancCb  = evt => evt.StopImmediatePropagation();
+            EventCallback<WheelEvent>         wheelCb = evt => evt.StopImmediatePropagation();
 
             scrollView.RegisterCallback(downCb,  TrickleDown.TrickleDown);
             scrollView.RegisterCallback(moveCb,  TrickleDown.TrickleDown);
@@ -103,7 +84,6 @@ public sealed class LevelMapScreen : MonoBehaviour
 
         uiReady = root != null && content != null;
 
-        // Build immediately — layout will resolve in the same frame
         if (uiReady)
             BuildMap();
     }
@@ -116,7 +96,7 @@ public sealed class LevelMapScreen : MonoBehaviour
         ve.style.top = 0;
         ve.style.right = 0;
         ve.style.bottom = 0;
-        // Keep the root transparent to picks — child buttons still register.
+        // Root must not swallow picks — child buttons still register.
         ve.pickingMode = PickingMode.Ignore;
     }
 
@@ -125,14 +105,12 @@ public sealed class LevelMapScreen : MonoBehaviour
         var ve = evt.target as VisualElement;
         if (ve == null) return;
 
-        // Re-apply stretch every time geometry changes until it sticks
         if (ve.resolvedStyle.height <= 0)
         {
             ForceStretchTemplateContainer(ve);
         }
         else
         {
-            // Layout resolved, rebuild map if not already done
             if (content != null && content.childCount == 0 && progression != null)
                 BuildMap();
         }
@@ -145,10 +123,6 @@ public sealed class LevelMapScreen : MonoBehaviour
         if (sceneLoader != null) sceneLoader.OnGameplayUnloaded -= Refresh;
     }
 
-    // ================================================================
-    //  MAP BUILDER
-    // ================================================================
-
     private void BuildMap()
     {
         if (!uiReady || progression == null) return;
@@ -157,10 +131,9 @@ public sealed class LevelMapScreen : MonoBehaviour
         nodeElements.Clear();
 
         int currentLevelNum = progression.LevelNumber; // 1-based
-        int nodesToShow = ExtraLockedLevels + 1; // current + locked above
+        int nodesToShow = ExtraLockedLevels + 1;
 
-        // Build top-to-bottom: highest future level at top, current at bottom.
-        // offset 0 = current level (bottom), offset 1 = next, offset 2 = next+1, etc.
+        // Build top-to-bottom: highest future level at top, current at bottom (offset 0).
         for (int offset = nodesToShow - 1; offset >= 0; offset--)
         {
             int levelNum = currentLevelNum + offset;
@@ -170,7 +143,6 @@ public sealed class LevelMapScreen : MonoBehaviour
             content.Add(node);
             nodeElements.Add(node);
 
-            // Path line below the node (except for the bottom-most = current)
             if (offset > 0)
             {
                 var pathLine = new VisualElement();
@@ -181,24 +153,16 @@ public sealed class LevelMapScreen : MonoBehaviour
             }
         }
 
-        // Update level label
         if (levelLabel != null)
             levelLabel.text = $"Level {currentLevelNum}";
 
-        // Auto-scroll to bottom (current level). A single-frame schedule fires
-        // before USS/layout has resolved child heights — contentContainer.layout.height
-        // reads 0 and the scroll snaps to the top. Hook GeometryChangedEvent on
-        // the content so we jump the moment real heights are known, then detach.
         ScrollToBottomWhenReady();
-
         AnimateNodesIn();
     }
 
-    /// <summary>
-    /// Snaps the ScrollView to the bottom as soon as the content container's
-    /// layout resolves. Uses GeometryChangedEvent because schedule.Execute fires
-    /// the same frame — before USS flex math has produced real child heights.
-    /// </summary>
+    // schedule.Execute fires the same frame — before USS flex math has produced
+    // real child heights, so contentContainer.layout.height reads 0 and the scroll
+    // snaps to the top. GeometryChangedEvent fires the moment heights are known.
     private void ScrollToBottomWhenReady()
     {
         if (scrollView == null) return;
@@ -207,7 +171,7 @@ public sealed class LevelMapScreen : MonoBehaviour
 
         void OnGeometry(GeometryChangedEvent evt)
         {
-            if (container.layout.height <= 0f) return; // still resolving
+            if (container.layout.height <= 0f) return;
             // Jump past the bottom; ScrollView clamps to the valid range.
             scrollView.scrollOffset = new Vector2(0, container.layout.height);
             container.UnregisterCallback<GeometryChangedEvent>(OnGeometry);
@@ -215,16 +179,14 @@ public sealed class LevelMapScreen : MonoBehaviour
 
         container.RegisterCallback<GeometryChangedEvent>(OnGeometry);
 
-        // If layout is already resolved (rebuilds on an already-shown map),
-        // the callback above won't fire — do an immediate attempt too.
+        // Rebuild on an already-shown map: layout is already resolved so the
+        // callback above won't fire — jump immediately instead.
         if (container.layout.height > 0f)
             scrollView.scrollOffset = new Vector2(0, container.layout.height);
     }
 
     private VisualElement CreateNode(int levelNumber, bool isCurrent)
     {
-        bool isLocked = !isCurrent;
-
         var node = new VisualElement();
         node.AddToClassList("level-node");
 
@@ -238,18 +200,16 @@ public sealed class LevelMapScreen : MonoBehaviour
         numLabel.pickingMode = PickingMode.Ignore;
         node.Add(numLabel);
 
-
         return node;
     }
 
     private void AnimateNodesIn()
     {
-        // Staggered pop-in, but bottom (current level) animates first so it's instantly visible
+        // Bottom-most node (current) animates first so it's instantly visible.
         int count = nodeElements.Count;
         for (int i = 0; i < count; i++)
         {
             var capturedNode = nodeElements[i];
-            // Reverse order: bottom-most node (current) starts at 0 delay
             float delay = (count - 1 - i) * 0.02f;
 
             capturedNode.transform.scale = Vector3.zero;
@@ -261,10 +221,6 @@ public sealed class LevelMapScreen : MonoBehaviour
             });
         }
     }
-
-    // ================================================================
-    //  INTERACTION
-    // ================================================================
 
     private void OnPlayClicked()
     {
@@ -279,12 +235,9 @@ public sealed class LevelMapScreen : MonoBehaviour
             root.AddToClassList("hidden");
     }
 
-    /// <summary>
-    /// Called when returning from gameplay. Refreshes the map.
-    /// </summary>
     public void Refresh()
     {
-        // Re-read progression from PlayerPrefs — gameplay scene may have advanced it
+        // Gameplay scene may have advanced progression; re-read from disk.
         progression?.ReloadFromDisk();
 
         var doc = GetComponent<UIDocument>();

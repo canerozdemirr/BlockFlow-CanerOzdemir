@@ -3,32 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using VContainer.Unity;
 
-/// <summary>
-/// Runtime owner of the level's <see cref="GrinderModel"/> list and the logic
-/// that consumes blocks when they fit an adjacent grinder. Populated by
-/// <see cref="LevelBuilder"/> during <c>Build</c>, cleared on <see cref="LevelEndedEvent"/>.
-///
-/// <para>
-/// <b>Consumption rule</b> (set during planning):<br/>
-/// A block is consumable by a grinder G if
-/// <list type="bullet">
-///   <item>the block's color id matches G's color id,</item>
-///   <item>the block isn't iced (iced blocks have an unknown color until revealed),</item>
-///   <item>the block's cells that lie on G's grid edge are all within G's coverage range,</item>
-///   <item>and at least one of the block's cells actually touches that edge.</item>
-/// </list>
-/// The "width = max acceptable" rule picked earlier is enforced naturally: any
-/// cell outside the grinder's coverage trips the containment check and
-/// rejects consumption.
-/// </para>
-///
-/// <para>
-/// The service listens for <see cref="BlockDragEndedEvent"/> because the only
-/// way a block can reach a new cell is by being dragged. Only the dragged
-/// block is checked — no block can move as a side-effect of another block's
-/// slide in this game.
-/// </para>
-/// </summary>
+// Consumption rule: a block is consumed by grinder G when its color matches,
+// it isn't iced (color unknown), ALL its cells fit within G's coverage range
+// along the edge's parallel axis, and at least one cell touches G's edge.
 public sealed class GrinderService : IStartable, IDisposable
 {
     private readonly IEventBus bus;
@@ -75,16 +52,10 @@ public sealed class GrinderService : IStartable, IDisposable
         grinders.Clear();
     }
 
-    /// <summary>
-    /// Called by <see cref="LevelBuilder"/> during level spawn. Each grinder
-    /// is registered once; the list is cleared on <see cref="LevelEndedEvent"/>.
-    /// </summary>
     public void Register(GrinderModel grinder)
     {
         if (grinder != null) grinders.Add(grinder);
     }
-
-    // ---------- drag-end handler ----------
 
     private void OnDragEnded(BlockDragEndedEvent evt)
     {
@@ -106,11 +77,8 @@ public sealed class GrinderService : IStartable, IDisposable
         }
     }
 
-    /// <summary>
-    /// Returns true if the given block is currently in a cell that a grinder
-    /// would consume on drag-release. Used by the drag controller to detect
-    /// eligibility mid-drag so it can cut input and snap-consume immediately.
-    /// </summary>
+    // Used by the drag controller to detect eligibility mid-drag so it can
+    // cut input and snap-consume immediately.
     public bool TryFindConsumingGrinder(BlockModel block, out GrinderModel grinder)
     {
         grinder = null;
@@ -129,11 +97,6 @@ public sealed class GrinderService : IStartable, IDisposable
         return false;
     }
 
-    /// <summary>
-    /// Consumes the block immediately using the same animation path as a
-    /// drag-release consume. Public so the drag controller can trigger it when
-    /// a mid-drag snap has landed on an eligible cell.
-    /// </summary>
     public void ConsumeNow(BlockId blockId)
     {
         if (context.Grid == null) return;
@@ -141,8 +104,6 @@ public sealed class GrinderService : IStartable, IDisposable
         if (!TryFindConsumingGrinder(block, out var grinder)) return;
         Consume(block, grinder);
     }
-
-    // ---------- consumption check ----------
 
     private static bool IsBlockConsumableBy(BlockModel block, GrinderModel grinder, GridSize size)
     {
@@ -152,9 +113,8 @@ public sealed class GrinderService : IStartable, IDisposable
         int start = grinder.Position;
         int end = start + grinder.Width - 1;
 
-        // First pass: ALL cells of the block must fit within the grinder's
-        // coverage range along the edge's parallel axis. Prevents a block
-        // that is wider/taller than the grinder from being consumed.
+        // ALL cells must fit within coverage along the edge's parallel axis —
+        // prevents oversized blocks from being consumed.
         for (int i = 0; i < offsets.Length; i++)
         {
             var cell = block.Origin + offsets[i];
@@ -162,7 +122,7 @@ public sealed class GrinderService : IStartable, IDisposable
             if (along < start || along > end) return false;
         }
 
-        // Second pass: at least one cell must actually touch the grinder's edge.
+        // And at least one cell must actually touch the grinder's edge.
         for (int i = 0; i < offsets.Length; i++)
         {
             var cell = block.Origin + offsets[i];
@@ -171,8 +131,6 @@ public sealed class GrinderService : IStartable, IDisposable
 
         return touchingCells > 0;
     }
-
-    // ---------- consumption ----------
 
     private void Consume(BlockModel block, GrinderModel grinder)
     {
@@ -187,13 +145,11 @@ public sealed class GrinderService : IStartable, IDisposable
             var captured = view;
             var slideDir = grinder.Edge.ToSlideDirection();
 
-            // Slide distance must be large enough to push the entire block
-            // past the clip plane. Compute from block's cell extent along
-            // the slide axis + extra margin.
+            // Slide distance must push the entire block past the clip plane.
             float blockExtent = GrinderGeometry.BlockPerpendicularExtent(block, grinder.Edge);
             float slideDist = (blockExtent + feel.SlideMargin) * cellSpace.CellSize;
 
-            // Scale duration proportionally so bigger blocks don't rush through
+            // Scale duration so bigger blocks don't rush through.
             float duration = feel.ConsumeTweenDuration + blockExtent * feel.DurationPerCellExtent;
 
             int blockParallelExtent = GrinderGeometry.BlockParallelExtent(block, grinder.Edge);
@@ -210,8 +166,7 @@ public sealed class GrinderService : IStartable, IDisposable
         }
         else
         {
-            // No view (headless state) — still signal completion so listeners
-            // tracking the grind timeline stay correct.
+            // Headless: still signal completion so grind-timeline listeners stay correct.
             bus.Publish(new BlockGrindCompletedEvent(id));
         }
 

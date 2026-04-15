@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Tuning for the grinder consume tween: how long a block slides, how that
-/// duration scales with block size, and how far past the edge it travels.
-/// </summary>
 [CreateAssetMenu(menuName = "BlockFlow/Config/Grinder Feel", fileName = "GrinderFeelConfig")]
 public sealed class GrinderFeelConfig : ScriptableObject
 {

@@ -1,13 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Ordered list of levels the player progresses through. Referenced by the
-/// <c>LevelProgressionService</c>; authoring-only data, no runtime state.
-///
-/// Kept as a thin wrapper around an array so levels can be reordered in the
-/// inspector without touching code and so tests / tooling can iterate the
-/// full set without reflection.
-/// </summary>
 [CreateAssetMenu(menuName = "BlockFlow/Data/Level Catalog", fileName = "LevelCatalog")]
 public sealed class LevelCatalog : ScriptableObject
 {

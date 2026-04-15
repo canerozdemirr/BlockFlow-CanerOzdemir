@@ -1,12 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Designer-authored collection of grinder definitions, keyed by width. Used
-/// by the level builder to resolve which prefab to spawn for a grinder of a
-/// given width. Lookup is lazy; <see cref="OnValidate"/> invalidates the
-/// index after inspector edits.
-/// </summary>
 [CreateAssetMenu(menuName = "BlockFlow/Data/Grinder Definition Catalog", fileName = "GrinderDefinitionCatalog")]
 public sealed class GrinderDefinitionCatalog : ScriptableObject
 {

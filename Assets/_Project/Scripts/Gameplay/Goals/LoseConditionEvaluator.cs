@@ -2,13 +2,6 @@ using System;
 using System.Collections.Generic;
 using VContainer.Unity;
 
-/// <summary>
-/// Subscribes to <see cref="TimerFinishedEvent"/> and publishes
-/// <see cref="LevelLostEvent"/> with <see cref="LevelLoseReason.TimerExpired"/>.
-/// Kept as its own evaluator even though it's currently a one-liner so
-/// deadlock detection or special-block fail states can land here without
-/// touching anything else.
-/// </summary>
 public sealed class LoseConditionEvaluator : IStartable, IDisposable
 {
     private readonly IEventBus bus;

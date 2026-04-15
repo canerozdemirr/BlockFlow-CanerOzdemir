@@ -1,25 +1,6 @@
 using System;
 using UnityEngine;
 
-/// <summary>
-/// Translates a deserialized <see cref="LevelPayload"/> into a fully live
-/// level: <see cref="GridModel"/> populated with blocks and walls, views
-/// spawned and registered, grinders placed, camera fitted, context bound.
-/// Every Phase 3/4 service is pulled through the constructor, which makes
-/// the build pipeline explicit and easy to swap out in tests or scenarios.
-///
-/// Responsibility split:
-///
-/// <list type="bullet">
-///   <item><see cref="LevelLoader"/> owns JSON &rarr; payload.</item>
-///   <item>This class owns payload &rarr; runtime state.</item>
-///   <item><see cref="LevelRunner"/> composes the two and owns lifecycle.</item>
-/// </list>
-///
-/// Validation runs first so authoring mistakes surface as console errors
-/// before any objects are spawned. Partial spawning on validation failure
-/// is avoided by bailing early.
-/// </summary>
 public sealed class LevelBuilder
 {
     private readonly BlockDefinitionCatalog blockCatalog;
@@ -66,8 +47,6 @@ public sealed class LevelBuilder
         this.levelRoot          = levelRoot;
     }
 
-    // ---------- build ----------
-
     public void Build(LevelPayload payload)
     {
         if (payload == null) throw new ArgumentNullException(nameof(payload));
@@ -75,7 +54,7 @@ public sealed class LevelBuilder
         if (grinderCatalog == null) throw new InvalidOperationException("GrinderDefinitionCatalog is not assigned on the LifetimeScope.");
         if (palette == null) throw new InvalidOperationException("ColorPalette is not assigned on the LifetimeScope.");
 
-        // 1. Semantic validation — fail fast before any allocations.
+        // Validate first so authoring mistakes surface before any spawn.
         var validation = LevelValidator.Validate(payload, palette, blockCatalog.AsDictionary());
         foreach (var issue in validation.Issues)
         {
@@ -85,33 +64,24 @@ public sealed class LevelBuilder
         if (validation.HasErrors)
             throw new InvalidOperationException($"Level '{payload.Id}' failed validation; see console for details.");
 
-        // 2. Grid model + walls.
         var size = new GridSize(payload.GridSize.X, payload.GridSize.Y);
         var grid = new GridModel(size);
         ApplyWalls(payload, grid);
 
-        // 3. Static visual layer: ground tiles + wall instances.
         gridBuilder.Build(grid, levelRoot);
 
-        // 4. Block spawn pass.
         blockModelFactory.Reset();
         SpawnBlocks(payload, grid);
 
-        // 5. Grinder spawn pass.
         SpawnGrinders(payload, size);
 
-        // 5b. Fill uncovered edge cells with walls.
         gridBuilder.BuildEdgeWalls(grid, payload.Grinders, levelRoot);
 
-        // 6. Bind the level context so other systems (drag, UI, evaluators) can read it.
         levelContext.Bind(grid, levelRoot);
 
-        // 7. Fit the camera to the freshly built grid.
         if (cameraFitter != null)
             cameraFitter.Fit(size, cellSpace);
     }
-
-    // ---------- teardown ----------
 
     public void Teardown()
     {
@@ -121,8 +91,6 @@ public sealed class LevelBuilder
         gridBuilder.Clear(levelRoot);
         levelContext.Clear();
     }
-
-    // ---------- spawn helpers ----------
 
     private static void ApplyWalls(LevelPayload payload, GridModel grid)
     {
@@ -202,8 +170,6 @@ public sealed class LevelBuilder
             grinderService.Register(model);
         }
     }
-
-    // ---------- parsing ----------
 
     private static BlockAxisLock ParseAxisLock(string value)
         => System.Enum.TryParse<BlockAxisLock>(value, ignoreCase: false, out var a) ? a : BlockAxisLock.None;

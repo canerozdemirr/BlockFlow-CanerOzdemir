@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Tuning for the ice overlay look: how opaque the frost gets per remaining
-/// level, and the tint applied to the overlay renderer.
-/// </summary>
 [CreateAssetMenu(menuName = "BlockFlow/Config/Ice Feel", fileName = "IceFeelConfig")]
 public sealed class IceFeelConfig : ScriptableObject
 {

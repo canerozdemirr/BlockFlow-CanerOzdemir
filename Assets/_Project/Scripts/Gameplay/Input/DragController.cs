@@ -4,12 +4,6 @@ using PrimeTween;
 using UnityEngine;
 using VContainer.Unity;
 
-/// <summary>
-/// Free-drag controller. The view follows the finger smoothly during a drag,
-/// clamped to the maximum reachable distance computed at drag start.
-/// On release, the model snaps to the nearest valid cell and the view
-/// tweens to match.
-/// </summary>
 public sealed class DragController : ITickable, IStartable, IDisposable
 {
     private readonly IInputService input;
@@ -40,14 +34,12 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         public GridCoord StartOrigin;
         public Vector3 StartLocalHit;
         public Vector3 StartViewLocalPos;
-        // Max distance the block can slide from start, in local units (axis-locked)
         public float MaxPositive;
         public float MaxNegative;
         public bool LimitsComputed;
 
-        // Cached free-movement limits. Re-computed only when the model origin
-        // changes, not every frame. Previously the controller re-scanned the
-        // grid 4× per tick for free blocks.
+        // Cached free-movement limits. Recomputing every tick meant 4× slide
+        // scans per frame for free blocks; we only refresh when Origin changes.
         public int FreeRightMax;
         public int FreeLeftMax;
         public int FreeUpMax;
@@ -122,8 +114,6 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         }
     }
 
-    // ---------- begin ----------
-
     private void BeginDrag(Vector2 screenPos)
     {
         var camera = cameraFitter != null ? cameraFitter.TargetCamera : null;
@@ -145,9 +135,8 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         if (!blockId.IsValid) return;
         if (inputLock != null && inputLock.IsLocked(blockId)) return;
         if (!context.Grid.TryGetBlock(blockId, out var block)) return;
-        // Iced blocks are non-interactive until their ice counter hits zero.
-        // The grinder also refuses iced blocks (GrinderService.OnDragEnded),
-        // so blocking the drag at source keeps the ice gate authoritative.
+        // GrinderService also refuses iced blocks — cutting drag at source
+        // keeps the ice gate authoritative.
         if (block.IsIced) return;
         if (!viewRegistry.TryGet(blockId, out var view)) return;
 
@@ -188,8 +177,6 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         return BlockId.None;
     }
 
-    // ---------- update (free drag) ----------
-
     private void UpdateDrag(Vector2 screenPos)
     {
         var camera = cameraFitter != null ? cameraFitter.TargetCamera : null;
@@ -206,13 +193,8 @@ public sealed class DragController : ITickable, IStartable, IDisposable
             return;
         }
 
-        // Free blocks (no axis lock) move in both axes simultaneously
         if (session.BlockLock == BlockAxisLock.None)
         {
-            // Limits are recomputed only when the block's origin has actually
-            // changed since the last compute — not every frame. The previous
-            // implementation did eight slide/slide-back calls per tick which
-            // dominated the drag cost on larger levels.
             if (!session.FreeLimitsValid || !session.FreeLimitsOrigin.Equals(block.Origin))
                 RecomputeFreeLimits();
 
@@ -227,8 +209,8 @@ public sealed class DragController : ITickable, IStartable, IDisposable
             float dx = Mathf.Clamp(deltaLocal.x, maxDxNeg, maxDxPos);
             float dz = Mathf.Clamp(deltaLocal.z, maxDzNeg, maxDzPos);
 
-            // If clamped on any axis, reset the start hit so delta doesn't
-            // accumulate in the background and cause snapping when freed.
+            // Reset the start hit on the clamped axis so delta doesn't
+            // accumulate in the background and snap when freed.
             bool clampedX = !Mathf.Approximately(dx, deltaLocal.x);
             bool clampedZ = !Mathf.Approximately(dz, deltaLocal.z);
             if (clampedX || clampedZ)
@@ -253,12 +235,8 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         TryAutoConsume();
     }
 
-    /// <summary>
-    /// Mid-drag hand-off to the grinder. The moment the dragged block's cells
-    /// satisfy a grinder's consumption rule, input is cut, the view is snapped
-    /// to the cell with the same release-snap tween the player already knows,
-    /// and the grinder is triggered when the snap lands.
-    /// </summary>
+    // Mid-drag hand-off: when the block satisfies a grinder's consumption
+    // rule, cut input, run the release-snap tween, then consume on complete.
     private bool TryAutoConsume()
     {
         if (!session.Active) return false;
@@ -269,15 +247,12 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         var blockId = session.BlockId;
         var view = session.View;
 
-        // Cut input: clear the drag session and lock this block so the next
-        // pointer events can't re-grab it while the snap/consume plays.
         if (snapTween.isAlive) snapTween.Stop();
         inputLock?.Lock(blockId);
         ClearSession();
-        // Intentionally do NOT publish BlockDragEndedEvent here — the grinder
-        // service's subscriber would call Consume/DismissToGrinder immediately,
-        // fighting our snap tween over transform.localPosition. Instead we run
-        // the snap and trigger the consume from its OnComplete.
+        // Do NOT publish BlockDragEndedEvent here — the grinder service would
+        // call Consume/DismissToGrinder immediately, fighting our snap tween
+        // over transform.localPosition. Trigger consume from the snap's OnComplete.
 
         if (view == null || view.Model == null)
         {
@@ -300,12 +275,7 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         return true;
     }
 
-    /// <summary>
-    /// Scans slide distances for free-movement blocks once and caches them.
-    /// Invalidated by <see cref="UpdateDrag"/> when the block's origin changes
-    /// so the next tick recomputes. Each slide is immediately reversed so the
-    /// grid state is preserved.
-    /// </summary>
+    // Each slide is immediately reversed so grid state is preserved.
     private void RecomputeFreeLimits()
     {
         var grid = context.Grid;
@@ -333,8 +303,6 @@ public sealed class DragController : ITickable, IStartable, IDisposable
 
     private void UpdateDragAxisLocked(BlockModel block, Vector3 deltaLocal)
     {
-
-        // Axis-locked blocks: lock on first significant movement
         if (session.LockedAxis == DragAxis.None)
         {
             float absX = Mathf.Abs(deltaLocal.x);
@@ -343,21 +311,17 @@ public sealed class DragController : ITickable, IStartable, IDisposable
             session.LockedAxis = absX > absZ ? DragAxis.Horizontal : DragAxis.Vertical;
         }
 
-        // Compute slide limits once after axis is locked
         if (!session.LimitsComputed)
         {
             ComputeSlideLimits(block);
             session.LimitsComputed = true;
         }
 
-        // Get finger delta along locked axis
         float axisDelta = session.LockedAxis == DragAxis.Horizontal
             ? deltaLocal.x : deltaLocal.z;
 
-        // Clamp to computed limits
         axisDelta = Mathf.Clamp(axisDelta, -session.MaxNegative, session.MaxPositive);
 
-        // Move view freely to follow finger
         var viewPos2 = session.StartViewLocalPos;
         if (session.LockedAxis == DragAxis.Horizontal)
             viewPos2.x = session.StartViewLocalPos.x + axisDelta;
@@ -366,14 +330,9 @@ public sealed class DragController : ITickable, IStartable, IDisposable
 
         session.View.transform.localPosition = viewPos2;
 
-        // Update model to nearest valid cell (silently, no view tween)
         UpdateModelToNearest(block, axisDelta);
     }
 
-    /// <summary>
-    /// Computes max slide distance in both directions from the start origin.
-    /// Called once when the axis locks in.
-    /// </summary>
     private void ComputeSlideLimits(BlockModel block)
     {
         var grid = context.Grid;
@@ -390,7 +349,7 @@ public sealed class DragController : ITickable, IStartable, IDisposable
             negDir = GridDirection.Down;
         }
 
-        // Slide to max positive, count steps, slide back
+        // Slide, count, slide back to restore state.
         int posSteps = 0;
         if (movementStrategy == null || movementStrategy.CanMove(block, posDir))
         {
@@ -399,7 +358,6 @@ public sealed class DragController : ITickable, IStartable, IDisposable
                 grid.SlideUntilBlocked(session.BlockId, negDir, posSteps, out _);
         }
 
-        // Slide to max negative, count steps, slide back
         int negSteps = 0;
         if (movementStrategy == null || movementStrategy.CanMove(block, negDir))
         {
@@ -412,9 +370,6 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         session.MaxNegative = negSteps * cellSpace.CellSize;
     }
 
-    /// <summary>
-    /// Updates the model for free-movement blocks along both axes.
-    /// </summary>
     private void UpdateModelToNearestFree(BlockModel block, float dx, float dz)
     {
         int desiredX = Mathf.RoundToInt(dx / cellSpace.CellSize);
@@ -446,10 +401,6 @@ public sealed class DragController : ITickable, IStartable, IDisposable
             bus.Publish(new BlockSteppedEvent(session.BlockId, totalMoved));
     }
 
-    /// <summary>
-    /// Updates the model to the nearest valid cell based on the current
-    /// finger offset. Does not tween the view.
-    /// </summary>
     private void UpdateModelToNearest(BlockModel block, float axisDelta)
     {
         int desiredOffset = Mathf.RoundToInt(axisDelta / cellSpace.CellSize);
@@ -479,8 +430,6 @@ public sealed class DragController : ITickable, IStartable, IDisposable
             bus.Publish(new BlockSteppedEvent(session.BlockId, moved));
     }
 
-    // ---------- end (snap to nearest cell) ----------
-
     private void EndDrag()
     {
         var ended = session.BlockId;
@@ -501,8 +450,6 @@ public sealed class DragController : ITickable, IStartable, IDisposable
         ClearSession();
         bus.Publish(new BlockDragEndedEvent(ended));
     }
-
-    // ---------- helpers ----------
 
     private void ClearSession()
     {

@@ -1,16 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// The visual representation of a <see cref="GrinderModel"/>. Mirrors the
-/// layout of <see cref="BlockView"/>: the view owns no gameplay logic, only a
-/// color renderer tinted via a <see cref="MaterialPropertyBlock"/> and a
-/// visual root used by Phase 7 juice animations.
-///
-/// The "color renderer" is expected to point at a sub-mesh of the grinder
-/// prefab that designers authored specifically to carry the matching color
-/// (e.g. an inner rim or a glowing slot), while the gray body and teeth
-/// render with their own static materials.
-/// </summary>
 public sealed class GrinderView : MonoBehaviour
 {
     [SerializeField, Tooltip("Renderer whose _BaseColor is tinted to match the accepted block color (usually a colored rim or slot).")]
@@ -27,11 +16,8 @@ public sealed class GrinderView : MonoBehaviour
     private MaterialPropertyBlock mpb;
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
-    /// <summary>
-    /// The prefab's authored local rotation, cached on first instantiation.
-    /// The factory multiplies the edge-specific turn by this base so the
-    /// designer's FBX orientation fix is never lost.
-    /// </summary>
+    // Authored local rotation, cached once. Factory multiplies the edge turn by
+    // this so the designer's FBX orientation fix is preserved.
     public Quaternion BaseRotation { get; private set; }
 
     public GrinderModel Model { get; private set; }
@@ -51,10 +37,8 @@ public sealed class GrinderView : MonoBehaviour
         ApplyColor(color);
     }
 
-    /// <summary>
-    /// Keeps the authored teeth rotation for Top/Left edges. For Bottom/Right
-    /// edges, overrides only the Y euler to 90 while preserving authored X/Z.
-    /// </summary>
+    // Top/Left keep authored teeth rotation; Bottom/Right override Y to 90
+    // while preserving authored X/Z so teeth stay aligned with the grid.
     private void ApplyTeethRotation(GridEdge edge)
     {
         if (teethRoot == null) return;

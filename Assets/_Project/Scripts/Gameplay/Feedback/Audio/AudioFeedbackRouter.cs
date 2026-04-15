@@ -2,19 +2,7 @@ using System;
 using System.Collections.Generic;
 using VContainer.Unity;
 
-/// <summary>
-/// Translates gameplay bus events into <see cref="AudioService.Play"/>
-/// calls. Keeping the routing in its own tiny entry point means:
-///
-/// <list type="bullet">
-///   <item>The audio service knows nothing about gameplay events.</item>
-///   <item>The gameplay code knows nothing about audio.</item>
-///   <item>Swapping the table is a one-file change.</item>
-/// </list>
-///
-/// Every mapping lives here — the ONLY place in the project that decides
-/// "this event → this sound".
-/// </summary>
+// The ONLY place in the project that decides "this event -> this sound".
 public sealed class AudioFeedbackRouter : IStartable, IDisposable
 {
     private readonly IEventBus bus;

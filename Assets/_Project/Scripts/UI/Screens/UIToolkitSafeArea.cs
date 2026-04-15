@@ -1,11 +1,6 @@
 using UnityEngine;
 using UnityEngine.UIElements;
 
-/// <summary>
-/// Applies <see cref="Screen.safeArea"/> padding to a named VisualElement
-/// inside the UIDocument's visual tree. Updates dynamically on orientation
-/// or safe area changes.
-/// </summary>
 [RequireComponent(typeof(UIDocument))]
 public sealed class UIToolkitSafeArea : MonoBehaviour
 {
@@ -39,8 +34,8 @@ public sealed class UIToolkitSafeArea : MonoBehaviour
 
         if (Screen.width <= 0 || Screen.height <= 0) return;
 
-        // Convert screen-space safe area to panel-space padding
-        // PanelSettings uses ScaleWithScreenSize so we need to account for the scale factor
+        // PanelSettings uses ScaleWithScreenSize, so convert screen-pixel safe
+        // area to panel points using the smaller of the two axis scales (Expand mode).
         var panel = doc.rootVisualElement.panel;
         if (panel == null) return;
 
@@ -49,9 +44,7 @@ public sealed class UIToolkitSafeArea : MonoBehaviour
         float pixelTop    = Screen.height - sa.yMax;
         float pixelBottom = sa.y;
 
-        // Convert from screen pixels to panel points
         float scale = Screen.width > 0 ? doc.panelSettings.referenceResolution.x / (float)Screen.width : 1f;
-        // Use the larger dimension ratio for Expand mode
         float scaleY = Screen.height > 0 ? doc.panelSettings.referenceResolution.y / (float)Screen.height : 1f;
         float s = Mathf.Min(scale, scaleY);
 

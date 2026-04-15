@@ -1,11 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// A palette of block colors used by a level (or set of levels). Acts as a
-/// lookup from string ids in JSON to <see cref="BlockColor"/> assets so no
-/// enum explosion is needed when designers add new colors.
-/// </summary>
 [CreateAssetMenu(menuName = "BlockFlow/Data/Color Palette", fileName = "ColorPalette_")]
 public sealed class ColorPalette : ScriptableObject
 {
@@ -14,10 +9,7 @@ public sealed class ColorPalette : ScriptableObject
 
     public IReadOnlyList<BlockColor> Colors => colors;
 
-    /// <summary>
-    /// Linear-scan lookup by color id. Palettes are tiny (&lt; 10 entries),
-    /// so a hash table would cost more than it saves.
-    /// </summary>
+    // Linear scan: palettes are tiny (< 10 entries), a hash table costs more than it saves.
     public bool TryGet(string colorId, out BlockColor result)
     {
         if (!string.IsNullOrEmpty(colorId) && colors != null)

@@ -1,14 +1,8 @@
 using UnityEngine;
 
-/// <summary>
-/// Pure geometry helpers for grinder-facing math: block extents along each
-/// axis, edge-local-to-world conversion, and the point where a block meets a
-/// grinder. Separated from <see cref="GrinderService"/> so consumption logic
-/// doesn't carry the Vector3 math and the math is trivially testable.
-/// </summary>
 public static class GrinderGeometry
 {
-    /// <summary>Cells spanned along the edge's parallel axis (sizes particles).</summary>
+    // Cells spanned along the edge's parallel axis. Used to size particles.
     public static int BlockParallelExtent(BlockModel block, GridEdge edge)
     {
         var offsets = block.CellOffsets;
@@ -25,7 +19,7 @@ public static class GrinderGeometry
         return max - min + 1;
     }
 
-    /// <summary>Cells spanned perpendicular to the edge (sets slide distance).</summary>
+    // Cells spanned perpendicular to the edge. Sets slide distance.
     public static float BlockPerpendicularExtent(BlockModel block, GridEdge edge)
     {
         var offsets = block.CellOffsets;
@@ -43,7 +37,6 @@ public static class GrinderGeometry
         return max - min + 1;
     }
 
-    /// <summary>World-space point at the edge midway along the block's span.</summary>
     public static Vector3 BlockEdgeCenterWorld(
         BlockModel block, GrinderModel grinder, GridSize gridSize,
         float cellSize, Transform gridRoot)
@@ -65,7 +58,6 @@ public static class GrinderGeometry
         return gridRoot != null ? gridRoot.TransformPoint(localPos) : localPos;
     }
 
-    /// <summary>World-space center of the grinder's full coverage area.</summary>
     public static Vector3 GrinderCenterWorld(
         GrinderModel grinder, GridSize gridSize, float cellSize, Transform gridRoot)
     {

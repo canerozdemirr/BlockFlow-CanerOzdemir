@@ -1,13 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Designer-authored definition of a block kind. Bundles the logical footprint
-/// (<see cref="CellOffsets"/>) with the visual mesh prefab so the runtime
-/// builder only needs a shape id from JSON to instantiate a fully formed block.
-///
-/// The shape id is the stable contract between designers and level data.
-/// Logical grid cells are expressed relative to the block origin (0, 0).
-/// </summary>
 [CreateAssetMenu(menuName = "BlockFlow/Data/Block Definition", fileName = "BlockDefinition_")]
 public sealed class BlockDefinition : ScriptableObject
 {
@@ -29,10 +21,6 @@ public sealed class BlockDefinition : ScriptableObject
     public GameObject MeshPrefab => meshPrefab;
     public int CellCount => cellOffsets == null ? 0 : cellOffsets.Length;
 
-    /// <summary>
-    /// Axis-aligned bounding box of the shape at rotation 0, expressed in cells.
-    /// Used by the level validator and by camera framing.
-    /// </summary>
     public GridSize GetBounds()
     {
         if (cellOffsets == null || cellOffsets.Length == 0)

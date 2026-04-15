@@ -2,16 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Pool;
 
-/// <summary>
-/// Thin wrapper around <see cref="ObjectPool{T}"/> for Component-rooted prefabs.
-/// Handles instantiation, parenting and activate/deactivate on get/release so
-/// call sites can treat pooled objects the same way they would a freshly
-/// instantiated prefab.
-///
-/// A single pool instance is bound to exactly one prefab. Projects that need
-/// multiple prefabs should keep a dictionary of <see cref="PrefabPool{T}"/>
-/// keyed by prefab reference (see BlockViewFactory / GrinderViewFactory).
-/// </summary>
+// One pool instance per prefab. See BlockViewFactory / GrinderViewFactory for multi-prefab usage.
 public sealed class PrefabPool<T> where T : Component
 {
     private readonly ObjectPool<T> pool;
@@ -42,14 +33,7 @@ public sealed class PrefabPool<T> where T : Component
         if (instance != null) pool.Release(instance);
     }
 
-    /// <summary>
-    /// Destroys every pooled instance and resets the pool. Call between
-    /// levels to reclaim memory; new instances will be freshly instantiated
-    /// on the next <see cref="Get"/>.
-    /// </summary>
     public void Clear() => pool.Clear();
-
-    // ---------- callbacks ----------
 
     private T Create()
     {

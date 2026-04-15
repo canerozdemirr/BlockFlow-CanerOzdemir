@@ -1,7 +1,3 @@
-/// <summary>
-/// Cardinal direction a block can be pushed along. Kept as a plain enum so it
-/// is trivially JSON/inspector friendly and branches cheaply.
-/// </summary>
 public enum GridDirection
 {
     Up,
@@ -12,9 +8,6 @@ public enum GridDirection
 
 public static class GridDirectionExtensions
 {
-    /// <summary>
-    /// Converts a cardinal direction into its unit delta on the grid.
-    /// </summary>
     public static GridCoord ToDelta(this GridDirection direction)
     {
         switch (direction)

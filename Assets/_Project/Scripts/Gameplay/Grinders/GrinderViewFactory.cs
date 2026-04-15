@@ -1,16 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Default <see cref="IGrinderViewFactory"/>. Mirrors
-/// <see cref="BlockViewFactory"/> in layout: one pool per grinder prefab
-/// indexed by <see cref="GrinderDefinition.MeshPrefab"/>, an active-view map
-/// for return-to-correct-pool on <see cref="Release"/>, and a color resolver
-/// that reads from the injected <see cref="ColorPalette"/>.
-///
-/// Placement is delegated to <see cref="GrinderPlacement"/> so the factory
-/// stays focused on object lifetime and doesn't hard-code pose math.
-/// </summary>
 public sealed class GrinderViewFactory : IGrinderViewFactory
 {
     private readonly ColorPalette palette;

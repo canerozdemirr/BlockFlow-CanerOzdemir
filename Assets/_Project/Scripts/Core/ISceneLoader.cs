@@ -1,10 +1,5 @@
 using System;
 
-/// <summary>
-/// Abstraction over the gameplay scene lifecycle so UI screens don't depend
-/// on the concrete <see cref="SceneFlowManager"/> static. Tests and alternate
-/// flows (editor harness, smoke bot) can substitute a fake implementation.
-/// </summary>
 public interface ISceneLoader
 {
     bool IsLoading { get; }
@@ -16,11 +11,6 @@ public interface ISceneLoader
     void UnloadGameplay(Action onComplete = null);
 }
 
-/// <summary>
-/// Default implementation: delegates to the existing <see cref="SceneFlowManager"/>
-/// static. Registered at the project scope so every screen resolves the same
-/// instance.
-/// </summary>
 public sealed class SceneFlowLoader : ISceneLoader
 {
     public bool IsLoading => SceneFlowManager.IsLoading;

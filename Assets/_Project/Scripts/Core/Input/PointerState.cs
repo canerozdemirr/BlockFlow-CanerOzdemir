@@ -1,10 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Immutable per-frame pointer snapshot. Keeps the drag controller decoupled
-/// from whichever platform input API is feeding it, and keeps test doubles
-/// trivially easy to construct.
-/// </summary>
 public readonly struct PointerState
 {
     public readonly Vector2 ScreenPosition;

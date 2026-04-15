@@ -1,13 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Default <see cref="IBlockViewFactory"/>. Keeps one <see cref="PrefabPool{T}"/>
-/// per <see cref="BlockDefinition.MeshPrefab"/> so acquiring a view for an
-/// already-seen shape is amortized free after the first spawn. Tracks every
-/// active view so <see cref="Release"/> returns it to the right pool without
-/// the caller having to remember which one it came from.
-/// </summary>
 public sealed class BlockViewFactory : IBlockViewFactory
 {
     private readonly ColorPalette palette;
@@ -84,8 +77,6 @@ public sealed class BlockViewFactory : IBlockViewFactory
             pool.Clear();
         poolsByPrefab.Clear();
     }
-
-    // ---------- internals ----------
 
     private Color ResolveColor(string colorId)
     {

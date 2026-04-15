@@ -1,11 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Owns the visual state of a block's ice overlay: toggle, per-level opacity,
-/// and the AlwaysOnTop text that shows remaining ice grinds. Split from
-/// <see cref="BlockView"/> so the view class only orchestrates; each visual
-/// effect lives with its own cached handles and shader IDs.
-/// </summary>
 public sealed class IceOverlayController
 {
     private static readonly int IceColorId = Shader.PropertyToID("_Color");
@@ -27,10 +21,6 @@ public sealed class IceOverlayController
         this.feel = feel;
     }
 
-    /// <summary>
-    /// Toggles the overlay and, when iced, refreshes the level-count text and
-    /// alpha. Safe to call repeatedly — children are cached on first use.
-    /// </summary>
     public void Refresh(bool isIced, int iceLevel)
     {
         if (overlay == null) return;

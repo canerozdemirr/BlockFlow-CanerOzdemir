@@ -1,16 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-/// <summary>
-/// Minimal multicast-delegate-backed <see cref="IEventBus"/> implementation.
-/// One <see cref="Delegate"/> per event <see cref="Type"/> in a dictionary;
-/// <see cref="Publish{T}"/> resolves the entry and invokes it. Subscribers
-/// hold a typed subscription token that unsubscribes on <see cref="IDisposable.Dispose"/>.
-///
-/// Keeping it this small is intentional: the case study doesn't need queued
-/// events, priorities, or cross-thread dispatch. If any of those land later,
-/// this is the single file that has to change.
-/// </summary>
 public sealed class EventBus : IEventBus
 {
     private readonly Dictionary<Type, Delegate> handlers = new Dictionary<Type, Delegate>();
@@ -41,10 +31,7 @@ public sealed class EventBus : IEventBus
         else                 handlers[key] = updated;
     }
 
-    /// <summary>
-    /// Token returned from <see cref="Subscribe{T}"/>. Disposing it removes
-    /// the handler from the bus. Safe to dispose more than once.
-    /// </summary>
+    // Safe to dispose more than once.
     private sealed class Subscription<T> : IDisposable
     {
         private EventBus bus;

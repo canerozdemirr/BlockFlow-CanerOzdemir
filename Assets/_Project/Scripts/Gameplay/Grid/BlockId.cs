@@ -1,10 +1,6 @@
 using System;
 
-/// <summary>
-/// Per-level unique identifier for a <see cref="BlockModel"/>. A value type so
-/// it can be stored in hash-based collections without allocations and copied
-/// freely between layers. <see cref="None"/> is the sentinel for empty cells.
-/// </summary>
+// None (default/Value=0) is the sentinel for empty cells.
 public readonly struct BlockId : IEquatable<BlockId>
 {
     public readonly int Value;

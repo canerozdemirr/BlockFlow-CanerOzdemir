@@ -2,16 +2,6 @@ using System;
 using System.Collections.Generic;
 using VContainer.Unity;
 
-/// <summary>
-/// Owns the single <see cref="GamePhase"/> value and exposes it to the rest
-/// of the gameplay layer. Transitions are driven by bus events rather than
-/// imperative calls, so the "who can change the phase" question has exactly
-/// one answer: whoever publishes the event.
-///
-/// Runs as a VContainer entry point so <see cref="Start"/> is invoked once
-/// per scope lifetime — which is the correct window to subscribe to bus
-/// events and arm the service for the rest of the level session.
-/// </summary>
 public sealed class GameStateService : IStartable, IDisposable
 {
     private readonly IEventBus bus;
@@ -39,13 +29,11 @@ public sealed class GameStateService : IStartable, IDisposable
         subs.Clear();
     }
 
-    /// <summary>Pauses gameplay. Only works while Playing.</summary>
     public void RequestPause()
     {
         if (Current == GamePhase.Playing) Set(GamePhase.Paused);
     }
 
-    /// <summary>Resumes gameplay. Only works while Paused.</summary>
     public void RequestResume()
     {
         if (Current == GamePhase.Paused) Set(GamePhase.Playing);

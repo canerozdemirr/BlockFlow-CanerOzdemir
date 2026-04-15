@@ -1,36 +1,21 @@
 using UnityEngine;
 
-/// <summary>
-/// Spawns the GrindParticleEffect prefab at a contact point.
-/// Tints all particle systems to match the block's color.
-/// Returns the transform so the caller can reposition it.
-/// </summary>
 public static class BlockShatterEffect
 {
     private static GameObject cachedPrefab;
 
-    /// <summary>Assigned at bootstrap. When null, fallback constants are used.</summary>
+    // Assigned at bootstrap. When null, fallback constants are used.
     public static ShatterFeelConfig Config { get; set; }
 
-    /// <summary>
-    /// Instantiates the grind particle prefab at the given position,
-    /// tints all particle systems to the block color, and starts playing.
-    /// </summary>
     public static Transform SpawnContinuous(Vector3 worldPosition, Color color,
         Vector3 slideDir, Transform parent = null, int grinderWidth = 1)
     {
         var prefab = GetPrefab();
         if (prefab == null)
-        {
-            // Fallback: no prefab found, create minimal particles
             return SpawnFallback(worldPosition, color, parent);
-        }
 
-        // Pull the spawn back toward the grid along -slideDir so particles appear
-        // at the grinder contact edge instead of floating past it. Without this,
-        // the cone's backward-straying particles render inside the grid because
-        // the caller passes the grinder's world center (which sits outside the
-        // grid by grinderDepthOffset).
+        // Pull spawn back along -slideDir so particles appear at the grinder contact
+        // edge; the caller passes the grinder's world center which sits past the grid.
         float inset = Config != null ? Config.SpawnInsetFromGrinder : 0f;
         Vector3 spawnPos = slideDir.sqrMagnitude > 0.0001f
             ? worldPosition - slideDir.normalized * inset
@@ -40,29 +25,22 @@ public static class BlockShatterEffect
         if (parent != null) go.transform.SetParent(parent, true);
         go.transform.position = spawnPos;
 
-        // Orient the cone shape to spray outward from the grid (same direction as slide).
-        // LookRotation requires a non-zero vector — fall back to identity otherwise
-        // so particles never fire toward a random axis (the "sometimes spawns
-        // backwards" case when slideDir is degenerate).
+        // LookRotation requires non-zero; fall back to identity so degenerate slideDir
+        // doesn't fire particles toward a random axis.
         go.transform.rotation = slideDir.sqrMagnitude > 0.0001f
             ? Quaternion.LookRotation(slideDir.normalized)
             : Quaternion.identity;
 
-        // Scale particle shape and intensity based on grinder width
         float widthScale = Mathf.Max(1f, grinderWidth);
 
-        // Tint all particle systems to the block's color
         var systems = go.GetComponentsInChildren<ParticleSystem>(true);
         foreach (var ps in systems)
         {
-            // Scale shape X and emission rate by grinder width
             var shape = ps.shape;
             var shapeScale = shape.scale;
             shapeScale.x = widthScale;
             shape.scale = shapeScale;
 
-            // Tighten the cone so fewer particles stray sideways/backwards.
-            // Only applies when Config authored a non-zero override.
             float coneAngle = Config != null ? Config.ConeAngleOverride : 0f;
             if (coneAngle > 0f && shape.shapeType == ParticleSystemShapeType.Cone)
                 shape.angle = coneAngle;
@@ -72,26 +50,21 @@ public static class BlockShatterEffect
             var main = ps.main;
             var currentColor = main.startColor;
 
-            // For the main debris: use block color directly
-            // For sparks/dust: tint toward block color but keep some of their original character
             if (ps.gameObject == go)
             {
                 main.startColor = color;
             }
             else if (ps.gameObject.name == "Sparks")
             {
-                // Sparks: blend block color with warm highlight
                 Color highlight = Config != null ? Config.SparkHighlightColor : new Color(1f, 0.9f, 0.6f);
                 float blend = Config != null ? Config.SparkBlendRatio : 0.3f;
                 var sparkColor = Color.Lerp(color, highlight, blend);
                 main.startColor = sparkColor;
             }
-            // DustCloud keeps its subtle white/transparent look
+            // DustCloud keeps its authored white/transparent look.
 
-            // Also tint materials. If the renderer shipped with no material
-            // (prefab authored with m_Materials: [fileID: 0]) the editor falls
-            // back to a default particle material, but a stripped build has
-            // nothing — particles render invisible. Create one on the fly.
+            // Prefab may ship with m_Materials: [fileID: 0]; editor falls back to a
+            // default particle material, but stripped builds have none — create one on the fly.
             var renderer = ps.GetComponent<ParticleSystemRenderer>();
             if (renderer != null && renderer.sharedMaterial == null)
             {
@@ -120,8 +93,7 @@ public static class BlockShatterEffect
         cachedPrefab = Resources.Load<GameObject>("GrindParticleEffect");
         if (cachedPrefab == null)
         {
-            // Try loading from asset path via direct reference
-            // In builds, this won't work — but for now it's fine for editor testing
+            // Editor-only fallback for prefabs not yet moved under Resources/.
             #if UNITY_EDITOR
             cachedPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/_Project/Prefabs/Gameplay/GrindParticleEffect.prefab");
@@ -130,7 +102,6 @@ public static class BlockShatterEffect
         return cachedPrefab;
     }
 
-    /// <summary>Minimal fallback if prefab is missing.</summary>
     private static Transform SpawnFallback(Vector3 worldPosition, Color color, Transform parent)
     {
         var go = new GameObject("GrindParticles_Fallback");
@@ -161,8 +132,7 @@ public static class BlockShatterEffect
         var shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
         if (shader == null) shader = Shader.Find("Particles/Standard Unlit");
         if (shader == null) shader = Shader.Find("Sprites/Default");
-        // Guard: if every candidate was stripped we still must not throw; the
-        // caller depends on this method returning so the slide tween starts.
+        // Must not throw even if every shader candidate was stripped — caller depends on return.
         if (shader != null)
         {
             renderer.material = new Material(shader);

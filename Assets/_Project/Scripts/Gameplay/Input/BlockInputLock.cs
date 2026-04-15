@@ -1,11 +1,7 @@
 using System.Collections.Generic;
 
-/// <summary>
-/// Tracks blocks that are currently ineligible for drag input (e.g. being
-/// auto-fed into a grinder). Prevents the player from re-grabbing a block
-/// mid-animation and desyncing model vs view.
-/// Cleared between levels.
-/// </summary>
+// Prevents re-grabbing a block mid-animation (e.g. during auto-consume) which
+// would desync model vs view.
 public sealed class BlockInputLock
 {
     private readonly HashSet<BlockId> locked = new HashSet<BlockId>();

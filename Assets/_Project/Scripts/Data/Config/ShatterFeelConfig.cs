@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Tuning for the grind-particle tint in <see cref="BlockShatterEffect"/>.
-/// Assigned at gameplay bootstrap via the static <c>Config</c> hook.
-/// </summary>
 [CreateAssetMenu(menuName = "BlockFlow/Config/Shatter Feel", fileName = "ShatterFeelConfig")]
 public sealed class ShatterFeelConfig : ScriptableObject
 {

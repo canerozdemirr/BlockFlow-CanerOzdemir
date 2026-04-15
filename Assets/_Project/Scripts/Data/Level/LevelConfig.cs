@@ -1,16 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Designer-facing wrapper around a level. Bridges two worlds:
-///
-/// <list type="bullet">
-///   <item>Level geometry lives in a hand-editable JSON file referenced as a TextAsset.</item>
-///   <item>Designer-tweakable metadata (palette, optional overrides, display name) lives on the SO itself.</item>
-/// </list>
-///
-/// This lets level layouts be authored/version-controlled as plain JSON while
-/// still exposing the important knobs in the inspector.
-/// </summary>
 [CreateAssetMenu(menuName = "BlockFlow/Data/Level Config", fileName = "LevelConfig_")]
 public sealed class LevelConfig : ScriptableObject
 {

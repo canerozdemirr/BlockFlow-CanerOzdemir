@@ -1,19 +1,8 @@
 using System.Collections.Generic;
 using System.Text;
 
-/// <summary>
-/// Semantic validator for <see cref="LevelPayload"/>. Runs at level load
-/// time and in tests to catch authoring mistakes before the runtime builder
-/// ever tries to spawn anything. Distinct from deserialization (which only
-/// checks JSON correctness); this layer knows about palettes, definitions,
-/// grid bounds and the project's win rules.
-///
-/// Lives in the Data assembly so the runtime LevelBuilder can invoke it;
-/// the validator itself has no editor-only dependencies.
-///
-/// The validator never throws: it returns a <see cref="Result"/> collecting
-/// every issue found so tooling can show them in bulk.
-/// </summary>
+// Semantic validator for LevelPayload. Never throws — returns a Result collecting
+// every issue found so tooling can show them in bulk.
 public static class LevelValidator
 {
     public sealed class Issue
@@ -60,11 +49,6 @@ public static class LevelValidator
         internal void Warn(string message)  => Issues.Add(new Issue(message, false));
     }
 
-    /// <summary>
-    /// Validates the payload against the given palette and a shape-id -&gt;
-    /// <see cref="BlockDefinition"/> lookup. The caller is responsible for
-    /// providing a complete catalog; unknown shapes become errors.
-    /// </summary>
     public static Result Validate(
         LevelPayload payload,
         ColorPalette palette,
@@ -90,8 +74,6 @@ public static class LevelValidator
         return result;
     }
 
-    // ----- individual rules -----
-
     private static void ValidateGridSize(LevelPayload payload, Result result)
     {
         if (payload.GridSize == null || payload.GridSize.X <= 0 || payload.GridSize.Y <= 0)
@@ -100,7 +82,7 @@ public static class LevelValidator
             return;
         }
 
-        // Case study requires 4x4..6x6, anything outside is suspicious but not fatal.
+        // Case study requires 4x4..6x6; outside that is suspicious but not fatal.
         if (payload.GridSize.X < 4 || payload.GridSize.Y < 4 ||
             payload.GridSize.X > 6 || payload.GridSize.Y > 6)
         {
@@ -159,8 +141,7 @@ public static class LevelValidator
 
             for (int c = 0; c < offsets.Length; c++)
             {
-                // Rotation handling lives in the builder; Phase 1 only validates
-                // the raw authored layout, so rotation is intentionally ignored here.
+                // Rotation handling lives in the builder; validator only checks raw authored layout.
                 int worldX = b.Origin.X + offsets[c].x;
                 int worldY = b.Origin.Y + offsets[c].y;
 
@@ -216,8 +197,7 @@ public static class LevelValidator
 
     private static void ValidateColorCoverage(LevelPayload payload, Result result)
     {
-        // Every block color must have at least one grinder that can accept it.
-        // This is a solvability smoke-check, not a proper solver.
+        // Solvability smoke-check: every block color needs at least one accepting grinder.
         if (payload.Blocks == null || payload.Blocks.Length == 0) return;
 
         var grinderColors = new HashSet<string>();

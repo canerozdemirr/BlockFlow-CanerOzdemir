@@ -1,12 +1,6 @@
 using System;
 using Newtonsoft.Json;
 
-/// <summary>
-/// Thin facade around Newtonsoft.Json so the rest of the codebase never sees
-/// the serializer directly. Centralizing the settings here makes it trivial
-/// to tweak JSON conventions later (naming, null handling, converters) without
-/// touching every call site.
-/// </summary>
 public static class LevelJsonSerializer
 {
     private static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
@@ -16,10 +10,6 @@ public static class LevelJsonSerializer
         Formatting = Formatting.Indented
     };
 
-    /// <summary>
-    /// Parses the given JSON text into a <see cref="LevelPayload"/>. Throws on
-    /// empty input or a null result so callers can fail fast with a clear site.
-    /// </summary>
     public static LevelPayload Deserialize(string json)
     {
         if (string.IsNullOrEmpty(json))
@@ -31,9 +21,6 @@ public static class LevelJsonSerializer
         return payload;
     }
 
-    /// <summary>
-    /// Writes a payload back out to JSON. Used by editor tooling and tests.
-    /// </summary>
     public static string Serialize(LevelPayload payload)
     {
         if (payload == null) throw new ArgumentNullException(nameof(payload));

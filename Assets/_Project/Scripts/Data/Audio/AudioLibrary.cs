@@ -3,15 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
 
-/// <summary>
-/// Designer-authored mapping from <see cref="SfxKey"/> to the actual audio
-/// clip, plus per-cue volume and pitch-jitter range. One asset shared by
-/// the entire gameplay scope; drops into the <c>AudioLibrary</c> inspector
-/// field on the <c>GameplayLifetimeScope</c>.
-///
-/// Lookup is lazy and rebuilt on <see cref="OnValidate"/> so in-editor edits
-/// don't serve stale entries.
-/// </summary>
 [CreateAssetMenu(menuName = "BlockFlow/Data/Audio Library", fileName = "AudioLibrary")]
 public sealed class AudioLibrary : ScriptableObject
 {
@@ -39,9 +30,6 @@ public sealed class AudioLibrary : ScriptableObject
     [SerializeField, Tooltip("Optional mixer group every SFX source is routed through. Lets you control SFX volume, duck under music, or apply bus effects without touching per-source volume. Leave null to play direct to the AudioListener.")]
     private AudioMixerGroup sfxMixerGroup;
 
-    /// <summary>
-    /// Mixer group the SFX ring should route through. Null = direct output.
-    /// </summary>
     public AudioMixerGroup SfxMixerGroup => sfxMixerGroup;
 
     private Dictionary<SfxKey, Entry> byKey;

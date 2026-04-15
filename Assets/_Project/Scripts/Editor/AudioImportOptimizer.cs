@@ -2,27 +2,8 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-/// <summary>
-/// Bulk-applies mobile-friendly import settings to every <see cref="AudioClip"/>
-/// under <c>Assets/_Project</c>. Run once after dropping new SFX into the
-/// project and every time the audio folder grows; the menu is idempotent —
-/// clips already matching the target settings are skipped without reimport.
-///
-/// <para>
-/// <b>Policy.</b> The puzzle is 2D and runs on phones, so:
-/// <list type="bullet">
-///   <item><b>Force To Mono.</b> Halves memory; stereo is wasted at spatialBlend=0.</item>
-///   <item><b>22050 Hz sample rate override.</b> Percussive UI SFX don't need 44.1k. Music keeps its native rate.</item>
-///   <item><b>Vorbis compression</b> at quality 0.6 for SFX / 0.5 for music.</item>
-///   <item><b>Load type</b> picked by length: &lt;2s decompressOnLoad (tiny, zero runtime cost), &lt;10s CompressedInMemory, longer = Streaming (music).</item>
-/// </list>
-/// </para>
-///
-/// <para>
-/// Clips whose asset path contains <c>Music</c> are treated as music and keep
-/// their native sample rate + stream. Everything else is treated as SFX.
-/// </para>
-/// </summary>
+// Paths containing "Music" are treated as music (streamed, native sample rate).
+// Everything else is SFX: forced mono, 22050Hz, Vorbis q=0.6, load type picked by length.
 public static class AudioImportOptimizer
 {
     private const string MenuItem = "BlockFlow/Audio/Optimize Import Settings";
@@ -91,8 +72,7 @@ public static class AudioImportOptimizer
             changed = true;
         }
 
-        // Apply the same settings to iOS + Android overrides so the platform
-        // build doesn't silently fall back to a heavier default.
+        // Apply to iOS + Android overrides so platform builds don't fall back to heavier defaults.
         changed |= ApplyOverride(importer, "iOS", target);
         changed |= ApplyOverride(importer, "Android", target);
 

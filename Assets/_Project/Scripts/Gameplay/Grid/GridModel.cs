@@ -1,20 +1,8 @@
 using System.Collections.Generic;
 
-/// <summary>
-/// Pure simulation of the puzzle board. Owns the authoritative cell grid and
-/// the set of blocks currently placed on it. No Unity types, no MonoBehaviour,
-/// no visuals — the view layer observes this model through read-only access
-/// and re-syncs after each mutation.
-///
-/// Design notes:
-///
-/// <list type="bullet">
-///   <item>Blocks occupy multi-cell footprints via their <see cref="BlockModel.CellOffsets"/>.</item>
-///   <item>Move operations use an internal <c>Lift → CanPlace → Commit</c> flow so a block never collides with its own cells mid-slide.</item>
-///   <item>Grinders are intentionally <b>not</b> modeled here. Consumption-on-exit is a higher-level concern; this class only answers "is a cell blocked".</item>
-///   <item>Public surface is narrow (TryPlace / Remove / TryMoveStep / SlideUntilBlocked / queries) to keep the class easy to reason about and easy to test.</item>
-/// </list>
-/// </summary>
+// Move operations use Lift -> CanPlace -> Commit so a block never collides
+// with its own cells mid-slide. Grinders are intentionally not modeled here;
+// consumption-on-exit is a higher-level concern.
 public sealed class GridModel
 {
     private struct Cell
@@ -30,7 +18,6 @@ public sealed class GridModel
 
     public GridSize Size { get; }
 
-    /// <summary>All blocks currently placed on the grid, keyed by id.</summary>
     public IReadOnlyDictionary<BlockId, BlockModel> Blocks => blocks;
 
     public GridModel(GridSize size)
@@ -39,8 +26,6 @@ public sealed class GridModel
         cells = new Cell[size.width <= 0 ? 0 : size.width,
                          size.height <= 0 ? 0 : size.height];
     }
-
-    // ---------- queries ----------
 
     public bool IsInside(GridCoord coord) => Size.Contains(coord);
 
@@ -55,13 +40,7 @@ public sealed class GridModel
 
     public int BlockCount => blocks.Count;
 
-    // ---------- mutation ----------
-
-    /// <summary>
-    /// Toggles a wall flag on a cell. Cannot be set on a cell already occupied
-    /// by a block — walls and blocks are mutually exclusive. Returns whether
-    /// the operation succeeded.
-    /// </summary>
+    // Walls and blocks are mutually exclusive.
     public bool SetWall(GridCoord coord, bool isWall)
     {
         if (!IsInside(coord)) return false;
@@ -71,11 +50,6 @@ public sealed class GridModel
         return true;
     }
 
-    /// <summary>
-    /// Places a block at the given origin. The block must not already be on
-    /// the grid and the target footprint must be clear. Returns true on
-    /// success.
-    /// </summary>
     public bool TryPlace(BlockModel block, GridCoord origin)
     {
         if (block == null) return false;
@@ -88,10 +62,6 @@ public sealed class GridModel
         return true;
     }
 
-    /// <summary>
-    /// Removes the block with the given id. Frees all cells it occupied.
-    /// Returns true if the block was on the grid.
-    /// </summary>
     public bool Remove(BlockId id)
     {
         if (!blocks.TryGetValue(id, out var block)) return false;
@@ -100,11 +70,6 @@ public sealed class GridModel
         return true;
     }
 
-    /// <summary>
-    /// Attempts to move the block one cell in the given direction. Writes the
-    /// block's post-move origin to <paramref name="newOrigin"/>, whether or
-    /// not the move succeeded.
-    /// </summary>
     public bool TryMoveStep(BlockId id, GridDirection direction, out GridCoord newOrigin)
     {
         if (!blocks.TryGetValue(id, out var block))
@@ -124,18 +89,11 @@ public sealed class GridModel
             return true;
         }
 
-        // Revert: re-commit at original origin.
         CommitInternal(block);
         newOrigin = block.Origin;
         return false;
     }
 
-    /// <summary>
-    /// Slides the block in a direction until it hits a wall, another block,
-    /// or the edge of the grid, up to <paramref name="maxSteps"/> cells.
-    /// Returns the number of cells actually moved; writes the final origin.
-    /// Pass <see cref="int.MaxValue"/> for an unrestricted slide.
-    /// </summary>
     public int SlideUntilBlocked(BlockId id, GridDirection direction, int maxSteps, out GridCoord finalOrigin)
     {
         if (!blocks.TryGetValue(id, out var block))
@@ -164,9 +122,7 @@ public sealed class GridModel
         return moved;
     }
 
-    // ---------- internals ----------
-
-    /// <summary>Check if the block (assumed lifted) can occupy <paramref name="origin"/>.</summary>
+    // Block is assumed already lifted before these helpers run.
     private bool CanPlaceInternal(BlockModel block, GridCoord origin)
     {
         var offsets = block.CellOffsets;
@@ -179,7 +135,6 @@ public sealed class GridModel
         return true;
     }
 
-    /// <summary>Clears the block's current cells. Used before trying to move it.</summary>
     private void LiftInternal(BlockModel block)
     {
         var offsets = block.CellOffsets;
@@ -191,7 +146,6 @@ public sealed class GridModel
         }
     }
 
-    /// <summary>Stamps the block's current cells with its id.</summary>
     private void CommitInternal(BlockModel block)
     {
         var offsets = block.CellOffsets;

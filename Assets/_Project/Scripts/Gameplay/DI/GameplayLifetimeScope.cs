@@ -3,23 +3,6 @@ using UnityEngine.Audio;
 using VContainer;
 using VContainer.Unity;
 
-/// <summary>
-/// Per-level composition root. Registers every service a single round of
-/// gameplay needs: the cell-space math, the model/view factories, the grid
-/// builder, the input pipeline, the level loader, and the Phase 6 core loop
-/// (event bus, timer, grinder service, ice melt service, evaluators, UI).
-/// Scene-authored prefabs and catalogs are exposed as inspector fields so
-/// designers can rewire them without touching code.
-///
-/// Registration order within <see cref="Configure"/> follows dependency
-/// direction: primitives → data → per-level state → factories → builders →
-/// input → level loading → core loop → scene-owned. This keeps the file
-/// scannable; VContainer itself does not care about declaration order.
-///
-/// Nothing here reaches into <see cref="ProjectLifetimeScope"/> yet — the
-/// project scope is still empty. As soon as persistent services (save,
-/// audio bus, analytics) land, they will be resolved up the parent chain.
-/// </summary>
 public class GameplayLifetimeScope : LifetimeScope
 {
     [Header("Scene refs")]
@@ -89,17 +72,12 @@ public class GameplayLifetimeScope : LifetimeScope
 
     protected override void Configure(IContainerBuilder builder)
     {
-        // ---------- utilities ----------
-
         var cellSpace = new CellSpace(cellSize);
         builder.RegisterInstance(cellSpace);
 
-        // ---------- core events ----------
-
         builder.Register<IEventBus, EventBus>(Lifetime.Singleton);
 
-        // ---------- data (optional so the scene still compiles pre-assignment) ----------
-
+        // Data refs are optional so the scene still compiles pre-assignment.
         if (defaultPalette  != null) builder.RegisterInstance(defaultPalette);
         if (blockCatalog    != null) builder.RegisterInstance(blockCatalog);
         if (grinderCatalog  != null) builder.RegisterInstance(grinderCatalog);
@@ -114,19 +92,14 @@ public class GameplayLifetimeScope : LifetimeScope
         builder.RegisterInstance(popupAnimation);
         builder.RegisterInstance(shatterFeel);
 
-        // BlockShatterEffect is a static utility in the Gameplay assembly; set it here.
-        // UIToolkitPopupAnimator lives in the UI assembly and is wired by the popup views
-        // via their own [Inject] hooks since Gameplay cannot reference UI types.
+        // UIToolkitPopupAnimator lives in the UI assembly; popup views inject it themselves
+        // because Gameplay cannot reference UI types.
         BlockShatterEffect.Config = shatterFeel;
-
-        // ---------- per-level state ----------
 
         builder.Register<LevelContext>(Lifetime.Singleton);
         builder.Register<BlockViewRegistry>(Lifetime.Singleton)
             .As<IBlockViewRegistry>()
             .AsSelf();
-
-        // ---------- factories ----------
 
         builder.Register<IBlockModelFactory, BlockModelFactory>(Lifetime.Singleton);
 
@@ -144,8 +117,6 @@ public class GameplayLifetimeScope : LifetimeScope
             grinderDepthOffset),
             Lifetime.Singleton);
 
-        // ---------- builders ----------
-
         builder.Register(container => new GridBuilder(
             groundTilePrefab,
             wallPrefab,
@@ -154,25 +125,18 @@ public class GameplayLifetimeScope : LifetimeScope
             grinderDepthOffset),
             Lifetime.Singleton);
 
-        // ---------- input & drag ----------
-
         builder.Register<IInputService, UnityPointerInputService>(Lifetime.Singleton);
         builder.RegisterInstance(SingleAxisMovementStrategy.Instance).As<IMovementStrategy>();
         builder.Register<BlockInputLock>(Lifetime.Singleton);
         builder.RegisterEntryPoint<DragController>();
 
-        // ---------- core loop (Phase 6) ----------
-        // .AsSelf() on GameStateService and GrinderService because other
-        // services resolve them by concrete type (not just via interfaces).
-
+        // .AsSelf() because other services resolve these by concrete type.
         builder.RegisterEntryPoint<GameStateService>().AsSelf();
         builder.RegisterEntryPoint<CountdownTimer>().AsSelf();
         builder.RegisterEntryPoint<GrinderService>().AsSelf();
         builder.RegisterEntryPoint<IceMeltService>();
         builder.RegisterEntryPoint<WinConditionEvaluator>();
         builder.RegisterEntryPoint<LoseConditionEvaluator>();
-
-        // ---------- level loading ----------
 
         builder.Register<LevelLoader>(Lifetime.Singleton);
         builder.Register(container => new LevelBuilder(
@@ -193,8 +157,6 @@ public class GameplayLifetimeScope : LifetimeScope
         builder.Register<LevelRunner>(Lifetime.Singleton);
         builder.RegisterEntryPoint<GameFlowController>();
 
-        // ---------- progression (Phase 7) ----------
-
         builder.Register(c => new LevelProgressionService(levelCatalog, c.Resolve<ISaveRepository>()), Lifetime.Singleton);
         builder.Register<ILevelStartupStrategy>(c =>
         {
@@ -202,8 +164,6 @@ public class GameplayLifetimeScope : LifetimeScope
             var fallback = bootstrapper != null ? bootstrapper.FallbackLevel : null;
             return new ProgressionOrFallbackStartupStrategy(c.Resolve<LevelProgressionService>(), fallback);
         }, Lifetime.Singleton);
-
-        // ---------- feedback (Phase 7) ----------
 
         builder.Register(_ => new AudioService(audioLibrary), Lifetime.Singleton);
         builder.RegisterEntryPoint<AudioFeedbackRouter>();
@@ -214,14 +174,8 @@ public class GameplayLifetimeScope : LifetimeScope
         builder.RegisterEntryPoint<HapticsService>();
         builder.RegisterEntryPoint<BlockJuiceService>();
 
-        // ---------- scene-owned ----------
-        // Note: UI components (GameplayHudView, LevelOutcomePopupView) live in
-        // the BlockFlow.UI assembly which Gameplay cannot reference. They receive
-        // their [Inject] dependencies via VContainer's autoInjectGameObjects
-        // list in the inspector — drag the Canvas root into that list on this
-        // LifetimeScope and VContainer will walk it on build, injecting every
-        // [Inject] method it finds without needing a type reference here.
-
+        // UI components live in BlockFlow.UI which Gameplay can't reference. They're
+        // injected via VContainer's autoInjectGameObjects inspector list (Canvas root).
         if (cameraFitter != null) builder.RegisterComponent(cameraFitter);
         builder.RegisterComponentInHierarchy<GameplayBootstrapper>();
     }

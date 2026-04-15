@@ -145,7 +145,10 @@
     background-color: rgb(60, 80, 150);
     border-width: 3px;
     border-color: rgb(40, 55, 110);
-    justify-content: center;
+    flex-direction: row;
+    /* main axis = horizontal in a row. justify-content drives the dot's X. */
+    justify-content: flex-start;
+    align-items: center;
     padding: 4px;
 }
 
@@ -156,18 +159,16 @@
     background-color: rgb(180, 190, 220);
     border-width: 0;
     -unity-background-image-tint-color: rgba(0, 0, 0, 0);
-    align-self: flex-start;
 }
 
-/* Checked state */
 .pause-toggle:checked .unity-toggle__input {
     background-color: rgb(76, 200, 80);
     border-color: rgb(55, 165, 58);
+    justify-content: flex-end;
 }
 
 .pause-toggle:checked .unity-toggle__checkmark {
     background-color: rgb(255, 255, 255);
-    align-self: flex-end;
 }
 
 /* ═══════════════════════════════════════════

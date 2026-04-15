@@ -2,13 +2,6 @@ using System;
 using System.Collections.Generic;
 using VContainer.Unity;
 
-/// <summary>
-/// Checks whether the board is clear after every successful grind. The
-/// evaluator is intentionally tiny: one subscription, one post-ground
-/// check, one publish. Win semantics live here and only here so the rule
-/// can be swapped (e.g. "clear N blocks", "survive X seconds") without
-/// touching the simulation or the UI.
-/// </summary>
 public sealed class WinConditionEvaluator : IStartable, IDisposable
 {
     private readonly IEventBus bus;

@@ -4,10 +4,6 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using VContainer;
 
-/// <summary>
-/// UI Toolkit gameplay HUD. Single strip background with level badge,
-/// timer text (no fill bar), and pause button. Fixed width, centered.
-/// </summary>
 [RequireComponent(typeof(UIDocument))]
 public sealed class GameplayHudView : MonoBehaviour
 {

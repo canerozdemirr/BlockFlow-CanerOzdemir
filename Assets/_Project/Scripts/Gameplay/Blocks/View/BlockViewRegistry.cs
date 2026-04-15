@@ -1,11 +1,5 @@
 using System.Collections.Generic;
 
-/// <summary>
-/// Abstraction for the id → view lookup consumers depend on. Keeping callers
-/// (drag, grinder, juice, ice-melt) bound to the interface instead of the
-/// concrete registry lets tests substitute a fake and leaves room for
-/// alternate impls (e.g. a weak-ref registry) without rippling changes.
-/// </summary>
 public interface IBlockViewRegistry
 {
     int Count { get; }
@@ -15,17 +9,7 @@ public interface IBlockViewRegistry
     void Clear();
 }
 
-/// <summary>
-/// Central lookup from <see cref="BlockId"/> to the <see cref="BlockView"/>
-/// currently representing it. Populated by the level builder as it
-/// spawns views and queried by gameplay systems that need to reach the
-/// visual representation of a logical block.
-///
-/// Deliberately kept separate from <see cref="IBlockViewFactory"/>: the
-/// factory owns lifetime (pool in, pool out), the registry owns identity
-/// (id → view). Keeping them split avoids bloating the factory's public API
-/// with queries it doesn't need and keeps the registry trivially mockable.
-/// </summary>
+// Factory owns lifetime; registry owns identity (id → view). Split keeps each mockable.
 public sealed class BlockViewRegistry : IBlockViewRegistry
 {
     private readonly Dictionary<BlockId, BlockView> views = new Dictionary<BlockId, BlockView>();

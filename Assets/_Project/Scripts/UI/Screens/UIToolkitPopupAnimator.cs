@@ -3,20 +3,13 @@ using PrimeTween;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-/// <summary>
-/// Animates UI Toolkit popup show/hide using PrimeTween.Custom.
-/// Uses the "hidden" USS class for visibility toggling so elements
-/// remain queryable even when not displayed.
-///
-/// Tuning lives on <see cref="PopupAnimationConfig"/>, assigned once at
-/// gameplay bootstrap via <see cref="Config"/>. The old hard-coded defaults
-/// apply only if bootstrap never ran (e.g., pure-UI test scenes).
-/// </summary>
+// Uses the "hidden" USS class for visibility toggling so elements remain
+// queryable when not displayed.
 public static class UIToolkitPopupAnimator
 {
     private const string HiddenClass = "hidden";
 
-    /// <summary>Assigned at bootstrap. When null, fallback constants are used.</summary>
+    // Null means bootstrap never ran (pure-UI test scenes); fallback constants apply.
     public static PopupAnimationConfig Config { get; set; }
 
     public static void AnimateShow(VisualElement root, VisualElement overlay,
@@ -102,7 +95,6 @@ public static class UIToolkitPopupAnimator
         });
     }
 
-    /// <summary>Hides immediately without animation.</summary>
     public static void HideImmediate(VisualElement root)
     {
         if (root != null) root.AddToClassList(HiddenClass);

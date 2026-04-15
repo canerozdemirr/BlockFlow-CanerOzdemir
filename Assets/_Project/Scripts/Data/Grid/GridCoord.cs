@@ -1,11 +1,6 @@
 using System;
 using UnityEngine;
 
-/// <summary>
-/// Integer cell coordinate on the puzzle grid. Value type so it can be passed
-/// around and stored in collections without allocations. Equality, hashing and
-/// arithmetic are provided so the type drops into HashSet/Dictionary hot paths.
-/// </summary>
 [Serializable]
 public struct GridCoord : IEquatable<GridCoord>
 {

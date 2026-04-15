@@ -2,17 +2,11 @@ using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-/// <summary>
-/// Static utility for managing scene transitions between Level Map and Gameplay.
-/// Fires <see cref="OnGameplayUnloaded"/> so listeners (like LevelMapScreen)
-/// can refresh without a cross-assembly reference.
-/// </summary>
 public static class SceneFlowManager
 {
     private const string GameplaySceneName = "Gameplay";
     private static bool isLoading;
 
-    /// <summary>Fired after the Gameplay scene finishes unloading.</summary>
     public static event Action OnGameplayUnloaded;
 
     public static bool IsLoading => isLoading;

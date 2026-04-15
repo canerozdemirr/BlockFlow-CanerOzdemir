@@ -5,11 +5,6 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using VContainer;
 
-/// <summary>
-/// UI Toolkit win/lose popup.
-/// Win: 1s delay, trophy icon, stars (big bouncy animation), Next/Restart/Home.
-/// Lose: same structure, stopwatch icon, Retry/Home.
-/// </summary>
 [RequireComponent(typeof(UIDocument))]
 public sealed class LevelOutcomePopupView : MonoBehaviour
 {
@@ -61,7 +56,6 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         var root = GetFullscreenRoot();
         if (root == null) return;
 
-        // Win
         winRoot    = root.Q("ui_popup_win_root");
         winOverlay = root.Q("ui_popup_win_overlay");
         winPanel   = root.Q("ui_popup_win_panel");
@@ -75,7 +69,6 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         stars[1] = root.Q("ui_popup_win_star_2");
         stars[2] = root.Q("ui_popup_win_star_3");
 
-        // Lose
         loseRoot    = root.Q("ui_popup_lose_root");
         loseOverlay = root.Q("ui_popup_lose_overlay");
         losePanel   = root.Q("ui_popup_lose_panel");
@@ -84,20 +77,17 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         loseRetryBtn = root.Q<Button>("ui_popup_lose_btn_retry");
         loseHomeBtn  = root.Q<Button>("ui_popup_lose_btn_home");
 
-        // Wire buttons
         if (winNextBtn != null)    winNextBtn.clicked    += OnNext;
         if (winRestartBtn != null) winRestartBtn.clicked += OnRestart;
         if (winHomeBtn != null)    winHomeBtn.clicked    += OnHome;
         if (loseRetryBtn != null)  loseRetryBtn.clicked  += OnRestart;
         if (loseHomeBtn != null)   loseHomeBtn.clicked   += OnHome;
 
-        // Set icon sprites
         if (winIcon != null && trophyIcon != null)
             winIcon.style.backgroundImage = new StyleBackground(trophyIcon);
         if (loseIcon != null && stopwatchIcon != null)
             loseIcon.style.backgroundImage = new StyleBackground(stopwatchIcon);
 
-        // Set star sprites
         foreach (var star in stars)
         {
             if (star != null && starSprite != null)
@@ -120,7 +110,6 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         if (loseHomeBtn != null)   loseHomeBtn.clicked   -= OnHome;
     }
 
-    // ── Win: 1 second delay before popup ──
     private void OnWon()
     {
         if (!uiReady) InitUI();
@@ -128,12 +117,10 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
             ? StarCalculator.FromTimeRemaining(timer.Remaining, timer.Total)
             : StarCalculator.MaxStars;
 
-        // Advance progression immediately so Home/Restart also get the new level.
-        // Progression mutation lives in the flow controller on the Gameplay side;
-        // the view just publishes a request event.
+        // Advance progression now so Home/Restart also land on the new level.
         bus?.Publish(new LevelAdvanceRequestedEvent());
 
-        // 1 second celebration delay
+        // 1s celebration delay before the popup animates in.
         Tween.Delay(1f, () => ShowWin(starCount));
     }
 
@@ -151,10 +138,9 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         tc.style.top = 0;
         tc.style.right = 0;
         tc.style.bottom = 0;
-        // Root covers the whole screen but must not intercept clicks itself —
-        // otherwise, when another UIDocument with a higher sortingOrder shares
-        // the panel (e.g. the pause doc), its root wins every pick test and
-        // swallows input to our buttons. Children still pick normally.
+        // Fullscreen root must not swallow picks; otherwise a higher-sort
+        // UIDocument sharing this PanelSettings wins every pick test and
+        // blocks clicks to our buttons. Children still pick normally.
         tc.pickingMode = PickingMode.Ignore;
         return tc;
     }
@@ -168,7 +154,6 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         if (winNextBtn != null)
             winNextBtn.style.display = DisplayStyle.Flex;
 
-        // Hide Restart on win — only Next and Home
         if (winRestartBtn != null)
             winRestartBtn.style.display = DisplayStyle.None;
 
@@ -206,7 +191,6 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
         }
     }
 
-    /// <summary>Big bouncy star animation with overshoot and slight rotation.</summary>
     private void AnimateStarsBouncy(int count)
     {
         var cfg = animConfig;
@@ -279,7 +263,7 @@ public sealed class LevelOutcomePopupView : MonoBehaviour
     {
         UIToolkitPopupAnimator.AnimateHide(winRoot, winOverlay, winPanel, 0.25f, () =>
         {
-            // Progression already advanced in OnWon; just ask the flow to load current.
+            // Progression already advanced in OnWon; just load the new current.
             bus?.Publish(new LevelLoadCurrentRequestedEvent());
         });
     }

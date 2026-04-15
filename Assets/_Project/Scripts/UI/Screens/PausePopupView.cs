@@ -5,11 +5,6 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using VContainer;
 
-/// <summary>
-/// Settings-style pause panel. Slides down from top.
-/// Sets Time.timeScale to 0 on open, 1 on close.
-/// Contains Sound/Music/Haptic toggles and HOME button.
-/// </summary>
 [RequireComponent(typeof(UIDocument))]
 public sealed class PausePopupView : MonoBehaviour
 {
@@ -64,8 +59,7 @@ public sealed class PausePopupView : MonoBehaviour
         ve.style.top = 0;
         ve.style.right = 0;
         ve.style.bottom = 0;
-        // See LevelOutcomePopupView: fullscreen root must not intercept picks
-        // so higher-sort docs don't block lower-sort popup buttons.
+        // See LevelOutcomePopupView: fullscreen root must not intercept picks.
         ve.pickingMode = PickingMode.Ignore;
 
         root    = ve.Q("ui_popup_pause_root");
@@ -124,7 +118,6 @@ public sealed class PausePopupView : MonoBehaviour
         if (root == null) return;
         root.RemoveFromClassList("hidden");
 
-        // Overlay fade in
         if (overlay != null)
         {
             overlay.style.opacity = 0f;
@@ -132,7 +125,6 @@ public sealed class PausePopupView : MonoBehaviour
                 ease: Ease.OutQuad, useUnscaledTime: true);
         }
 
-        // Panel slides down from above
         if (panel != null)
         {
             panel.transform.position = new Vector3(0, -800f, 0);
@@ -151,7 +143,6 @@ public sealed class PausePopupView : MonoBehaviour
 
     private void AnimateHide(Action onComplete = null)
     {
-        // Panel slides up
         if (panel != null)
         {
             Tween.Custom(0f, -800f, SlideDuration * 0.7f, val =>
@@ -159,7 +150,6 @@ public sealed class PausePopupView : MonoBehaviour
                 ease: Ease.InBack, useUnscaledTime: true);
         }
 
-        // Overlay fade out
         if (overlay != null)
         {
             Tween.Custom(1f, 0f, SlideDuration * 0.7f, val => overlay.style.opacity = val,

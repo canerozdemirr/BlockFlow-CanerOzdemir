@@ -1,19 +1,12 @@
 using UnityEngine;
 
-/// <summary>
-/// Minimal abstraction for loading runtime prefabs by name. Default resolution
-/// hits the Resources folder with an editor-only AssetDatabase fallback; tests
-/// swap this for a fake that returns hand-crafted GameObjects.
-/// </summary>
+// Default resolution hits Resources; editor-only AssetDatabase fallback covers prefabs
+// that designers haven't moved under Resources/ yet.
 public interface IPrefabLoader
 {
     GameObject Load(string resourceName);
 }
 
-/// <summary>
-/// Default prefab loader — caches results per name so repeated calls don't
-/// hit Resources/AssetDatabase twice.
-/// </summary>
 public sealed class ResourcesPrefabLoader : IPrefabLoader
 {
     private readonly System.Collections.Generic.Dictionary<string, GameObject> cache =

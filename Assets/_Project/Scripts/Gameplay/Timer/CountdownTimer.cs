@@ -3,20 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using VContainer.Unity;
 
-/// <summary>
-/// Per-level countdown timer. Picks up its duration from
-/// <see cref="LevelStartedEvent.TimeLimit"/>, ticks while the phase is
-/// <see cref="GamePhase.Playing"/>, and publishes <see cref="TimerTickEvent"/>
-/// every frame for the HUD plus a one-shot <see cref="TimerFinishedEvent"/>
-/// on expiry.
-///
-/// Using an <see cref="ITickable"/> rather than a coroutine means:
-/// <list type="bullet">
-///   <item>No MonoBehaviour, no GameObject, no scene placement.</item>
-///   <item>Pause is a single-line check against <see cref="GameStateService.Current"/>.</item>
-///   <item>Zero allocations per frame (the event struct is value-typed).</item>
-/// </list>
-/// </summary>
 public sealed class CountdownTimer : ITickable, IStartable, IDisposable
 {
     private readonly IEventBus bus;

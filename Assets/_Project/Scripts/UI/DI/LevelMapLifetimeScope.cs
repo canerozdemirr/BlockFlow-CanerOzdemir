@@ -5,10 +5,6 @@ using VContainer.Unity;
 
 namespace BlockFlow.UI
 {
-    /// <summary>
-    /// DI scope for the Level Map scene. Registers <see cref="LevelProgressionService"/>
-    /// so the map screen can read/write player progression.
-    /// </summary>
     public class LevelMapLifetimeScope : LifetimeScope
     {
         [SerializeField] private LevelCatalog levelCatalog;
@@ -27,9 +23,8 @@ namespace BlockFlow.UI
         {
             builder.Register(c => new LevelProgressionService(levelCatalog, c.Resolve<ISaveRepository>()), Lifetime.Singleton);
 
-            // MusicService is entry-pointed so VContainer drives its Start/Tick/Dispose.
-            // Dispose runs when this scope tears down (scene unload), which stops the
-            // track — so switching scenes cuts music without any extra plumbing.
+            // Entry-pointed so scope Dispose (scene unload) stops the track —
+            // no extra plumbing needed to cut music on scene switch.
             builder.RegisterEntryPoint<MusicService>()
                 .WithParameter(mapMusic)
                 .WithParameter(mapMusicVolume)

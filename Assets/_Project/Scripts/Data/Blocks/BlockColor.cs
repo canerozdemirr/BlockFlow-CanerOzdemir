@@ -1,11 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// A single color entry authored by designers. Levels reference colors by
-/// <see cref="ColorId"/>, so the string is the stable contract; the
-/// Unity <see cref="Color"/> and optional <see cref="MaterialOverride"/> are
-/// purely visual.
-/// </summary>
 [CreateAssetMenu(menuName = "BlockFlow/Data/Block Color", fileName = "BlockColor_")]
 public sealed class BlockColor : ScriptableObject
 {

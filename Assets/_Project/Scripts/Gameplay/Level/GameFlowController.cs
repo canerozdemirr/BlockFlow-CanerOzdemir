@@ -2,12 +2,8 @@ using System;
 using System.Collections.Generic;
 using VContainer.Unity;
 
-/// <summary>
-/// Bridges view-side request events to the gameplay-side state mutators.
-/// Views publish intents (restart, advance, load current) instead of calling
-/// <see cref="LevelRunner"/> or <see cref="LevelProgressionService"/> directly,
-/// which keeps the UI assembly from knowing about flow orchestration.
-/// </summary>
+// Bridges view-side request events to flow mutators so the UI assembly
+// doesn't need to know about LevelRunner/LevelProgressionService directly.
 public sealed class GameFlowController : IStartable, IDisposable
 {
     private readonly IEventBus bus;

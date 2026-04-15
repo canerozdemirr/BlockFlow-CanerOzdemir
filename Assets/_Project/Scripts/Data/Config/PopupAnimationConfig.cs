@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Tuning for UI Toolkit popup show/hide tweens in <see cref="UIToolkitPopupAnimator"/>.
-/// Assigned at gameplay bootstrap via the static <c>Config</c> hook.
-/// </summary>
 [CreateAssetMenu(menuName = "BlockFlow/Config/Popup Animation", fileName = "PopupAnimationConfig")]
 public sealed class PopupAnimationConfig : ScriptableObject
 {

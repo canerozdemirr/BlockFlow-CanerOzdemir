@@ -1,11 +1,3 @@
-/// <summary>
-/// Runtime state of a single grinder placed on the edge of the board. As with
-/// <see cref="BlockModel"/>, this is deliberately pure C#: no MonoBehaviour,
-/// no SO references, so the consumption logic added in Phase 6 stays
-/// unit-testable. Grinders are immutable once authored — only their
-/// "consumed block count" changes, and that is tracked on a higher-level
-/// service rather than the model itself.
-/// </summary>
 public sealed class GrinderModel
 {
     public int Id { get; }

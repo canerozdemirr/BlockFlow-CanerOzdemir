@@ -3,18 +3,8 @@ using PrimeTween;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-/// <summary>
-/// The visual representation of a single <see cref="BlockModel"/>. Follows the
-/// strict "model first" rule of the project: the view owns no gameplay state,
-/// never mutates the model, and only mirrors whatever the simulation layer
-/// tells it. Keeping behavior out of the view is what lets Phase 2 run unit
-/// tests without any MonoBehaviour involvement.
-///
-/// Coloring goes through a <see cref="MaterialPropertyBlock"/> so every block
-/// shares the same <c>M_Block_Base</c> material instance and batches via GPU
-/// instancing. This avoids the classic "one material per color" pitfall that
-/// explodes SetPass counts on mobile.
-/// </summary>
+// Coloring goes through MaterialPropertyBlock so every block shares one material
+// and batches via GPU instancing.
 public sealed class BlockView : MonoBehaviour
 {
     [SerializeField, Tooltip("Renderer whose _BaseColor is tinted to match the block's color. Usually the block's mesh renderer.")]
@@ -52,17 +42,11 @@ public sealed class BlockView : MonoBehaviour
 
     private void Awake()
     {
-        // Pre-cache the clip plane shader so the first grind doesn't pay the
-        // Shader.Find cost. Cached statically so repeated Awakes are free.
+        // Pre-cache so the first grind doesn't pay Shader.Find cost.
         if (clipPlaneShader == null)
             clipPlaneShader = Shader.Find("BlockFlow/BlockClipPlane");
     }
 
-    /// <summary>
-    /// Binds the view to a model and snaps to its current position and color.
-    /// Called by <see cref="BlockViewFactory"/> immediately after acquiring
-    /// an instance from the pool.
-    /// </summary>
     public void Bind(BlockModel model, Color color, CellSpace space, IceFeelConfig iceFeel)
     {
         Model = model;
@@ -73,11 +57,6 @@ public sealed class BlockView : MonoBehaviour
         RefreshArrows();
     }
 
-    /// <summary>
-    /// Clears the model reference, stops any in-flight dismiss tween, and
-    /// resets the transform's local scale so the next pool acquire starts
-    /// from a known state.
-    /// </summary>
     public void Unbind()
     {
         if (dismissTween.isAlive) dismissTween.Stop();
@@ -87,22 +66,13 @@ public sealed class BlockView : MonoBehaviour
         transform.localScale = Vector3.one;
     }
 
-    /// <summary>
-    /// Aligns the transform with the model's current origin. Callers invoke
-    /// this after grid mutations; there is intentionally no Update loop so
-    /// idle blocks cost nothing.
-    /// </summary>
+    // No Update loop — idle blocks cost nothing. Callers invoke after grid mutations.
     public void SyncTransform(CellSpace space)
     {
         if (Model == null || space == null) return;
         transform.localPosition = space.ToWorld(Model.Origin);
     }
 
-    /// <summary>
-    /// Re-checks <see cref="BlockModel.IsIced"/> and toggles the ice overlay.
-    /// Updates the ice count text and overlay opacity based on ice level.
-    /// Called on bind and whenever the global grind counter ticks ice down.
-    /// </summary>
     public void RefreshIceOverlay()
     {
         if (iceOverlay == null) return;
@@ -111,9 +81,6 @@ public sealed class BlockView : MonoBehaviour
         iceController.Refresh(isIced, Model != null ? Model.IceLevel : 0);
     }
 
-    /// <summary>
-    /// Shows the appropriate arrow indicators based on the block's axis lock.
-    /// </summary>
     public void RefreshArrows()
     {
         if (Model == null || Model.AxisLock == BlockAxisLock.None)
@@ -126,18 +93,13 @@ public sealed class BlockView : MonoBehaviour
         if (arrowVertical != null)   arrowVertical.SetActive(Model.AxisLock == BlockAxisLock.Vertical);
     }
 
-    /// <summary>Hides both arrow indicators.</summary>
     public void HideArrows()
     {
         if (arrowHorizontal != null) arrowHorizontal.SetActive(false);
         if (arrowVertical != null)   arrowVertical.SetActive(false);
     }
 
-    /// <summary>
-    /// The block slides into the grinder at full size. A clip plane shader
-    /// discards pixels past the grinder edge, making it look like the block
-    /// is being swallowed. Particles play at the grinder contact point.
-    /// </summary>
+    // Clip plane shader discards pixels past the grinder edge — block looks swallowed.
     public void DismissToGrinder(Vector3 slideDir, float slideDist, Vector3 grinderWorldCenter,
         float duration, Action onComplete, int grinderWidth = 1)
     {
@@ -149,14 +111,11 @@ public sealed class BlockView : MonoBehaviour
         Vector3 startPos = transform.localPosition;
         Action callback = onComplete;
 
-        // Switch to clip plane shader
         EnableClipPlane(grinderWorldCenter, slideDir);
 
-        // Spawn particles at the grinder
         Transform particles = BlockShatterEffect.SpawnContinuous(
             grinderWorldCenter, debrisColor, slideDir, transform.parent, grinderWidth);
 
-        // Slide the block through the grinder at full size — no scaling
         dismissTween = Tween.Custom(0f, 1f, duration, (float t) =>
         {
             transform.localPosition = startPos + slideDir * (t * slideDist);
@@ -176,41 +135,32 @@ public sealed class BlockView : MonoBehaviour
         });
     }
 
-    /// <summary>
-    /// Swaps the renderer to the clip plane shader and sets the clip plane
-    /// at the grinder's world position, facing back toward the block.
-    /// </summary>
     private void EnableClipPlane(Vector3 planePosition, Vector3 slideDir)
     {
         if (colorRenderer == null) return;
 
-        // Cache and load shader
         if (clipPlaneShader == null)
             clipPlaneShader = Shader.Find("BlockFlow/BlockClipPlane");
         if (clipPlaneShader == null) return;
 
-        // Save original material for restore
         originalMaterial = colorRenderer.sharedMaterial;
 
-        // Create clip material instance with same base color
         clipMaterial = new Material(clipPlaneShader);
         Color blockColor = GetBlockColor();
         clipMaterial.SetColor(BaseColorId, blockColor);
         clipMaterial.SetVector(ClipPlanePosId, planePosition);
-        // Normal points AGAINST the slide direction — pixels on the far side get clipped
+        // Normal points AGAINST slide direction — pixels on far side get clipped.
         clipMaterial.SetVector(ClipPlaneNormalId, slideDir.normalized);
         clipMaterial.SetFloat(ClipEnabledId, 1f);
 
         colorRenderer.material = clipMaterial;
     }
 
-    /// <summary>Restores the original shared material after grind completes.</summary>
     private void RestoreOriginalMaterial()
     {
         if (colorRenderer != null && originalMaterial != null)
         {
             colorRenderer.sharedMaterial = originalMaterial;
-            // Re-apply color via MPB
             Color c = GetBlockColor();
             if (c != Color.clear) ApplyColor(c);
         }
@@ -231,7 +181,6 @@ public sealed class BlockView : MonoBehaviour
         return c == Color.clear ? Color.white : c;
     }
 
-    /// <summary>Returns half the renderer extent along the given direction.</summary>
     private float GetRendererHalfExtent(Vector3 direction)
     {
         if (colorRenderer == null) return 0.5f;
@@ -240,7 +189,7 @@ public sealed class BlockView : MonoBehaviour
         return Mathf.Abs(Vector3.Dot(bounds.extents, localDir));
     }
 
-    /// <summary>Fallback dismiss (simple scale-down) if no grinder context is available.</summary>
+    // Fallback scale-down dismiss when no grinder context is available.
     public void Dismiss(float duration, Action onComplete)
     {
         if (dismissTween.isAlive) dismissTween.Stop();
@@ -249,8 +198,6 @@ public sealed class BlockView : MonoBehaviour
         Action callback = onComplete;
         dismissTween.OnComplete(() => callback?.Invoke());
     }
-
-    // ---------- internals ----------
 
     private void ApplyColor(Color color)
     {

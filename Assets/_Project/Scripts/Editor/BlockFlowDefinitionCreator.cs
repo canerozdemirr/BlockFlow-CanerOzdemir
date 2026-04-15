@@ -3,21 +3,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-/// <summary>
-/// One-click asset creator that generates everything the runtime needs to
-/// spawn blocks and grinders: prefabs with auto-centered meshes, definition
-/// SOs with offsets and prefab refs, and both catalogs.
-///
-/// <b>Mesh centering</b> — the key feature. FBX meshes come from modeling
-/// tools with arbitrary pivots (corner, center, off-axis). This script
-/// measures each mesh's <see cref="Renderer.bounds"/> after instantiation
-/// and offsets the mesh child so its visual center aligns with the shape's
-/// footprint center. The result: blocks sit exactly where the grid says
-/// they should regardless of how the FBX was authored.
-///
-/// Run via <c>BlockFlow → Create All Definitions</c>.
-/// <b>Always recreates prefabs</b> so pivot fixes are applied every time.
-/// </summary>
 public static class BlockFlowDefinitionCreator
 {
     private const string MeshRoot   = "Assets/Art/Meshes/";
@@ -55,7 +40,6 @@ public static class BlockFlowDefinitionCreator
         if (blockBaseMat == null)   Debug.LogWarning("[DefinitionCreator] M_Block_Base.mat not found at " + MatRoot);
         if (grinderBodyMat == null) Debug.LogWarning("[DefinitionCreator] M_Grinder_Body.mat not found at " + MatRoot);
 
-        // ---- Blocks ----
         var shapes    = GetShapeEntries();
         var blockDefs = new List<BlockDefinition>();
 
@@ -96,7 +80,6 @@ public static class BlockFlowDefinitionCreator
         var blockCatalog = CreateOrLoad<BlockDefinitionCatalog>(DefRoot + "BlockDefinitionCatalog.asset");
         SetArray(blockCatalog, "definitions", blockDefs);
 
-        // ---- Grinders ----
         var grinders    = GetGrinderEntries();
         var grinderDefs = new List<GrinderDefinition>();
 
@@ -134,15 +117,6 @@ public static class BlockFlowDefinitionCreator
                   $"{grinderDefs.Count} grinder prefabs + definitions, and both catalogs under {DefRoot}.");
     }
 
-    // ==================================================================
-    //  PREFAB BUILDERS — with auto-centering
-    // ==================================================================
-
-    /// <summary>
-    /// Creates a block prefab. Mesh child gets localPosition=zero and its
-    /// FBX rotation preserved. If the mesh doesn't sit on cells correctly,
-    /// open the prefab and adjust the mesh child's position manually.
-    /// </summary>
     private static GameObject CreateBlockPrefab(
         GameObject fbx, string path, Material mat, string shapeId)
     {
@@ -156,7 +130,6 @@ public static class BlockFlowDefinitionCreator
         if (mat != null)
             SetMaterial(meshInstance, mat);
 
-        // Add BlockView and wire serialized fields.
         var view      = root.AddComponent<BlockView>();
         var renderer0 = meshInstance.GetComponentInChildren<Renderer>();
 
@@ -170,10 +143,6 @@ public static class BlockFlowDefinitionCreator
         return prefab;
     }
 
-    /// <summary>
-    /// Creates a grinder prefab. Same approach as blocks: localPosition=zero,
-    /// FBX rotation preserved, manual adjustment if needed.
-    /// </summary>
     private static GameObject CreateGrinderPrefab(
         GameObject fbx, string path, Material mat, int width)
     {
@@ -199,10 +168,6 @@ public static class BlockFlowDefinitionCreator
         Object.DestroyImmediate(root);
         return prefab;
     }
-
-    // ==================================================================
-    //  SHAPE DATA
-    // ==================================================================
 
     private static ShapeEntry[] GetShapeEntries() => new[]
     {
@@ -274,10 +239,6 @@ public static class BlockFlowDefinitionCreator
         new GrinderEntry { Width = 2, MeshFileName = "SM_Grinder_2X_01", DisplayName = "Grinder 2X" },
         new GrinderEntry { Width = 3, MeshFileName = "SM_Grinder_3X_01", DisplayName = "Grinder 3X" }
     };
-
-    // ==================================================================
-    //  HELPERS
-    // ==================================================================
 
     private static GridCoord C(int x, int y) => new GridCoord(x, y);
 

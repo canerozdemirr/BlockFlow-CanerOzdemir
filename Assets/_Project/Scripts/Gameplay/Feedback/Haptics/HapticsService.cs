@@ -3,17 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using VContainer.Unity;
 
-/// <summary>
-/// Haptic feedback service using CandyCoded.HapticFeedback for native
-/// iOS Core Haptics and Android vibration patterns.
-///
-/// Intensity levels:
-///   Tap    → Selection feedback (lightest, drag pickup)
-///   Bump   → Light impact (wall bump, grind complete)
-///   Strong → Success/heavy (level win)
-///
-/// Respects an enabled flag that the pause settings toggle can control.
-/// </summary>
 public sealed class HapticsService : IStartable, IDisposable
 {
     private readonly IEventBus bus;
@@ -54,7 +43,6 @@ public sealed class HapticsService : IStartable, IDisposable
         subs.Clear();
     }
 
-    /// <summary>Lightest feedback — drag pickup, selection.</summary>
     public void Tap()
     {
         if (!enabled) return;
@@ -63,7 +51,6 @@ public sealed class HapticsService : IStartable, IDisposable
 #endif
     }
 
-    /// <summary>Medium feedback — wall bump, grind, lose.</summary>
     public void Bump()
     {
         if (!enabled) return;
@@ -72,7 +59,6 @@ public sealed class HapticsService : IStartable, IDisposable
 #endif
     }
 
-    /// <summary>Heavy feedback — level win.</summary>
     public void Strong()
     {
         if (!enabled) return;

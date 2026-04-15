@@ -1,14 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// A designer-authored collection of every <see cref="BlockDefinition"/> the
-/// project supports. Acts as the string-id → definition lookup consumed by the
-/// level validator, the level builder, and the block view factory.
-///
-/// The first lookup lazily builds an index; <see cref="OnValidate"/> invalidates
-/// it so in-editor edits don't serve stale results.
-/// </summary>
 [CreateAssetMenu(menuName = "BlockFlow/Data/Block Definition Catalog", fileName = "BlockDefinitionCatalog")]
 public sealed class BlockDefinitionCatalog : ScriptableObject
 {
@@ -28,10 +20,6 @@ public sealed class BlockDefinitionCatalog : ScriptableObject
         return false;
     }
 
-    /// <summary>
-    /// Returns the shape-id → definition map. Handy for the level validator
-    /// which accepts an <see cref="IReadOnlyDictionary{TKey,TValue}"/> directly.
-    /// </summary>
     public IReadOnlyDictionary<string, BlockDefinition> AsDictionary()
     {
         EnsureIndex();
