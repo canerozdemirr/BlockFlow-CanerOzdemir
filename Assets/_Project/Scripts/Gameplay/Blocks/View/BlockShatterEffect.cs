@@ -88,8 +88,19 @@ public static class BlockShatterEffect
             }
             // DustCloud keeps its subtle white/transparent look
 
-            // Also tint materials
+            // Also tint materials. If the renderer shipped with no material
+            // (prefab authored with m_Materials: [fileID: 0]) the editor falls
+            // back to a default particle material, but a stripped build has
+            // nothing — particles render invisible. Create one on the fly.
             var renderer = ps.GetComponent<ParticleSystemRenderer>();
+            if (renderer != null && renderer.sharedMaterial == null)
+            {
+                var fallbackShader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+                if (fallbackShader == null) fallbackShader = Shader.Find("Particles/Standard Unlit");
+                if (fallbackShader == null) fallbackShader = Shader.Find("Sprites/Default");
+                if (fallbackShader != null)
+                    renderer.material = new Material(fallbackShader);
+            }
             var mat = renderer != null ? renderer.material : null;
             if (mat != null)
             {
